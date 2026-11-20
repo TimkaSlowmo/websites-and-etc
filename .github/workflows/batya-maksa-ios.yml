@@ -5,6 +5,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+concurrency:
+  group: proyom-ios
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: macos-15
@@ -31,12 +34,30 @@ jobs:
         with:
           name: Proyom-ipa
           path: batya-maksa/ios/Proyom.ipa
-      - name: Publish release (stable download link)
+      - name: Put .ipa into the repository (batya-maksa/Proyom.ipa)
         if: github.ref == 'refs/heads/main'
+        working-directory: .
+        run: |
+          cp batya-maksa/ios/Proyom.ipa /tmp/Proyom.ipa
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          for i in 1 2 3 4 5; do
+            git fetch -q --depth=1 origin main && git reset -q --hard origin/main
+            cp /tmp/Proyom.ipa batya-maksa/Proyom.ipa
+            git add batya-maksa/Proyom.ipa
+            git diff --cached --quiet && exit 0
+            git commit -qm "Проём: свежая сборка Proyom.ipa [skip ci]"
+            git push -q origin HEAD:main && exit 0
+            sleep 5
+          done
+          exit 1
+      - name: Update release (extra download link)
+        if: github.ref == 'refs/heads/main'
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release delete batya-maksa-latest --cleanup-tag -y -R "$GITHUB_REPOSITORY" || true
-          gh release create batya-maksa-latest Proyom.ipa -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest \
-            --title "Проём для iPhone — скачать" \
-            --notes "⬇️ Скачай **Proyom.ipa** ниже (Assets) и установи через Sideloadly. Инструкция: https://timkaslowmo.github.io/websites-and-etc/proyom/ · коммит $GITHUB_SHA"
+          gh release view proyom -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+            gh release create proyom -R "$GITHUB_REPOSITORY" --latest --title "Проём для iPhone" \
+              --notes "Скачай Proyom.ipa ниже (Assets) и поставь через Sideloadly. Также лежит в репозитории: batya-maksa/Proyom.ipa"
+          gh release upload proyom Proyom.ipa --clobber -R "$GITHUB_REPOSITORY"

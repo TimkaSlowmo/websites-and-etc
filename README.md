@@ -1,9 +1,7 @@
 # websites-and-etc
 
 ## 📱 Проём (iPhone) — скачать
-**[⬇️ Proyom.ipa](https://github.com/TimkaSlowmo/websites-and-etc/releases/latest/download/Proyom.ipa)** · [страница установки](https://timkaslowmo.github.io/websites-and-etc/proyom/) · исходники в `batya-maksa/`
-
-Установка: Sideloadly на Mac/ПК → iPhone кабелем → перетащить `.ipa` → Apple ID → Start.
+**[⬇️ Proyom.ipa](https://github.com/TimkaSlowmo/websites-and-etc/raw/main/batya-maksa/Proyom.ipa)** (или папка `batya-maksa` → `Proyom.ipa`) · ставится через [Sideloadly](https://sideloadly.io) · [подробнее](batya-maksa/README.md)
 
 Мои сайты и веб-проекты (каждый проект — в своей папке).
 NutriMate и другие приложения живут в своих репозиториях.
