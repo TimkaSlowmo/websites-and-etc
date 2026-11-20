@@ -3,6 +3,8 @@ on:
   push:
     paths: ['batya-maksa/**', '.github/workflows/batya-maksa-ios.yml']
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: macos-15
@@ -29,3 +31,12 @@ jobs:
         with:
           name: BatyaMaksa-ipa
           path: batya-maksa/ios/BatyaMaksa.ipa
+      - name: Publish release (stable download link)
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete batya-maksa-latest --cleanup-tag -y -R "$GITHUB_REPOSITORY" || true
+          gh release create batya-maksa-latest BatyaMaksa.ipa -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest \
+            --title "Батя Макса (последняя сборка)" \
+            --notes "Неподписанный .ipa. Установка через Sideloadly. Собрано из коммита $GITHUB_SHA"

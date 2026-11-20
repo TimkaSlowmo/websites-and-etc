@@ -24,6 +24,9 @@ Xcode → Signing & Capabilities → выбери свою Team → Run на iPh
 ## v0.2
 PDF коммерческого предложения (⚙︎ → название компании), история расчётов (сохранение, повторное открытие, удаление долгим нажатием).
 
-## Установка на iPhone без Mac
-GitHub → Actions → «Батя Макса iOS (.ipa)» → последний запуск → Artifacts → `BatyaMaksa-ipa`.
-Файл не подписан: подпиши и поставь через Sideloadly или AltStore (бесплатный Apple ID, 7 дней) либо через TestFlight (Apple Developer, $99/год).
+## Установка на iPhone (без Xcode, как NutriMate)
+Скачать: [BatyaMaksa.ipa](https://github.com/TimkaSlowmo/websites-and-etc/releases/latest/download/BatyaMaksa.ipa) (пересобирается после каждого изменения).
+
+Mac/ПК: [Sideloadly](https://sideloadly.io) → iPhone кабелем → перетащить `BatyaMaksa.ipa` → Apple ID → Start.
+iPhone: Настройки → Основные → VPN и управление устройством → твой Apple ID → Доверять (и Режим разработчика, если попросит).
+Бесплатный Apple ID: 7 дней, потом поставить заново поверх (данные сохраняются).
