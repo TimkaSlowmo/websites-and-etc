@@ -3,7 +3,12 @@
 // POST /render   {spec, image?: base64 jpeg}     -> {image: base64 jpeg/png}
 // Без токена: защита — лимит запросов с IP и ограничение размера изображения.
 
-const VISION_MODEL = "@cf/meta/llama-3.2-11b-vision-instruct";
+const VISION_MODELS = [
+  "@cf/meta/llama-4-scout-17b-16e-instruct",
+  "@cf/mistralai/mistral-small-3.1-24b-instruct",
+  "@cf/google/gemma-3-12b-it",
+];
+const LEGACY_VISION_MODEL = "@cf/meta/llama-3.2-11b-vision-instruct";
 const IMAGE_MODEL = "@cf/black-forest-labs/flux-1-schnell";
 
 const WINDOW_TYPES = [
@@ -76,34 +81,98 @@ Read the drawing and return ONLY a JSON object, no markdown, with these keys:
 }
 If a value is not visible, make the most reasonable guess and lower "confidence". Output JSON only.`;
 
-async function analyze(env, imageB64) {
-  if (!imageB64) throw new Error("image is required");
-  const bytes = b64ToBytes(imageB64);
-  if (bytes.length > 5 * 1024 * 1024) throw new Error("image too large");
+const SPEC_SCHEMA = {
+  type: "object",
+  properties: {
+    width_mm: { type: "number" },
+    height_mm: { type: "number" },
+    type: { type: "string", enum: WINDOW_TYPES },
+    sashes: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: { width_mm: { type: ["number", "null"] }, opening: { type: "string", enum: OPENINGS } },
+        required: ["opening"],
+      },
+    },
+    profile: { type: "string" },
+    glass: { type: "string" },
+    color: { type: "string" },
+    extras: { type: "array", items: { type: "string" } },
+    notes: { type: "string" },
+    confidence: { type: "number" },
+  },
+  required: ["width_mm", "height_mm", "type", "sashes"],
+};
 
+const responseText = (res) =>
+  typeof res === "string" ? res : (res && (res.response ?? res.result?.response ?? res.description ?? res.choices?.[0]?.message?.content)) || "";
+
+async function tryModel(env, model, dataUri, withSchema) {
+  const input = {
+    messages: [
+      { role: "system", content: "You read window/door technical drawings and reply with JSON only." },
+      {
+        role: "user",
+        content: [
+          { type: "text", text: ANALYZE_PROMPT },
+          { type: "image_url", image_url: { url: dataUri } },
+        ],
+      },
+    ],
+    max_tokens: 800,
+    temperature: 0.1,
+  };
+  if (withSchema) input.response_format = { type: "json_schema", json_schema: SPEC_SCHEMA };
+  const res = await env.AI.run(model, input);
+  const out = res && typeof res.response === "object" && res.response !== null ? res.response : responseText(res);
+  return extractJson(out);
+}
+
+async function tryLegacy(env, bytes) {
   const run = () =>
-    env.AI.run(VISION_MODEL, {
-      image: [...bytes],
-      prompt: ANALYZE_PROMPT,
-      max_tokens: 700,
-      temperature: 0.1,
-    });
-
+    env.AI.run(LEGACY_VISION_MODEL, { image: [...bytes], prompt: ANALYZE_PROMPT, max_tokens: 700, temperature: 0.1 });
   let res;
   try {
     res = await run();
   } catch (e) {
-    // Первый запуск модели Llama Vision требует принять лицензию Meta.
-    if (/agree/i.test(String(e && e.message))) {
-      await env.AI.run(VISION_MODEL, { prompt: "agree" });
-      res = await run();
-    } else {
-      throw e;
+    if (!/agree/i.test(String(e && e.message))) throw e;
+    await env.AI.run(LEGACY_VISION_MODEL, { prompt: "agree" });
+    res = await run();
+  }
+  return extractJson(responseText(res));
+}
+
+async function analyze(env, imageB64) {
+  if (!imageB64) throw new Error("image is required");
+  const bytes = b64ToBytes(imageB64);
+  if (bytes.length > 5 * 1024 * 1024) throw new Error("image too large");
+  const dataUri = "data:image/jpeg;base64," + String(imageB64).replace(/^data:[^,]+,/, "");
+
+  const errors = [];
+  for (const model of VISION_MODELS) {
+    for (const withSchema of [true, false]) {
+      try {
+        const spec = normalizeSpec(await tryModel(env, model, dataUri, withSchema));
+        return { ...spec, model };
+      } catch (e) {
+        errors.push(`${model.split("/").pop()}${withSchema ? "+schema" : ""}: ${String(e && e.message).slice(0, 120)}`);
+      }
     }
   }
-
-  const text = typeof res === "string" ? res : res.response ?? res.description ?? "";
-  return normalizeSpec(extractJson(text));
+  try {
+    return { ...normalizeSpec(await tryLegacy(env, bytes)), model: LEGACY_VISION_MODEL };
+  } catch (e) {
+    errors.push(`legacy: ${String(e && e.message).slice(0, 120)}`);
+  }
+  console.log("analyze failed:", errors.join(" | "));
+  // Не роняем приложение: пустая спецификация с нулевой уверенностью, сотрудник правит руками.
+  return {
+    ...normalizeSpec({}),
+    confidence: 0,
+    notes: "ИИ не смог прочитать чертёж. Проверьте размеры и параметры вручную.",
+    model: "none",
+  };
 }
 
 export function extractJson(text) {
