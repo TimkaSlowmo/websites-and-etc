@@ -15,7 +15,7 @@ struct SettingsView: View {
                     .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
                 SecureField("Токен приложения", text: $settings.token)
             } header: { Text("ИИ-сервер (Cloudflare)") }
-            footer: { Text("Адрес Worker и токен APP_TOKEN из инструкции по развёртыванию.") }
+            footer: { Text("Адрес сервера уже зашит в приложение. Токен вводится один раз и хранится в Keychain.") }
 
             Section {
                 TextField("Название компании (для КП)", text: $settings.companyName)

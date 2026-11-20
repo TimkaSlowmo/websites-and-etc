@@ -7,7 +7,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.9"
-    MARKETING_VERSION: "0.1.0"
+    MARKETING_VERSION: "0.3.0"
     CURRENT_PROJECT_VERSION: "1"
 targets:
   OknoCalc:
@@ -21,11 +21,13 @@ targets:
         CFBundleDisplayName: Батя Макса
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        DefaultWorkerURL: $(DEFAULT_WORKER_URL)
         NSCameraUsageDescription: Камера нужна, чтобы сфотографировать чертёж окна.
         NSPhotoLibraryUsageDescription: Доступ к фото нужен, чтобы выбрать снимок чертежа.
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: kz.okno.calc
+        DEFAULT_WORKER_URL: https:/$()/batya-maksa-ai.makxxim-007.workers.dev
         TARGETED_DEVICE_FAMILY: "1"
   OknoCalcTests:
     type: bundle.unit-test

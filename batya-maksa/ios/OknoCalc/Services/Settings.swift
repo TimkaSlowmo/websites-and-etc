@@ -14,9 +14,15 @@ final class AppSettings: ObservableObject {
     }
 
     init() {
-        workerURL = UserDefaults.standard.string(forKey: "workerURL") ?? ""
+        workerURL = UserDefaults.standard.string(forKey: "workerURL") ?? Self.bundled("DefaultWorkerURL")
         companyName = UserDefaults.standard.string(forKey: "companyName") ?? ""
         token = Keychain.get("appToken") ?? ""
+    }
+
+    /// Адрес сервера зашит в сборку (Info.plist), чтобы не вводить его вручную.
+    private static func bundled(_ key: String) -> String {
+        let v = (Bundle.main.object(forInfoDictionaryKey: key) as? String) ?? ""
+        return v.hasPrefix("$(") ? "" : v
     }
 
     var isConfigured: Bool { URL(string: workerURL)?.host != nil && !token.isEmpty }

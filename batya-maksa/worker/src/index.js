@@ -80,6 +80,7 @@ If a value is not visible, make the most reasonable guess and lower "confidence"
 async function analyze(env, imageB64) {
   if (!imageB64) throw new Error("image is required");
   const bytes = b64ToBytes(imageB64);
+  if (bytes.length > 5 * 1024 * 1024) throw new Error("image too large");
 
   const run = () =>
     env.AI.run(VISION_MODEL, {
