@@ -14,6 +14,8 @@ enum APIError: LocalizedError {
     }
 }
 
+private struct ServerError: Decodable { let error: String?; let message: String? }
+
 /// Клиент Cloudflare Worker (Workers AI).
 struct APIClient {
     let baseURL: URL
@@ -54,8 +56,7 @@ struct APIClient {
         let (data, resp) = try await URLSession.shared.data(for: req)
         guard let http = resp as? HTTPURLResponse else { throw APIError.badResponse }
         guard http.statusCode == 200 else {
-            struct E: Decodable { let error: String?; let message: String? }
-            let e = try? JSONDecoder().decode(E.self, from: data)
+            let e = try? JSONDecoder().decode(ServerError.self, from: data)
             if http.statusCode == 401 { throw APIError.server("неверный токен") }
             throw APIError.server(e?.message ?? e?.error ?? "HTTP \(http.statusCode)")
         }
