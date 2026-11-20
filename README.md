@@ -11,3 +11,9 @@ NutriMate и другие приложения живут в своих репо
 ## Правила
 - Один проект — одна папка в корне.
 - В каждой папке свой `README.md` с описанием и способом запуска.
+
+## Ссылки (GitHub Pages)
+- https://timkaslowmo.github.io/websites-and-etc/zhanar-cosma/
+- https://timkaslowmo.github.io/websites-and-etc/alatau-wear/
+
+После `git push` в main сайты обновляются сами. Новую папку-сайт добавь в список `for d in ...` и в ссылки на главной в `.github/workflows/pages.yml` (папки приложений вроде `batya-maksa` не публикуются).
