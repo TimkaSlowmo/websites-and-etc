@@ -23,6 +23,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: batya-maksa/worker
+          wranglerVersion: "4"
           secrets: APP_TOKEN
         env:
           APP_TOKEN: ${{ secrets.APP_TOKEN }}
