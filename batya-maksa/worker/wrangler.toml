@@ -1,0 +1,9 @@
+name = "batya-maksa-ai"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+[ai]
+binding = "AI"
+
+# Секрет токена приложения (не хранится в коде):
+#   npx wrangler secret put APP_TOKEN
