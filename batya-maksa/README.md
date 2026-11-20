@@ -23,3 +23,7 @@ Xcode → Signing & Capabilities → выбери свою Team → Run на iPh
 
 ## v0.2
 PDF коммерческого предложения (⚙︎ → название компании), история расчётов (сохранение, повторное открытие, удаление долгим нажатием).
+
+## Установка на iPhone без Mac
+GitHub → Actions → «Батя Макса iOS (.ipa)» → последний запуск → Artifacts → `BatyaMaksa-ipa`.
+Файл не подписан: подпиши и поставь через Sideloadly или AltStore (бесплатный Apple ID, 7 дней) либо через TestFlight (Apple Developer, $99/год).

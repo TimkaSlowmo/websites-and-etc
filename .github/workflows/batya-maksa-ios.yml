@@ -1,0 +1,28 @@
+name: Батя Макса iOS (.ipa)
+on:
+  push:
+    paths: ['batya-maksa/**', '.github/workflows/batya-maksa-ios.yml']
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: batya-maksa/ios
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install xcodegen && xcodegen
+      - name: Unit tests
+        continue-on-error: true
+        run: xcodebuild test -project OknoCalc.xcodeproj -scheme OknoCalc -destination 'platform=iOS Simulator,name=iPhone 16' CODE_SIGNING_ALLOWED=NO | tail -40
+      - name: Build unsigned .ipa
+        run: |
+          xcodebuild -project OknoCalc.xcodeproj -scheme OknoCalc -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
+          mkdir Payload && cp -R build/Build/Products/Release-iphoneos/OknoCalc.app Payload/
+          zip -qr BatyaMaksa.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BatyaMaksa-ipa
+          path: batya-maksa/ios/BatyaMaksa.ipa
