@@ -1,7 +1,7 @@
 // Cloudflare Worker: ИИ-бэкенд приложения OknoCalc.
 // POST /analyze  {image: base64 jpeg}            -> {spec}
 // POST /render   {spec, image?: base64 jpeg}     -> {image: base64 jpeg/png}
-// Авторизация: заголовок  Authorization: Bearer <APP_TOKEN>
+// Без токена: защита — лимит запросов с IP и ограничение размера изображения.
 
 const VISION_MODEL = "@cf/meta/llama-3.2-11b-vision-instruct";
 const IMAGE_MODEL = "@cf/black-forest-labs/flux-1-schnell";
@@ -19,11 +19,8 @@ const WINDOW_TYPES = [
 ];
 const OPENINGS = ["fixed", "tilt", "turn", "tilt_turn", "slide"];
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Authorization, Content-Type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+// Нативному приложению CORS не нужен; браузерам доступ не открываем.
+const CORS = {};
 
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -36,9 +33,11 @@ export default {
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
     if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
 
-    const auth = request.headers.get("Authorization") || "";
-    if (!env.APP_TOKEN || auth !== `Bearer ${env.APP_TOKEN}`) {
-      return json({ error: "unauthorized" }, 401);
+    // Защита от злоупотреблений: лимит запросов с одного IP (если биндинг LIMITER подключён).
+    if (env.LIMITER) {
+      const ip = request.headers.get("CF-Connecting-IP") || "anon";
+      const { success } = await env.LIMITER.limit({ key: ip });
+      if (!success) return json({ error: "rate_limited", message: "Слишком много запросов, подождите минуту" }, 429);
     }
 
     const path = new URL(request.url).pathname;

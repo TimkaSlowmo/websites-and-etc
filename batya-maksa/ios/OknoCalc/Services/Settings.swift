@@ -25,7 +25,7 @@ final class AppSettings: ObservableObject {
         return v.hasPrefix("$(") ? "" : v
     }
 
-    var isConfigured: Bool { URL(string: workerURL)?.host != nil && !token.isEmpty }
+    var isConfigured: Bool { URL(string: workerURL)?.host != nil }
 }
 
 enum Keychain {

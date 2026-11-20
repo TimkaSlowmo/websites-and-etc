@@ -13,9 +13,8 @@ struct SettingsView: View {
             Section {
                 TextField("https://batya-maksa-ai.<аккаунт>.workers.dev", text: $settings.workerURL)
                     .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
-                SecureField("Токен приложения", text: $settings.token)
             } header: { Text("ИИ-сервер (Cloudflare)") }
-            footer: { Text("Адрес сервера уже зашит в приложение. Токен вводится один раз и хранится в Keychain.") }
+            footer: { Text("Адрес сервера уже зашит в приложение, менять не нужно.") }
 
             Section {
                 TextField("Название компании (для КП)", text: $settings.companyName)

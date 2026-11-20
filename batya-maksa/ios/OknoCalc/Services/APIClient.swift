@@ -47,7 +47,7 @@ struct APIClient {
         var req = URLRequest(url: baseURL.appendingPathComponent(path))
         req.httpMethod = "POST"
         req.timeoutInterval = 120
-        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        if !token.isEmpty { req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         let enc = JSONEncoder()
         enc.keyEncodingStrategy = .convertToSnakeCase
@@ -57,7 +57,6 @@ struct APIClient {
         guard let http = resp as? HTTPURLResponse else { throw APIError.badResponse }
         guard http.statusCode == 200 else {
             let e = try? JSONDecoder().decode(ServerError.self, from: data)
-            if http.statusCode == 401 { throw APIError.server("неверный токен") }
             throw APIError.server(e?.message ?? e?.error ?? "HTTP \(http.statusCode)")
         }
         do { return try JSONDecoder.snake.decode(R.self, from: data) } catch { throw APIError.badResponse }
