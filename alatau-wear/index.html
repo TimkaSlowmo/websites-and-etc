@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ALATAU Wear</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: tall light catalog, sticky sidebar filters, right-hand cart drawer. Single light theme by choice. */
+:root{
+  --bg:#eef0f2; --card:#ffffff; --ink:#111318; --muted:#626872; --line:#dcdfe4; --accent:#2b4cff; --accent-ink:#ffffff; --good:#12805c;
+  --display:"Syne","Arial Black",system-ui,sans-serif; --body:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1240px;margin:0 auto;padding:0 20px}
+h1,h2,h3{font-family:var(--display);line-height:1.05;margin:0;text-wrap:balance}
+
+/* header */
+.top{position:sticky;top:0;z-index:30;background:rgba(238,240,242,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:20px;height:64px}
+.logo{font-family:var(--display);font-weight:800;font-size:24px;letter-spacing:.04em;text-decoration:none;color:var(--ink)}
+.logo span{color:var(--accent)}
+.nav{display:flex;gap:22px;margin-left:12px}
+.nav a{color:var(--muted);text-decoration:none;font-weight:600;font-size:15px}
+.nav a:hover{color:var(--ink)}
+.spacer{flex:1}
+.cartbtn{display:flex;align-items:center;gap:10px;background:var(--ink);color:#fff;border:0;border-radius:999px;padding:10px 18px;font-weight:700}
+.cartbtn .n{background:var(--accent);border-radius:999px;min-width:22px;height:22px;display:grid;place-items:center;font-size:13px;padding:0 6px}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1.2fr .8fr;gap:24px;padding:36px 0 12px;align-items:stretch}
+.hero-main{background:var(--ink);color:#fff;border-radius:24px;padding:40px;display:flex;flex-direction:column;justify-content:space-between;gap:28px;min-height:280px;position:relative;overflow:hidden}
+.hero-main h1{font-size:clamp(34px,5vw,60px);font-weight:800;max-width:11em}
+.hero-main p{margin:0;color:#c3c8d2;max-width:30em}
+.hero-main .cta{align-self:flex-start;background:var(--accent);color:#fff;border:0;border-radius:999px;padding:14px 26px;font-weight:700;text-decoration:none}
+.hero-art{position:absolute;right:-20px;bottom:-30px;width:300px;opacity:.9;pointer-events:none}
+.hero-side{display:grid;grid-template-rows:1fr 1fr;gap:24px}
+.tile{background:var(--card);border-radius:24px;padding:24px;display:flex;flex-direction:column;justify-content:space-between;border:1px solid var(--line)}
+.tile b{font-family:var(--display);font-size:30px}
+.tile small{color:var(--muted);font-size:14px}
+.tile.acc{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tile.acc small{color:#dbe2ff}
+
+/* catalog layout */
+.shop{display:grid;grid-template-columns:260px 1fr;gap:28px;padding:28px 0 56px;align-items:start}
+.side{position:sticky;top:84px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:20px}
+.side h3{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-family:var(--body);font-weight:700;margin-bottom:10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 13px;font-size:14px;font-weight:600}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.sw{width:30px;height:30px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--line)}
+.sw[aria-pressed="true"]{box-shadow:0 0 0 2px var(--accent)}
+.price-row{display:flex;justify-content:space-between;font-weight:700;font-size:14px;margin-bottom:6px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.reset{background:none;border:0;color:var(--accent);font-weight:700;text-align:left;padding:0}
+.filter-toggle{display:none}
+
+.bar{display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap}
+.bar h2{font-size:28px;margin-right:auto}
+.bar .count{color:var(--muted);font-size:15px;font-weight:600}
+.field{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 14px;min-width:0}
+.search{flex:1 1 220px;max-width:320px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:18px}
+.card{background:var(--card);border-radius:20px;border:1px solid var(--line);overflow:hidden;display:flex;flex-direction:column;transition:transform .18s,box-shadow .18s}
+.card:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(17,19,24,.1)}
+.pic{position:relative;border:0;padding:0;width:100%;aspect-ratio:5/6;display:block;background:#e6e9ee}
+.pic svg{width:100%;height:100%;display:block}
+.tag{position:absolute;left:12px;top:12px;background:var(--ink);color:#fff;font-size:12px;font-weight:700;border-radius:999px;padding:4px 10px}
+.tag.sale{background:var(--accent)}
+.info{padding:14px 16px 16px;display:flex;flex-direction:column;gap:8px;flex:1}
+.info h3{font-family:var(--body);font-size:16px;font-weight:700;line-height:1.25}
+.info .meta{color:var(--muted);font-size:13px}
+.dots{display:flex;gap:6px}
+.dots i{width:14px;height:14px;border-radius:50%;box-shadow:0 0 0 1px var(--line);display:block}
+.price{display:flex;gap:8px;align-items:baseline;margin-top:auto;font-weight:800;font-variant-numeric:tabular-nums}
+.price s{color:var(--muted);font-weight:500;font-size:14px}
+.add{margin-top:4px;background:var(--ink);color:#fff;border:0;border-radius:12px;padding:11px;font-weight:700}
+.add:hover{background:var(--accent)}
+.empty{grid-column:1/-1;background:var(--card);border-radius:20px;padding:48px 24px;text-align:center;color:var(--muted)}
+
+/* info section */
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding-bottom:56px}
+.fact{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px}
+.fact h3{font-size:20px;margin-bottom:8px}
+.fact p{margin:0;color:var(--muted)}
+footer{background:var(--ink);color:#c3c8d2;padding:36px 0;font-size:15px}
+footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+footer b{color:#fff;font-family:var(--display);letter-spacing:.04em}
+footer a{color:#fff}
+
+/* overlays */
+.veil{position:fixed;inset:0;background:rgba(17,19,24,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.veil.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--card);z-index:50;transform:translateX(100%);transition:transform .25s;display:flex;flex-direction:column}
+.drawer.on{transform:none}
+.dh{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--line)}
+.dh h2{font-size:22px}
+.x{background:var(--bg);border:0;border-radius:50%;width:38px;height:38px;font-size:20px;line-height:1}
+.db{flex:1;overflow:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px}
+.line{display:grid;grid-template-columns:72px 1fr auto;gap:12px;align-items:center}
+.line .t{width:72px;height:86px;border-radius:12px;overflow:hidden;background:#e6e9ee}
+.line .t svg{width:100%;height:100%}
+.line h4{margin:0;font-size:15px;line-height:1.25}
+.line small{color:var(--muted)}
+.qty{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;margin-top:6px}
+.qty button{background:none;border:0;width:30px;height:30px;font-size:17px}
+.qty span{min-width:22px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.rm{background:none;border:0;color:var(--muted);font-size:13px;text-decoration:underline}
+.df{border-top:1px solid var(--line);padding:16px 20px;display:flex;flex-direction:column;gap:10px}
+.sum{display:flex;justify-content:space-between;font-variant-numeric:tabular-nums}
+.sum.tot{font-weight:800;font-size:19px}
+.promo{display:flex;gap:8px}
+.promo input{flex:1;min-width:0}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:14px;padding:14px;font-weight:700;text-align:center;text-decoration:none;display:block}
+.btn.ghost{background:var(--bg);color:var(--ink)}
+.btn.wa{background:#1fa855}
+.note{font-size:13px;color:var(--muted);margin:0}
+.form{display:flex;flex-direction:column;gap:12px}
+.form label{display:flex;flex-direction:column;gap:5px;font-size:14px;font-weight:600}
+.form input,.form textarea{border:1px solid var(--line);border-radius:12px;padding:11px 14px;background:#fff;width:100%}
+.err{color:#b3261e;font-size:13px;min-height:18px}
+.ok{background:#e4f5ee;color:var(--good);border-radius:14px;padding:14px;font-weight:600}
+pre.order{white-space:pre-wrap;background:var(--bg);border-radius:12px;padding:12px;font:13px/1.5 var(--body);margin:0}
+
+.modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;padding:16px}
+.modal.on{display:flex}
+.sheet{background:var(--card);border-radius:24px;max-width:860px;width:100%;max-height:calc(100% - 8px);overflow:auto;display:grid;grid-template-columns:1fr 1fr;position:relative}
+.sheet .big{background:#e6e9ee;min-height:340px}
+.sheet .big svg{width:100%;height:100%;display:block}
+.sheet .body{padding:28px;display:flex;flex-direction:column;gap:16px}
+.sheet h2{font-size:28px}
+.sheet .x{position:absolute;right:14px;top:14px;background:#fff}
+.sheet p{margin:0;color:var(--muted)}
+.opt h4{margin:0 0 8px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.size{min-width:46px;text-align:center}
+.chip.sz[disabled]{opacity:.35;text-decoration:line-through;cursor:not-allowed}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:999px;font-weight:600;z-index:80;opacity:0;pointer-events:none;transition:.2s}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:980px){
+  .hero{grid-template-columns:1fr}
+  .hero-side{grid-template-rows:none;grid-template-columns:1fr 1fr}
+  .shop{grid-template-columns:1fr}
+  .side{position:static}
+  .side.closed .sbody{display:none}
+  .filter-toggle{display:inline-flex;justify-content:space-between;align-items:center;background:none;border:0;font-weight:800;font-family:var(--display);font-size:18px;padding:0;width:100%}
+  .nav{display:none}
+  .facts{grid-template-columns:1fr}
+}
+@media (max-width:640px){
+  .hero-main{padding:26px}
+  .hero-art{width:190px;opacity:.5}
+  .grid{grid-template-columns:repeat(2,1fr);gap:12px}
+  .info{padding:12px}
+  .sheet{grid-template-columns:1fr}
+  .sheet .big{min-height:260px;aspect-ratio:1}
+  .cartbtn .lbl{display:none}
+  .bar h2{font-size:24px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="#top">ALATAU<span>.</span></a>
+    <nav class="nav" aria-label="Разделы">
+      <a href="#catalog">Каталог</a>
+      <a href="#info">Доставка и оплата</a>
+      <a href="#contacts">Контакты</a>
+    </nav>
+    <div class="spacer"></div>
+    <button class="cartbtn" id="openCart" aria-label="Открыть корзину"><span class="lbl">Корзина</span><span class="n" id="cartN">0</span></button>
+  </div>
+</header>
+
+<main id="top">
+  <section class="wrap hero">
+    <div class="hero-main">
+      <h1>Одежда, в которой удобно жить в Алматы</h1>
+      <p>Базовые вещи из плотного хлопка и флиса. Доставка по городу за 1 день, примерка при получении, возврат 14 дней.</p>
+      <a class="cta" href="#catalog">Смотреть каталог</a>
+      <svg class="hero-art" viewBox="0 0 200 240" id="heroArt" aria-hidden="true"></svg>
+    </div>
+    <div class="hero-side">
+      <div class="tile acc"><b>-20%</b><small>на худи и куртки по промокоду WELCOME10 ещё минус 10% к первому заказу</small></div>
+      <div class="tile"><b>1 день</b><small>доставка курьером по Алматы, бесплатно от 30 000 ₸</small></div>
+    </div>
+  </section>
+
+  <section class="wrap shop" id="catalog">
+    <aside class="side" id="side" aria-label="Фильтры">
+      <button class="filter-toggle" id="ftoggle" aria-expanded="true">Фильтры <span id="fsign">–</span></button>
+      <div class="sbody" style="display:flex;flex-direction:column;gap:20px">
+        <div><h3>Категория</h3><div class="chips" id="fCat"></div></div>
+        <div><h3>Для кого</h3><div class="chips" id="fGender"></div></div>
+        <div><h3>Размер</h3><div class="chips" id="fSize"></div></div>
+        <div><h3>Цвет</h3><div class="chips" id="fColor"></div></div>
+        <div>
+          <h3>Цена</h3>
+          <div class="price-row"><span>до</span><span id="priceVal"></span></div>
+          <input type="range" id="fPrice" min="5000" max="60000" step="1000" value="60000" aria-label="Максимальная цена">
+        </div>
+        <button class="reset" id="reset">Сбросить фильтры</button>
+      </div>
+    </aside>
+
+    <div>
+      <div class="bar">
+        <h2>Каталог</h2>
+        <span class="count" id="count"></span>
+        <input class="field search" id="q" type="search" placeholder="Поиск по названию" aria-label="Поиск по названию">
+        <select class="field" id="sort" aria-label="Сортировка">
+          <option value="pop">Сначала популярные</option>
+          <option value="asc">Сначала дешёвые</option>
+          <option value="desc">Сначала дорогие</option>
+          <option value="new">Новинки</option>
+        </select>
+      </div>
+      <div class="grid" id="grid"></div>
+    </div>
+  </section>
+
+  <section class="wrap facts" id="info">
+    <div class="fact"><h3>Доставка</h3><p>Курьером по Алматы за 1 день, 1 500 ₸, бесплатно от 30 000 ₸. По Казахстану транспортной компанией за 2–5 дней.</p></div>
+    <div class="fact"><h3>Оплата</h3><p>Наличными или картой курьеру, переводом на Kaspi или онлайн. Предоплата не нужна.</p></div>
+    <div class="fact"><h3>Примерка и возврат</h3><p>Примеряйте при курьере. Не подошло, вернём деньги в течение 14 дней, если вещь не носили.</p></div>
+  </section>
+</main>
+
+<footer id="contacts">
+  <div class="wrap">
+    <div><b>ALATAU Wear</b><br>Алматы, пр. Достык 100<br>Ежедневно 10:00–21:00</div>
+    <div>WhatsApp: <a href="#" id="waLink">+7 700 123 45 67</a><br>Instagram: @alatau.wear</div>
+    <div style="max-width:320px">Демо-сайт магазина одежды. Товары, цены и контакты вымышленные.</div>
+  </div>
+</footer>
+
+<div class="veil" id="veil"></div>
+
+<aside class="drawer" id="drawer" aria-label="Корзина" aria-hidden="true">
+  <div class="dh"><h2 id="drawerTitle">Корзина</h2><button class="x" id="closeCart" aria-label="Закрыть">×</button></div>
+  <div class="db" id="cartBody"></div>
+  <div class="df" id="cartFoot"></div>
+</aside>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Товар">
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ====== Настройки магазина (замени под клиента) ====== */
+const SHOP = { name:'ALATAU Wear', whatsapp:'77001234567', freeFrom:30000, delivery:1500, promo:{ WELCOME10:0.10 } };
+
+const COLORS = {
+  black:{n:'Чёрный',h:'#1b1b1f'}, white:{n:'Белый',h:'#f4f4f0'}, sand:{n:'Песочный',h:'#cbb89a'}, olive:{n:'Оливковый',h:'#5f6d4b'},
+  navy:{n:'Тёмно-синий',h:'#1f2f55'}, red:{n:'Красный',h:'#b8392f'}, grey:{n:'Серый',h:'#8c9097'}, sky:{n:'Голубой',h:'#8fb3dc'}
+};
+const CATS = {tee:'Футболки',hoodie:'Худи',jacket:'Куртки',pants:'Брюки',dress:'Платья',cap:'Кепки'};
+const GENDERS = {m:'Мужское',w:'Женское',u:'Унисекс'};
+const SIZES = ['XS','S','M','L','XL'];
+const P = (id,name,cat,g,price,old,colors,sizes,tag,desc)=>({id,name,cat,g,price,old,colors,sizes,tag,desc,order:id});
+const PRODUCTS = [
+  P(1,'Футболка Basic Heavy','tee','u',7900,0,['white','black','sand','sky'],['XS','S','M','L','XL'],'hit','Плотный хлопок 220 г/м², прямой крой, не вытягивается после стирки.'),
+  P(2,'Футболка Oversize Alatau','tee','u',9500,0,['black','grey','olive'],['S','M','L','XL'],'new','Свободный силуэт, спущенное плечо, мягкая вязка кулир.'),
+  P(3,'Худи Fleece Core','hoodie','u',21900,27900,['black','grey','navy','olive'],['XS','S','M','L','XL'],'sale','Трёхнитка с начёсом, капюшон на шнуре, карман-кенгуру.'),
+  P(4,'Худи на молнии Zip','hoodie','m',24900,0,['navy','black','sand'],['S','M','L','XL'],'new','Двусторонняя молния, манжеты на резинке, плотный флис.'),
+  P(5,'Куртка Bomber City','jacket','m',38900,46900,['olive','black','navy'],['S','M','L','XL'],'sale','Лёгкий бомбер на синтепоне 100, водоотталкивающая ткань.'),
+  P(6,'Куртка Puffer Light','jacket','w',44900,0,['sand','black','sky'],['XS','S','M','L'],'hit','Короткий пуховик с лёгким утеплителем, помещается в сумку.'),
+  P(7,'Ветровка Trail','jacket','u',29900,0,['red','navy','black'],['S','M','L','XL'],'','Мембрана 5000 мм, проклеенные швы, капюшон в воротнике.'),
+  P(8,'Брюки Cargo Wide','pants','m',23900,0,['olive','black','sand'],['S','M','L','XL'],'hit','Широкий крой, шесть карманов, хлопок с эластаном.'),
+  P(9,'Брюки Jogger Soft','pants','u',16900,19900,['grey','black','navy'],['XS','S','M','L','XL'],'sale','Мягкий трикотаж, манжеты на щиколотках, шнур на поясе.'),
+  P(10,'Брюки Straight Chino','pants','m',19900,0,['sand','navy','black'],['S','M','L','XL'],'','Классический чинос из хлопкового твила, сидят чуть выше талии.'),
+  P(11,'Платье Midi Linen','dress','w',27900,0,['sand','sky','white'],['XS','S','M','L'],'new','Лён с хлопком, длина миди, свободный силуэт, карманы в швах.'),
+  P(12,'Платье Rib Mini','dress','w',17900,22900,['black','red','navy'],['XS','S','M','L'],'sale','Трикотаж в рубчик, облегающий силуэт, длина выше колена.'),
+  P(13,'Платье Shirt Dress','dress','w',25900,0,['white','sky','olive'],['XS','S','M','L','XL'],'','Платье-рубашка на пуговицах с поясом, плотный поплин.'),
+  P(14,'Кепка Six Panel','cap','u',5900,0,['black','navy','sand','red'],['ONE'],'hit','Шесть панелей, вышивка на лбу, регулировка сзади.'),
+  P(15,'Кепка Dad Cap','cap','u',6400,0,['olive','grey','white'],['ONE'],'','Мягкий козырёк, плотный хлопок, застёжка-ремешок.'),
+  P(16,'Футболка Pocket Tee','tee','m',8900,0,['navy','olive','white'],['S','M','L','XL'],'','Накладной карман, воротник в рубчик, лёгкая посадка.')
+];
+
+/* ====== Рисунки одежды (SVG) ====== */
+function shade(hex,a){const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;r=Math.round(r*(1-a));g=Math.round(g*(1-a));b=Math.round(b*(1-a));return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1)}
+function art(type,key){
+  const c=COLORS[key].h, d=shade(c,.16), l=shade(c,-.0), line=shade(c,.32);
+  const bg={black:'#d9dce2',white:'#dfe3e9',sand:'#e8e2d8',olive:'#dde1d5',navy:'#d5dbe8',red:'#ecdcda',grey:'#e1e3e7',sky:'#dbe6f3'}[key];
+  const o=`stroke="${line}" stroke-width="1.2" stroke-linejoin="round"`;
+  let g='';
+  if(type==='tee') g=`<path d="M62 34 L86 24 Q100 38 114 24 L138 34 L172 66 L150 88 L138 76 L138 214 L62 214 L62 76 L50 88 L28 66 Z" fill="${c}" ${o}/><path d="M86 24 Q100 38 114 24 L116 30 Q100 46 84 30 Z" fill="${d}"/><path d="M62 76 L62 214 L72 214 L72 70 Z" fill="${d}" opacity=".5"/>`;
+  if(type==='hoodie') g=`<path d="M58 40 L84 28 Q100 44 116 28 L142 40 L178 92 L176 160 L156 160 L148 100 L142 90 L142 216 L58 216 L58 90 L52 100 L44 160 L24 160 L22 92 Z" fill="${c}" ${o}/><path d="M78 26 Q100 6 122 26 Q116 52 100 56 Q84 52 78 26 Z" fill="${d}" ${o}/><path d="M72 156 L128 156 L136 190 L64 190 Z" fill="${d}" opacity=".7"/><path d="M92 50 L90 84 M108 50 L110 84" stroke="${line}" stroke-width="2" stroke-linecap="round"/>`;
+  if(type==='jacket') g=`<path d="M58 38 L84 26 L100 40 L116 26 L142 38 L180 92 L176 190 L154 190 L146 104 L142 100 L142 216 L58 216 L58 100 L54 104 L46 190 L24 190 L20 92 Z" fill="${c}" ${o}/><path d="M84 26 L100 40 L116 26 L120 22 Q100 14 80 22 Z" fill="${d}"/><path d="M100 40 V216" stroke="${line}" stroke-width="2"/><rect x="68" y="150" width="22" height="30" rx="3" fill="none" stroke="${line}" stroke-width="1.4"/><rect x="110" y="150" width="22" height="30" rx="3" fill="none" stroke="${line}" stroke-width="1.4"/><path d="M58 100 H142" stroke="${line}" stroke-width="1" opacity=".6"/>`;
+  if(type==='pants') g=`<path d="M58 22 H142 L152 222 H108 L100 96 L92 222 H48 Z" fill="${c}" ${o}/><path d="M58 22 H142 V38 H58 Z" fill="${d}"/><path d="M100 38 V96" stroke="${line}" stroke-width="1.4"/><rect x="62" y="64" width="22" height="26" rx="2" fill="none" stroke="${line}" stroke-width="1.2" opacity=".7"/><rect x="116" y="64" width="22" height="26" rx="2" fill="none" stroke="${line}" stroke-width="1.2" opacity=".7"/>`;
+  if(type==='dress') g=`<path d="M78 26 L90 22 Q100 34 110 22 L122 26 L128 84 L166 222 L34 222 L72 84 Z" fill="${c}" ${o}/><path d="M72 84 L128 84 L130 96 L70 96 Z" fill="${d}"/><path d="M90 22 Q100 34 110 22" fill="none" stroke="${line}" stroke-width="1.4"/><path d="M60 140 L64 222 M100 100 V222 M140 140 L136 222" stroke="${line}" stroke-width="1" opacity=".35"/>`;
+  if(type==='cap') g=`<path d="M40 150 Q40 70 102 66 Q164 70 164 150 Z" fill="${c}" ${o}/><path d="M36 150 Q100 144 164 150 Q190 160 180 174 Q130 160 60 166 Q36 168 36 150 Z" fill="${d}" ${o}/><circle cx="102" cy="68" r="5" fill="${line}"/><path d="M102 70 V148 M72 82 Q70 118 76 148 M132 82 Q134 118 128 148" stroke="${line}" stroke-width="1" fill="none" opacity=".5"/><rect x="88" y="104" width="28" height="12" rx="2" fill="${line}" opacity=".5"/>`;
+  return `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" role="img" aria-hidden="true"><rect width="200" height="240" fill="${bg}"/><ellipse cx="100" cy="228" rx="62" ry="5" fill="#000" opacity=".08"/>${g}</svg>`;
+}
+
+/* ====== Утилиты ====== */
+const $=s=>document.querySelector(s);
+const fmt=n=>n.toLocaleString('ru-RU').replace(/ /g,' ')+' ₸';
+const esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),1800)}
+const byId=id=>PRODUCTS.find(p=>p.id===id);
+
+/* ====== Каталог ====== */
+const S={q:'',cat:'all',g:'all',sizes:new Set(),colors:new Set(),max:60000,sort:'pop'};
+
+function chip(label,attr,val,pressed){return `<button class="chip" ${attr}="${val}" aria-pressed="${pressed}">${label}</button>`}
+function renderFilters(){
+  $('#fCat').innerHTML=chip('Все','data-cat','all',S.cat==='all')+Object.entries(CATS).map(([k,v])=>chip(v,'data-cat',k,S.cat===k)).join('');
+  $('#fGender').innerHTML=chip('Все','data-g','all',S.g==='all')+Object.entries(GENDERS).map(([k,v])=>chip(v,'data-g',k,S.g===k)).join('');
+  $('#fSize').innerHTML=SIZES.map(s=>chip(s,'data-size',s,S.sizes.has(s))).join('');
+  $('#fColor').innerHTML=Object.entries(COLORS).map(([k,v])=>`<button class="sw" data-color="${k}" style="background:${v.h}" aria-pressed="${S.colors.has(k)}" aria-label="${v.n}" title="${v.n}"></button>`).join('');
+  $('#priceVal').textContent=fmt(S.max);
+}
+function filtered(){
+  let r=PRODUCTS.filter(p=>
+    (S.cat==='all'||p.cat===S.cat)&&(S.g==='all'||p.g===S.g)&&p.price<=S.max&&
+    (!S.q||p.name.toLowerCase().includes(S.q))&&
+    (!S.sizes.size||p.sizes.some(s=>S.sizes.has(s)))&&
+    (!S.colors.size||p.colors.some(c=>S.colors.has(c))));
+  const tagRank={hit:0,sale:1,new:2,'':3};
+  if(S.sort==='asc')r.sort((a,b)=>a.price-b.price);
+  else if(S.sort==='desc')r.sort((a,b)=>b.price-a.price);
+  else if(S.sort==='new')r.sort((a,b)=>(b.tag==='new')-(a.tag==='new')||b.id-a.id);
+  else r.sort((a,b)=>tagRank[a.tag]-tagRank[b.tag]||a.id-b.id);
+  return r;
+}
+function renderGrid(){
+  const list=filtered();
+  $('#count').textContent=list.length+' '+(list.length%10===1&&list.length%100!==11?'товар':(list.length%10>=2&&list.length%10<=4&&(list.length%100<10||list.length%100>=20)?'товара':'товаров'));
+  if(!list.length){$('#grid').innerHTML='<div class="empty"><b>Ничего не найдено</b><br>Измени фильтры или сбрось их.</div>';return}
+  const tagText={hit:'Хит',new:'Новинка',sale:'Скидка'};
+  $('#grid').innerHTML=list.map(p=>{
+    const disc=p.old?Math.round((1-p.price/p.old)*100):0;
+    return `<article class="card">
+      <button class="pic" data-open="${p.id}" aria-label="Открыть: ${esc(p.name)}">${art(p.cat,p.colors[0])}${p.tag?`<span class="tag ${p.tag==='sale'?'sale':''}">${p.tag==='sale'?'−'+disc+'%':tagText[p.tag]}</span>`:''}</button>
+      <div class="info">
+        <h3>${esc(p.name)}</h3>
+        <div class="meta">${CATS[p.cat]} · ${GENDERS[p.g]}</div>
+        <div class="dots">${p.colors.map(c=>`<i style="background:${COLORS[c].h}" title="${COLORS[c].n}"></i>`).join('')}</div>
+        <div class="price"><span>${fmt(p.price)}</span>${p.old?`<s>${fmt(p.old)}</s>`:''}</div>
+        <button class="add" data-open="${p.id}">Выбрать размер</button>
+      </div></article>`}).join('');
+}
+function refresh(){renderFilters();renderGrid()}
+
+document.addEventListener('click',e=>{
+  const t=e.target.closest('button,a');if(!t)return;
+  if(t.dataset.cat){S.cat=t.dataset.cat;refresh()}
+  else if(t.dataset.g){S.g=t.dataset.g;refresh()}
+  else if(t.dataset.size){const v=t.dataset.size;S.sizes.has(v)?S.sizes.delete(v):S.sizes.add(v);refresh()}
+  else if(t.dataset.color){const v=t.dataset.color;S.colors.has(v)?S.colors.delete(v):S.colors.add(v);refresh()}
+  else if(t.dataset.open){openProduct(+t.dataset.open)}
+});
+$('#q').addEventListener('input',e=>{S.q=e.target.value.trim().toLowerCase();renderGrid()});
+$('#sort').addEventListener('change',e=>{S.sort=e.target.value;renderGrid()});
+$('#fPrice').addEventListener('input',e=>{S.max=+e.target.value;$('#priceVal').textContent=fmt(S.max);renderGrid()});
+$('#reset').addEventListener('click',()=>{Object.assign(S,{q:'',cat:'all',g:'all',max:60000,sort:'pop'});S.sizes.clear();S.colors.clear();$('#q').value='';$('#sort').value='pop';$('#fPrice').value=60000;refresh()});
+$('#ftoggle').addEventListener('click',()=>{const s=$('#side');const c=s.classList.toggle('closed');$('#ftoggle').setAttribute('aria-expanded',!c);$('#fsign').textContent=c?'+':'–'});
+
+/* ====== Карточка товара ====== */
+let cur=null;
+function openProduct(id){
+  const p=byId(id);cur={p,color:p.colors[0],size:p.sizes.length===1?p.sizes[0]:null};
+  drawProduct();$('#modal').classList.add('on');$('#veil').classList.add('on');$('#veil').dataset.for='modal';
+}
+function drawProduct(){
+  const {p,color,size}=cur;
+  $('#sheet').innerHTML=`<button class="x" id="mClose" aria-label="Закрыть">×</button>
+  <div class="big">${art(p.cat,color)}</div>
+  <div class="body">
+    <div><div class="meta" style="color:var(--muted);font-size:14px">${CATS[p.cat]} · ${GENDERS[p.g]}</div><h2>${esc(p.name)}</h2></div>
+    <div class="price" style="font-size:22px"><span>${fmt(p.price)}</span>${p.old?`<s>${fmt(p.old)}</s>`:''}</div>
+    <p>${esc(p.desc)}</p>
+    <div class="opt"><h4>Цвет: ${COLORS[color].n}</h4><div class="chips">${p.colors.map(c=>`<button class="sw" data-mc="${c}" style="background:${COLORS[c].h}" aria-pressed="${c===color}" aria-label="${COLORS[c].n}"></button>`).join('')}</div></div>
+    <div class="opt"><h4>Размер${size?': '+size:''}</h4><div class="chips">${p.sizes.map(s=>`<button class="chip size sz" data-ms="${s}" aria-pressed="${s===size}">${s==='ONE'?'Универсальный':s}</button>`).join('')}</div></div>
+    <button class="btn" id="mAdd">Добавить в корзину</button>
+    <p class="note" id="mErr" style="color:#b3261e;min-height:18px"></p>
+  </div>`;
+  $('#mClose').onclick=closeAll;
+  $('#sheet').querySelectorAll('[data-mc]').forEach(b=>b.onclick=()=>{cur.color=b.dataset.mc;drawProduct()});
+  $('#sheet').querySelectorAll('[data-ms]').forEach(b=>b.onclick=()=>{cur.size=b.dataset.ms;drawProduct()});
+  $('#mAdd').onclick=()=>{
+    if(!cur.size){$('#mErr').textContent='Выбери размер.';return}
+    addToCart(cur.p.id,cur.color,cur.size);closeAll();toast('Добавлено в корзину');
+  };
+}
+
+/* ====== Корзина ====== */
+let cart=[];try{cart=JSON.parse(localStorage.getItem('alatau-cart')||'[]').filter(i=>byId(i.id))}catch(e){cart=[]}
+let promoCode='',view='cart';
+const saveCart=()=>{try{localStorage.setItem('alatau-cart',JSON.stringify(cart))}catch(e){}};
+function addToCart(id,color,size){
+  const it=cart.find(i=>i.id===id&&i.color===color&&i.size===size);
+  it?it.q++:cart.push({id,color,size,q:1});saveCart();renderCart();
+}
+const subtotal=()=>cart.reduce((s,i)=>s+byId(i.id).price*i.q,0);
+const discount=()=>Math.round(subtotal()*(SHOP.promo[promoCode]||0));
+const shipping=()=>cart.length&&subtotal()-discount()<SHOP.freeFrom?SHOP.delivery:0;
+const total=()=>subtotal()-discount()+shipping();
+
+function renderCart(){
+  $('#cartN').textContent=cart.reduce((s,i)=>s+i.q,0);
+  const body=$('#cartBody'),foot=$('#cartFoot');
+  if(view==='done')return;
+  if(!cart.length){
+    view='cart';$('#drawerTitle').textContent='Корзина';
+    body.innerHTML='<div class="empty" style="margin:auto;background:none"><b>В корзине пусто</b><br>Добавь вещи из каталога.</div>';
+    foot.innerHTML='<button class="btn ghost" id="toCatalog">Перейти в каталог</button>';
+    $('#toCatalog').onclick=()=>{closeAll();location.hash='catalog'};return;
+  }
+  if(view==='cart'){
+    $('#drawerTitle').textContent='Корзина';
+    body.innerHTML=cart.map((i,idx)=>{const p=byId(i.id);return `<div class="line">
+      <div class="t">${art(p.cat,i.color)}</div>
+      <div><h4>${esc(p.name)}</h4><small>${COLORS[i.color].n} · ${i.size==='ONE'?'универсальный':i.size}</small><br>
+        <span class="qty"><button data-dec="${idx}" aria-label="Меньше">−</button><span>${i.q}</span><button data-inc="${idx}" aria-label="Больше">+</button></span></div>
+      <div style="text-align:right"><b>${fmt(p.price*i.q)}</b><br><button class="rm" data-rm="${idx}">Убрать</button></div></div>`}).join('');
+    const left=Math.max(0,SHOP.freeFrom-(subtotal()-discount()));
+    foot.innerHTML=`
+      <div class="promo"><input class="field" id="promoIn" placeholder="Промокод" value="${esc(promoCode)}" aria-label="Промокод"><button class="btn ghost" id="promoBtn" style="padding:10px 16px">Применить</button></div>
+      <div class="sum"><span>Товары</span><span>${fmt(subtotal())}</span></div>
+      ${discount()?`<div class="sum" style="color:var(--good)"><span>Скидка ${promoCode}</span><span>−${fmt(discount())}</span></div>`:''}
+      <div class="sum"><span>Доставка</span><span>${shipping()?fmt(shipping()):'бесплатно'}</span></div>
+      ${left?`<p class="note">До бесплатной доставки ${fmt(left)}</p>`:''}
+      <div class="sum tot"><span>Итого</span><span>${fmt(total())}</span></div>
+      <button class="btn" id="toCheckout">Оформить заказ</button>`;
+    $('#promoBtn').onclick=()=>{const v=$('#promoIn').value.trim().toUpperCase();if(!v){promoCode='';renderCart();return}
+      if(SHOP.promo[v]){promoCode=v;toast('Промокод применён')}else{promoCode='';toast('Такого промокода нет')}renderCart()};
+    $('#toCheckout').onclick=()=>{view='checkout';renderCart()};
+  }
+  if(view==='checkout'){
+    $('#drawerTitle').textContent='Оформление';
+    body.innerHTML=`<form class="form" id="chk" novalidate>
+      <label>Имя<input id="cName" autocomplete="name" placeholder="Как к тебе обращаться"></label>
+      <label>Телефон<input id="cPhone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+7 7__ ___ __ __"></label>
+      <label>Адрес доставки<input id="cAddr" autocomplete="street-address" placeholder="Улица, дом, квартира"></label>
+      <label>Комментарий<textarea id="cNote" rows="2" placeholder="Домофон, удобное время"></textarea></label>
+      <div class="err" id="cErr"></div>
+      <p class="note">Заказ уйдёт в WhatsApp магазина. Оплата курьеру при получении.</p></form>`;
+    foot.innerHTML=`<div class="sum tot"><span>К оплате</span><span>${fmt(total())}</span></div>
+      <button class="btn wa" id="send">Отправить заказ в WhatsApp</button><button class="btn ghost" id="back">Назад в корзину</button>`;
+    $('#back').onclick=()=>{view='cart';renderCart()};
+    $('#send').onclick=sendOrder;
+  }
+}
+function orderText(f){
+  const lines=cart.map((i,n)=>{const p=byId(i.id);return `${n+1}. ${p.name}, ${COLORS[i.color].n}, ${i.size==='ONE'?'универсальный':i.size} × ${i.q} = ${fmt(p.price*i.q)}`});
+  return `Новый заказ в ${SHOP.name}\n\n${lines.join('\n')}\n\nТовары: ${fmt(subtotal())}${discount()?`\nСкидка ${promoCode}: −${fmt(discount())}`:''}\nДоставка: ${shipping()?fmt(shipping()):'бесплатно'}\nИтого: ${fmt(total())}\n\nИмя: ${f.name}\nТелефон: ${f.phone}\nАдрес: ${f.addr}${f.note?`\nКомментарий: ${f.note}`:''}`;
+}
+function sendOrder(){
+  const f={name:$('#cName').value.trim(),phone:$('#cPhone').value.trim(),addr:$('#cAddr').value.trim(),note:$('#cNote').value.trim()};
+  const digits=f.phone.replace(/\D/g,'');
+  if(f.name.length<2){$('#cErr').textContent='Укажи имя.';return}
+  if(digits.length<10){$('#cErr').textContent='Проверь номер телефона, нужно минимум 10 цифр.';return}
+  if(f.addr.length<5){$('#cErr').textContent='Укажи адрес доставки.';return}
+  const text=orderText(f);
+  view='done';$('#drawerTitle').textContent='Заказ готов';
+  $('#cartBody').innerHTML=`<div class="ok">Заказ собран. Нажми кнопку ниже, чтобы отправить его в WhatsApp магазина.</div><pre class="order" id="orderPre"></pre>`;
+  $('#orderPre').textContent=text;
+  $('#cartFoot').innerHTML=`<a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/${SHOP.whatsapp}?text=${encodeURIComponent(text)}">Открыть WhatsApp</a>
+    <button class="btn ghost" id="copy">Скопировать текст заказа</button><button class="btn ghost" id="newOrder">Очистить корзину и закрыть</button>`;
+  $('#copy').onclick=()=>{try{navigator.clipboard.writeText(text).then(()=>toast('Скопировано'),()=>toast('Не удалось скопировать'))}catch(e){toast('Не удалось скопировать')}};
+  $('#newOrder').onclick=()=>{cart=[];promoCode='';view='cart';saveCart();renderCart();closeAll()};
+}
+$('#cartBody').addEventListener('click',e=>{
+  const t=e.target.closest('button');if(!t)return;
+  if(t.dataset.inc!==undefined)cart[+t.dataset.inc].q++;
+  else if(t.dataset.dec!==undefined){const i=cart[+t.dataset.dec];i.q>1?i.q--:cart.splice(+t.dataset.dec,1)}
+  else if(t.dataset.rm!==undefined)cart.splice(+t.dataset.rm,1);
+  else return;
+  saveCart();renderCart();
+});
+
+/* ====== Окна ====== */
+function openCart(){if(view==='done')view='cart';renderCart();$('#drawer').classList.add('on');$('#drawer').setAttribute('aria-hidden','false');$('#veil').classList.add('on');$('#veil').dataset.for='drawer'}
+function closeAll(){$('#drawer').classList.remove('on');$('#drawer').setAttribute('aria-hidden','true');$('#modal').classList.remove('on');$('#veil').classList.remove('on');if(view==='done'){view='cart';renderCart()}}
+$('#openCart').onclick=openCart;$('#closeCart').onclick=closeAll;$('#veil').onclick=closeAll;
+$('#modal').addEventListener('click',e=>{if(e.target.id==='modal')closeAll()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll()});
+$('#waLink').href='https://wa.me/'+SHOP.whatsapp;$('#waLink').target='_blank';$('#waLink').rel='noopener';
+
+/* ====== Старт ====== */
+$('#heroArt').outerHTML=art('hoodie','sky').replace('<svg ','<svg class="hero-art" ').replace(/<rect width="200" height="240"[^>]*>/,'').replace(/<ellipse[^>]*>/,'');
+refresh();renderCart();
+if(matchMedia('(max-width:980px)').matches){$('#side').classList.add('closed');$('#ftoggle').setAttribute('aria-expanded','false');$('#fsign').textContent='+'}
+</script>
+</body>
+</html>
