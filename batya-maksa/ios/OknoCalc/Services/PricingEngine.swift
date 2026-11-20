@@ -1,7 +1,7 @@
 import Foundation
 
 /// Выбор позиций каталога под конкретное изделие.
-struct Selection: Equatable {
+struct Selection: Codable, Equatable {
     var profileId: String
     var glassId: String
     var colorId: String

@@ -6,12 +6,16 @@ final class AppSettings: ObservableObject {
     @Published var workerURL: String {
         didSet { UserDefaults.standard.set(workerURL, forKey: "workerURL") }
     }
+    @Published var companyName: String {
+        didSet { UserDefaults.standard.set(companyName, forKey: "companyName") }
+    }
     @Published var token: String {
         didSet { Keychain.set(token, for: "appToken") }
     }
 
     init() {
         workerURL = UserDefaults.standard.string(forKey: "workerURL") ?? ""
+        companyName = UserDefaults.standard.string(forKey: "companyName") ?? ""
         token = Keychain.get("appToken") ?? ""
     }
 

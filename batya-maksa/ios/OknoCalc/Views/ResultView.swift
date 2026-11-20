@@ -2,7 +2,10 @@ import SwiftUI
 
 struct ResultView: View {
     @EnvironmentObject private var vm: EstimateViewModel
+    @EnvironmentObject private var history: HistoryStore
     @State private var tab = 0
+    @State private var pdfURL: URL?
+    @State private var saved = false
 
     var body: some View {
         let catalog = vm.catalog
@@ -121,7 +124,18 @@ struct ResultView: View {
             footer: { Text("Расчёт по каталогу «\(catalog.name)». Точную цену подтверждает замер.") }
 
             Section {
-                ShareLink(item: vm.summaryText) { Label("Поделиться расчётом", systemImage: "square.and.arrow.up") }
+                Button {
+                    pdfURL = PDFExporter.makeOffer(spec: vm.spec, breakdown: b, catalogName: catalog.name,
+                                                   company: vm.companyName, drawing: vm.drawing, render: vm.renderImage)
+                } label: { Label("Создать КП (PDF)", systemImage: "doc.richtext") }
+                if let pdfURL {
+                    ShareLink(item: pdfURL) { Label("Отправить КП", systemImage: "square.and.arrow.up") }
+                }
+                ShareLink(item: vm.summaryText) { Label("Поделиться текстом расчёта", systemImage: "text.bubble") }
+                Button { vm.saveToHistory(); saved = true } label: {
+                    Label(saved ? "Сохранено" : "Сохранить в историю", systemImage: saved ? "checkmark.circle.fill" : "tray.and.arrow.down")
+                }
+                .disabled(saved)
             }
         }
     }

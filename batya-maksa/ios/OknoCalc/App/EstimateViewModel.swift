@@ -19,10 +19,28 @@ final class EstimateViewModel: ObservableObject {
 
     private let settings: AppSettings
     private let catalogStore: CatalogStore
+    private let history: HistoryStore
 
-    init(settings: AppSettings, catalogStore: CatalogStore) {
+    init(settings: AppSettings, catalogStore: CatalogStore, history: HistoryStore) {
         self.settings = settings
         self.catalogStore = catalogStore
+        self.history = history
+    }
+
+    var companyName: String { settings.companyName }
+
+    func saveToHistory() {
+        history.save(spec: spec, selection: selection, total: breakdown.total, currency: breakdown.currency,
+                     drawing: drawing, render: renderImage)
+    }
+
+    func load(_ item: HistoryItem) {
+        spec = item.spec
+        selection = item.selection
+        drawing = history.drawing(for: item)
+        renderImage = history.render(for: item)
+        renderError = nil
+        phase = .ready
     }
 
     var catalog: Catalog { catalogStore.catalog }

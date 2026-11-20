@@ -18,6 +18,10 @@ struct SettingsView: View {
             footer: { Text("Адрес Worker и токен APP_TOKEN из инструкции по развёртыванию.") }
 
             Section {
+                TextField("Название компании (для КП)", text: $settings.companyName)
+            } header: { Text("Коммерческое предложение") }
+
+            Section {
                 LabeledContent("Текущий", value: catalogStore.catalog.name)
                 LabeledContent("Профилей / стеклопакетов", value: "\(catalogStore.catalog.profiles.count) / \(catalogStore.catalog.glass.count)")
                 Button { importing = true } label: { Label("Загрузить каталог (JSON)", systemImage: "square.and.arrow.down") }

@@ -4,6 +4,7 @@ import PhotosUI
 struct HomeView: View {
     @EnvironmentObject private var vm: EstimateViewModel
     @EnvironmentObject private var settings: AppSettings
+    @EnvironmentObject private var history: HistoryStore
     @State private var showCamera = false
     @State private var photoItem: PhotosPickerItem?
     @State private var showSettings = false
@@ -74,7 +75,27 @@ struct HomeView: View {
                 Button("Ввести параметры вручную") { vm.startManual() }
                     .font(.footnote)
             }
-            .padding(.horizontal, 24).padding(.bottom, 24)
+            .padding(.horizontal, 24).padding(.bottom, 12)
+
+            if !history.items.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Недавние расчёты").font(.footnote).foregroundStyle(.secondary)
+                    ForEach(history.items.prefix(3)) { item in
+                        Button { vm.load(item) } label: {
+                            HStack {
+                                Text("\(item.spec.type.title) \(item.spec.widthMm)×\(item.spec.heightMm)")
+                                Spacer()
+                                Text(Money.format(item.total, currency: item.currency)).foregroundStyle(.secondary)
+                            }
+                            .font(.callout).padding(10)
+                            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
+                        }
+                        .buttonStyle(.plain)
+                        .contextMenu { Button("Удалить", role: .destructive) { history.delete(item) } }
+                    }
+                }
+                .padding(.horizontal, 24).padding(.bottom, 16)
+            }
         }
     }
 
