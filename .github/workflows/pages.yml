@@ -23,6 +23,7 @@ jobs:
         run: |
           mkdir _site
           for d in zhanar-cosma alatau-wear; do cp -r "$d" "_site/$d"; done
+          cp -r batya-maksa/download _site/proyom
           cat > _site/index.html <<'HTML'
           <!doctype html><meta charset="utf-8"><title>websites-and-etc</title>
           <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -30,6 +31,7 @@ jobs:
           <h1>Sites</h1><ul>
           <li><a href="zhanar-cosma/">Zhanar Cosma</a></li>
           <li><a href="alatau-wear/">ALATAU Wear</a></li>
+          <li><a href="proyom/">Проём (iPhone)</a></li>
           </ul></body>
           HTML
       - uses: actions/upload-pages-artifact@v3

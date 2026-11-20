@@ -10,6 +10,7 @@ final class EstimateViewModel: ObservableObject {
     }
 
     @Published var phase: Phase = .idle
+    @Published var tab: AppTab = .estimate
     @Published var drawing: UIImage?
     @Published var renderImage: UIImage?
     @Published var isRendering = false
@@ -41,6 +42,7 @@ final class EstimateViewModel: ObservableObject {
         renderImage = history.render(for: item)
         renderError = nil
         phase = .ready
+        tab = .estimate
     }
 
     var catalog: Catalog { catalogStore.catalog }

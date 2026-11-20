@@ -1,4 +1,4 @@
-name: Батя Макса iOS (.ipa)
+name: Проём iOS (.ipa)
 on:
   push:
     paths: ['batya-maksa/**', '.github/workflows/batya-maksa-ios.yml']
@@ -26,17 +26,17 @@ jobs:
             -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
           mkdir Payload && cp -R build/Build/Products/Release-iphoneos/OknoCalc.app Payload/
-          zip -qr BatyaMaksa.ipa Payload
+          zip -qr Proyom.ipa Payload
       - uses: actions/upload-artifact@v4
         with:
-          name: BatyaMaksa-ipa
-          path: batya-maksa/ios/BatyaMaksa.ipa
+          name: Proyom-ipa
+          path: batya-maksa/ios/Proyom.ipa
       - name: Publish release (stable download link)
         if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete batya-maksa-latest --cleanup-tag -y -R "$GITHUB_REPOSITORY" || true
-          gh release create batya-maksa-latest BatyaMaksa.ipa -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest \
-            --title "Батя Макса (последняя сборка)" \
-            --notes "Неподписанный .ipa. Установка через Sideloadly. Собрано из коммита $GITHUB_SHA"
+          gh release create batya-maksa-latest Proyom.ipa -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest \
+            --title "Проём для iPhone — скачать" \
+            --notes "⬇️ Скачай **Proyom.ipa** ниже (Assets) и установи через Sideloadly. Инструкция: https://timkaslowmo.github.io/websites-and-etc/proyom/ · коммит $GITHUB_SHA"

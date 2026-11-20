@@ -24,9 +24,21 @@ private struct RootView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            HomeView()
+        TabView(selection: $vm.tab) {
+            NavigationStack { HomeView() }
+                .tabItem { Label("Расчёт", systemImage: "camera.viewfinder") }
+                .tag(AppTab.estimate)
+            NavigationStack { HistoryView() }
+                .tabItem { Label("История", systemImage: "clock.arrow.circlepath") }
+                .tag(AppTab.history)
+            NavigationStack { CatalogView() }
+                .tabItem { Label("Каталог", systemImage: "list.bullet.rectangle") }
+                .tag(AppTab.catalog)
+            NavigationStack { SettingsView() }
+                .tabItem { Label("Настройки", systemImage: "gearshape") }
+                .tag(AppTab.settings)
         }
+        .tint(Theme.accent)
         .environmentObject(vm)
     }
 }

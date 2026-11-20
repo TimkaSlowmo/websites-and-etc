@@ -1,4 +1,4 @@
-# Батя Макса — iOS + Cloudflare Workers AI (v0.1)
+# Проём (проект «Батя Макса») — iOS + Cloudflare Workers AI (v0.1)
 
 ## 1. ИИ-сервер (5 минут)
 ```
@@ -25,8 +25,8 @@ Xcode → Signing & Capabilities → выбери свою Team → Run на iPh
 PDF коммерческого предложения (⚙︎ → название компании), история расчётов (сохранение, повторное открытие, удаление долгим нажатием).
 
 ## Установка на iPhone (без Xcode, как NutriMate)
-Скачать: [BatyaMaksa.ipa](https://github.com/TimkaSlowmo/websites-and-etc/releases/latest/download/BatyaMaksa.ipa) (пересобирается после каждого изменения).
+Скачать: [Proyom.ipa](https://github.com/TimkaSlowmo/websites-and-etc/releases/latest/download/Proyom.ipa) (пересобирается после каждого изменения).
 
-Mac/ПК: [Sideloadly](https://sideloadly.io) → iPhone кабелем → перетащить `BatyaMaksa.ipa` → Apple ID → Start.
+Mac/ПК: [Sideloadly](https://sideloadly.io) → iPhone кабелем → перетащить `Proyom.ipa` → Apple ID → Start.
 iPhone: Настройки → Основные → VPN и управление устройством → твой Apple ID → Доверять (и Режим разработчика, если попросит).
 Бесплатный Apple ID: 7 дней, потом поставить заново поверх (данные сохраняются).

@@ -4,7 +4,6 @@ import UniformTypeIdentifiers
 struct SettingsView: View {
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var catalogStore: CatalogStore
-    @Environment(\.dismiss) private var dismiss
     @State private var importing = false
     @State private var message: String?
 
@@ -28,10 +27,12 @@ struct SettingsView: View {
             } header: { Text("Каталог и цены") }
 
             if let message { Section { Text(message).font(.footnote) } }
+
+            Section {
+                LabeledContent("Версия", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
+            } footer: { Text("Проём — ИИ-расчёт окон и дверей по чертежу.") }
         }
         .navigationTitle("Настройки")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Готово") { dismiss() } } }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
             switch result {
             case .success(let url):

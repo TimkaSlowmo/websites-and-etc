@@ -79,6 +79,9 @@ Read the drawing and return ONLY a JSON object, no markdown, with these keys:
  "notes": string (any other text from the drawing, short),
  "confidence": number from 0 to 1
 }
+How to read sashes: vertical/horizontal lines inside the frame (imposts) split it into sections. Diagonal lines inside a section show how it opens: lines meeting at the left or right side = "turn" (side-hung), lines meeting at the bottom center = "tilt", both patterns in one section = "tilt_turn", no diagonals = "fixed", arrows along the frame = "slide".
+The photo may be rotated, skewed or in shadow: read the numbers as written, the bigger horizontal dimension line is the width.
+"type" must match the number of sections (1 = single_sash or fixed, 2 = double_sash, 3 = triple_sash) unless it is clearly a door or balcony block.
 If a value is not visible, make the most reasonable guess and lower "confidence". Output JSON only.`;
 
 const SPEC_SCHEMA = {
@@ -200,10 +203,19 @@ export function normalizeSpec(raw) {
     }));
   if (sashes.length === 0) sashes.push({ width_mm: null, opening: "tilt_turn" });
 
+  // Тип окна согласуем с количеством секций (кроме дверей и балконных блоков).
+  let fixedType = type;
+  const windowTypes = ["fixed", "single_sash", "double_sash", "triple_sash"];
+  if (windowTypes.includes(type)) {
+    const n = sashes.length;
+    const allFixed = sashes.every((x) => x.opening === "fixed");
+    fixedType = n >= 3 ? "triple_sash" : n === 2 ? "double_sash" : allFixed ? "fixed" : "single_sash";
+  }
+
   return {
     width_mm: num(raw.width_mm, 200, 6000, 1300),
     height_mm: num(raw.height_mm, 200, 3500, 1400),
-    type,
+    type: fixedType,
     sashes,
     profile: String(raw.profile || "").slice(0, 80),
     glass: String(raw.glass || "").slice(0, 80),

@@ -7,7 +7,6 @@ struct HomeView: View {
     @EnvironmentObject private var history: HistoryStore
     @State private var showCamera = false
     @State private var photoItem: PhotosPickerItem?
-    @State private var showSettings = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -18,7 +17,7 @@ struct HomeView: View {
             case .ready: ResultView()
             }
         }
-        .navigationTitle("Батя Макса")
+        .navigationTitle(vm.phase == .idle ? "Проём" : "Расчёт")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -26,11 +25,7 @@ struct HomeView: View {
                     Button { vm.reset() } label: { Label("Новый", systemImage: "plus") }
                 }
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { showSettings = true } label: { Image(systemName: "gearshape") }
-            }
         }
-        .sheet(isPresented: $showSettings) { NavigationStack { SettingsView() } }
         .fullScreenCover(isPresented: $showCamera) {
             CameraPicker { vm.start(with: $0) }.ignoresSafeArea()
         }
@@ -48,14 +43,15 @@ struct HomeView: View {
     private var idle: some View {
         VStack(spacing: 20) {
             Spacer()
-            Image(systemName: "window.vertical.closed")
-                .font(.system(size: 72)).foregroundStyle(.tint)
+            Image("Logo").resizable().scaledToFit().frame(width: 120, height: 120)
+                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+                .shadow(color: Theme.deep.opacity(0.3), radius: 16, y: 8)
             Text("Сфотографируйте чертёж окна").font(.title2.bold())
             Text("ИИ прочитает размеры и параметры, покажет, как изделие будет выглядеть, и рассчитает ориентировочную цену.")
                 .multilineTextAlignment(.center).foregroundStyle(.secondary).padding(.horizontal, 32)
 
             if !settings.isConfigured {
-                Label("Сначала укажите адрес сервера в настройках", systemImage: "exclamationmark.triangle")
+                Label("Укажите адрес сервера во вкладке «Настройки»", systemImage: "exclamationmark.triangle")
                     .font(.footnote).foregroundStyle(.orange)
             }
             Spacer()
@@ -77,23 +73,21 @@ struct HomeView: View {
             }
             .padding(.horizontal, 24).padding(.bottom, 12)
 
-            if !history.items.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Недавние расчёты").font(.footnote).foregroundStyle(.secondary)
-                    ForEach(history.items.prefix(3)) { item in
-                        Button { vm.load(item) } label: {
-                            HStack {
-                                Text("\(item.spec.type.title) \(item.spec.widthMm)×\(item.spec.heightMm)")
-                                Spacer()
-                                Text(Money.format(item.total, currency: item.currency)).foregroundStyle(.secondary)
-                            }
-                            .font(.callout).padding(10)
-                            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
+            if let last = history.items.first {
+                Button { vm.load(last) } label: {
+                    HStack {
+                        Image(systemName: "clock.arrow.circlepath").foregroundStyle(Theme.accent)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Последний расчёт").font(.caption).foregroundStyle(.secondary)
+                            Text("\(last.spec.type.title) \(last.spec.widthMm)×\(last.spec.heightMm)").font(.callout)
                         }
-                        .buttonStyle(.plain)
-                        .contextMenu { Button("Удалить", role: .destructive) { history.delete(item) } }
+                        Spacer()
+                        Text(Money.format(last.total, currency: last.currency)).font(.callout.bold())
                     }
+                    .padding(12)
+                    .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
                 }
+                .buttonStyle(.plain)
                 .padding(.horizontal, 24).padding(.bottom, 16)
             }
         }

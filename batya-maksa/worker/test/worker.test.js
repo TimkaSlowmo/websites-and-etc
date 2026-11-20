@@ -25,3 +25,10 @@ test("render prompt reflects spec", () => {
   assert.match(p, /1\.80 m wide/);
   assert.match(p, /tilt-and-turn/);
 });
+
+test("type follows section count", () => {
+  const s = normalizeSpec({ type: "fixed", sashes: [{ opening: "tilt_turn" }, { opening: "fixed" }] });
+  assert.equal(s.type, "double_sash");
+  const d = normalizeSpec({ type: "balcony_door", sashes: [{ opening: "tilt_turn" }] });
+  assert.equal(d.type, "balcony_door");
+});
