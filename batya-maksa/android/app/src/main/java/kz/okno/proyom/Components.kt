@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -49,6 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
@@ -97,8 +99,10 @@ fun <T> Choice(label: String, current: String, options: List<T>, title: (T) -> S
             Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable { open = true }.padding(vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(label, Modifier.weight(1f))
-            Text(current, color = Accent, fontWeight = FontWeight.Medium, maxLines = 1)
+            Text(label, maxLines = 1, softWrap = false)
+            Spacer(Modifier.width(12.dp))
+            Text(current, color = Accent, fontWeight = FontWeight.Medium, maxLines = 2,
+                textAlign = TextAlign.End, modifier = Modifier.weight(1f))
             Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint = Accent)
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {

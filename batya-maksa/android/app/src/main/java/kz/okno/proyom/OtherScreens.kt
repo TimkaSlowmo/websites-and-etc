@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.text.SimpleDateFormat
@@ -120,7 +121,8 @@ fun CatalogScreen(vm: AppViewModel) {
 private fun Line(title: String, value: String) {
     Row(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
         Text(title, Modifier.weight(1f))
-        Text(value, color = Color.Gray)
+        Spacer(Modifier.size(12.dp))
+        Text(value, color = Color.Gray, textAlign = TextAlign.End, modifier = Modifier.weight(1f, fill = false))
     }
 }
 

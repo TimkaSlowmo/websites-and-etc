@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 val Accent = Color(0xFF127A8C)
@@ -42,6 +43,11 @@ class MainActivity : ComponentActivity() {
                     secondary = Deep,
                     primaryContainer = Color(0xFFD5EEF2),
                     onPrimaryContainer = Deep,
+                    secondaryContainer = Color(0xFFD5EEF2),
+                    onSecondaryContainer = Deep,
+                    surfaceVariant = Color(0xFFE6ECEF),
+                    surfaceContainerHighest = Color(0xFFE6ECEF),
+                    outline = Color(0xFF9AA8B0),
                     background = Color(0xFFF6F7F9),
                     surface = Color(0xFFF6F7F9),
                     surfaceContainer = Color.White,
@@ -70,7 +76,7 @@ fun App(vm: AppViewModel = viewModel()) {
                         selected = vm.tab == t.tab,
                         onClick = { vm.tab = t.tab },
                         icon = { Icon(t.icon, contentDescription = t.title) },
-                        label = { Text(t.title) },
+                        label = { Text(t.title, maxLines = 1, softWrap = false, fontSize = 11.sp) },
                     )
                 }
             }
