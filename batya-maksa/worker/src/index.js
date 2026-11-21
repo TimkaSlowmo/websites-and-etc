@@ -68,6 +68,7 @@ export default {
 const ANALYZE_PROMPT = `You are an expert in window and door manufacturing. The image is a technical drawing (sketch) of a window or door, usually with dimensions and notes written next to it.
 Read the drawing and return ONLY a JSON object, no markdown, with these keys:
 {
+ "numbers": [string] (FIRST copy every dimension number exactly as written on the drawing, digit by digit, e.g. ["1800","1400","900"]),
  "width_mm": number (overall width in millimetres; convert cm/m to mm),
  "height_mm": number (overall height in millimetres),
  "type": one of ${JSON.stringify(WINDOW_TYPES)},
@@ -82,11 +83,13 @@ Read the drawing and return ONLY a JSON object, no markdown, with these keys:
 How to read sashes: vertical/horizontal lines inside the frame (imposts) split it into sections. Diagonal lines inside a section show how it opens: lines meeting at the left or right side = "turn" (side-hung), lines meeting at the bottom center = "tilt", both patterns in one section = "tilt_turn", no diagonals = "fixed", arrows along the frame = "slide".
 The photo may be rotated, skewed or in shadow: read the numbers as written, the bigger horizontal dimension line is the width.
 "type" must match the number of sections (1 = single_sash or fixed, 2 = double_sash, 3 = triple_sash) unless it is clearly a door or balcony block.
+Width and height MUST be taken from "numbers": the overall dimension lines go along the whole frame. Section widths should add up to the overall width. Handwritten digits: 1 vs 7, 3 vs 8, 5 vs 6 — check carefully.
 If a value is not visible, make the most reasonable guess and lower "confidence". Output JSON only.`;
 
 const SPEC_SCHEMA = {
   type: "object",
   properties: {
+    numbers: { type: "array", items: { type: "string" } },
     width_mm: { type: "number" },
     height_mm: { type: "number" },
     type: { type: "string", enum: WINDOW_TYPES },
@@ -105,7 +108,7 @@ const SPEC_SCHEMA = {
     notes: { type: "string" },
     confidence: { type: "number" },
   },
-  required: ["width_mm", "height_mm", "type", "sashes"],
+  required: ["numbers", "width_mm", "height_mm", "type", "sashes"],
 };
 
 const responseText = (res) =>
@@ -123,7 +126,7 @@ async function tryModel(env, model, dataUri, withSchema) {
         ],
       },
     ],
-    max_tokens: 800,
+    max_tokens: 600,
     temperature: 0.1,
   };
   if (withSchema) input.response_format = { type: "json_schema", json_schema: SPEC_SCHEMA };
@@ -146,36 +149,102 @@ async function tryLegacy(env, bytes) {
   return extractJson(responseText(res));
 }
 
+async function runModel(env, model, dataUri) {
+  try {
+    return await tryModel(env, model, dataUri, true);
+  } catch (e) {
+    return await tryModel(env, model, dataUri, false);
+  }
+}
+
+const withTimeout = (p, ms) =>
+  Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))]);
+
 async function analyze(env, imageB64) {
   if (!imageB64) throw new Error("image is required");
   const bytes = b64ToBytes(imageB64);
   if (bytes.length > 5 * 1024 * 1024) throw new Error("image too large");
   const dataUri = "data:image/jpeg;base64," + String(imageB64).replace(/^data:[^,]+,/, "");
+  const started = Date.now();
 
-  const errors = [];
-  for (const model of VISION_MODELS) {
-    for (const withSchema of [true, false]) {
+  // Две модели параллельно: сверяем цифры. Вторую ждём не дольше 5 с после первой.
+  const [m1, m2] = VISION_MODELS;
+  const p1 = withTimeout(runModel(env, m1, dataUri), 30000).then((r) => ({ r, m: m1 }));
+  const p2 = withTimeout(runModel(env, m2, dataUri), 30000).then((r) => ({ r, m: m2 }));
+  const results = [];
+  const first = await Promise.any([p1, p2]).catch(() => null);
+  if (first) {
+    results.push(first);
+    const other = first.m === m1 ? p2 : p1;
+    const second = await withTimeout(other, 5000).catch(() => null);
+    if (second) results.push(second);
+  }
+
+  if (results.length === 0) {
+    for (const m of VISION_MODELS.slice(2)) {
       try {
-        const spec = normalizeSpec(await tryModel(env, model, dataUri, withSchema));
-        return { ...spec, model };
-      } catch (e) {
-        errors.push(`${model.split("/").pop()}${withSchema ? "+schema" : ""}: ${String(e && e.message).slice(0, 120)}`);
-      }
+        results.push({ r: await withTimeout(runModel(env, m, dataUri), 30000), m });
+        break;
+      } catch {}
     }
   }
-  try {
-    return { ...normalizeSpec(await tryLegacy(env, bytes)), model: LEGACY_VISION_MODEL };
-  } catch (e) {
-    errors.push(`legacy: ${String(e && e.message).slice(0, 120)}`);
+  if (results.length === 0) {
+    try {
+      results.push({ r: await tryLegacy(env, bytes), m: LEGACY_VISION_MODEL });
+    } catch {}
   }
-  console.log("analyze failed:", errors.join(" | "));
-  // Не роняем приложение: пустая спецификация с нулевой уверенностью, сотрудник правит руками.
-  return {
-    ...normalizeSpec({}),
-    confidence: 0,
-    notes: "ИИ не смог прочитать чертёж. Проверьте размеры и параметры вручную.",
-    model: "none",
+  if (results.length === 0) {
+    return {
+      ...normalizeSpec({}),
+      confidence: 0,
+      notes: "ИИ не смог прочитать чертёж. Проверьте размеры и параметры вручную.",
+      model: "none",
+      ms: Date.now() - started,
+    };
+  }
+  const specs = results.map(({ r, m }) => ({ ...normalizeSpec(r), model: m }));
+  return { ...reconcile(specs), ms: Date.now() - started };
+}
+
+/** Насколько спецификация сама с собой согласована (0..3). */
+export function selfScore(s) {
+  let score = 0;
+  const widths = s.sashes.map((x) => x.width_mm).filter(Boolean);
+  if (widths.length === s.sashes.length && widths.length > 1) {
+    const sum = widths.reduce((a, b) => a + b, 0);
+    if (Math.abs(sum - s.width_mm) / s.width_mm < 0.04) score += 1;
+  }
+  const nums = (s.numbers || []).map(Number);
+  if (nums.includes(s.width_mm)) score += 1;
+  if (nums.includes(s.height_mm)) score += 1;
+  return score;
+}
+
+const close = (a, b) => Math.abs(a - b) / Math.max(a, b) < 0.03;
+
+/** Сверка ответов моделей: согласие повышает уверенность, расхождение — варианты на выбор. */
+export function reconcile(specs) {
+  const ranked = [...specs].sort((a, b) => selfScore(b) - selfScore(a) || b.confidence - a.confidence);
+  const best = { ...ranked[0] };
+  delete best.numbers;
+  if (ranked.length < 2) {
+    best.confidence = Math.min(best.confidence, selfScore(ranked[0]) >= 2 ? 0.85 : 0.6);
+    return best;
+  }
+  const other = ranked[1];
+  const wOk = close(best.width_mm, other.width_mm);
+  const hOk = close(best.height_mm, other.height_mm);
+  if (wOk && hOk) {
+    best.confidence = Math.max(best.confidence, 0.9);
+    if (best.sashes.length !== other.sashes.length) best.confidence = 0.75;
+    return best;
+  }
+  best.confidence = Math.min(best.confidence, 0.5);
+  best.alternatives = {
+    width_mm: wOk ? [] : [other.width_mm],
+    height_mm: hOk ? [] : [other.height_mm],
   };
+  return best;
 }
 
 export function extractJson(text) {
@@ -189,6 +258,17 @@ export function extractJson(text) {
 }
 
 export function normalizeSpec(raw) {
+  raw = raw || {};
+  // Единицы: если оба размера < 400, значит в сантиметрах; < 10 — в метрах.
+  let w = Number(raw.width_mm), h = Number(raw.height_mm), k = 1;
+  if (w > 0 && h > 0) {
+    if (w < 10 && h < 10) k = 1000;
+    else if (w < 400 && h < 400) k = 10;
+  }
+  if (k !== 1) {
+    raw = { ...raw, width_mm: w * k, height_mm: h * k,
+      sashes: (raw.sashes || []).map((x) => ({ ...x, width_mm: x && x.width_mm ? x.width_mm * k : null })) };
+  }
   const num = (v, min, max, fallback) => {
     const n = Number(v);
     if (!Number.isFinite(n) || n <= 0) return fallback;
@@ -202,6 +282,20 @@ export function normalizeSpec(raw) {
       opening: OPENINGS.includes(s && s.opening) ? s.opening : "fixed",
     }));
   if (sashes.length === 0) sashes.push({ width_mm: null, opening: "tilt_turn" });
+  const widthMm = num(raw.width_mm, 200, 6000, 1300);
+  // Ширины створок: если сумма не сходится с общей шириной — делим поровну.
+  const given = sashes.map((x) => x.width_mm);
+  const sum = given.reduce((a, b) => a + (b || 0), 0);
+  if (given.some((x) => !x) || Math.abs(sum - widthMm) / widthMm > 0.06) {
+    const missing = given.filter((x) => !x).length;
+    const known = given.reduce((a, b) => a + (b || 0), 0);
+    if (missing > 0 && known < widthMm && known > 0) {
+      const each = Math.round((widthMm - known) / missing);
+      sashes.forEach((x) => { if (!x.width_mm) x.width_mm = each; });
+    } else {
+      sashes.forEach((x) => { x.width_mm = Math.round(widthMm / sashes.length); });
+    }
+  }
 
   // Тип окна согласуем с количеством секций (кроме дверей и балконных блоков).
   let fixedType = type;
@@ -213,7 +307,8 @@ export function normalizeSpec(raw) {
   }
 
   return {
-    width_mm: num(raw.width_mm, 200, 6000, 1300),
+    numbers: (Array.isArray(raw.numbers) ? raw.numbers : []).map(String).slice(0, 20),
+    width_mm: widthMm,
     height_mm: num(raw.height_mm, 200, 3500, 1400),
     type: fixedType,
     sashes,
@@ -265,7 +360,7 @@ async function render(env, spec) {
   if (!spec) throw new Error("spec is required");
   const out = await env.AI.run(IMAGE_MODEL, {
     prompt: buildRenderPrompt(spec),
-    steps: 6,
+    steps: 4,
   });
   if (!out || !out.image) throw new Error("image model returned nothing");
   return out.image; // base64 JPEG
