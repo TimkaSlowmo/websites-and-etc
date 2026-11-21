@@ -30,7 +30,7 @@ struct APIClient {
     func analyze(drawing: UIImage) async throws -> WindowSpec {
         struct Req: Encodable { let image: String }
         struct Res: Decodable { let spec: WindowSpec }
-        let b64 = try Self.jpegBase64(drawing, maxSide: 1600, quality: 0.85)
+        let b64 = try Self.jpegBase64(drawing, maxSide: 1280, quality: 0.8)
         let res: Res = try await post("analyze", body: Req(image: b64))
         return res.spec
     }

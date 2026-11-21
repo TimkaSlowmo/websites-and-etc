@@ -30,11 +30,12 @@ enum PricingEngine {
     // MARK: Автоподбор позиций каталога по тексту из чертежа
 
     static func autoSelection(spec: WindowSpec, catalog: Catalog) -> Selection {
-        let profile = match(spec.profile, in: catalog.profiles, keywords: { $0.keywords ?? [] }, isDefault: { $0.isDefault ?? false })?.id ?? catalog.profiles.first?.id ?? ""
-        let glass = match(spec.glass, in: catalog.glass, keywords: { $0.keywords ?? [] }, isDefault: { $0.isDefault ?? false })?.id ?? catalog.glass.first?.id ?? ""
-        let color = match(spec.color, in: catalog.colors, keywords: { $0.keywords ?? [] }, isDefault: { $0.isDefault ?? false })?.id ?? catalog.colors.first?.id ?? ""
+        let all = [spec.profile, spec.glass, spec.color, spec.notes, spec.extras.joined(separator: " ")].joined(separator: " ")
+        let profile = match(spec.profile + " " + spec.notes, in: catalog.profiles, keywords: { $0.keywords ?? [] }, isDefault: { $0.isDefault ?? false })?.id ?? catalog.profiles.first?.id ?? ""
+        let glass = match(spec.glass + " " + spec.notes, in: catalog.glass, keywords: { $0.keywords ?? [] }, isDefault: { $0.isDefault ?? false })?.id ?? catalog.glass.first?.id ?? ""
+        let color = match(all, in: catalog.colors, keywords: { $0.keywords ?? [] }, isDefault: { $0.isDefault ?? false })?.id ?? catalog.colors.first?.id ?? ""
 
-        let haystack = (spec.extras + [spec.notes]).joined(separator: " ").lowercased()
+        let haystack = all.lowercased()
         let extras = catalog.extras.filter { item in
             (item.keywords ?? []).contains { !$0.isEmpty && haystack.contains($0.lowercased()) }
         }.map(\.id)

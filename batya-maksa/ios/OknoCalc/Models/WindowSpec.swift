@@ -45,6 +45,12 @@ struct Sash: Codable, Identifiable, Hashable {
     enum CodingKeys: String, CodingKey { case widthMm, opening }
 }
 
+/// Другие значения, которые увидела вторая модель ИИ (если модели разошлись).
+struct Alternatives: Codable, Equatable {
+    var widthMm: [Int]? = nil
+    var heightMm: [Int]? = nil
+}
+
 /// Параметры изделия: приходят из ИИ-анализа чертежа и редактируются вручную.
 struct WindowSpec: Codable, Equatable {
     var widthMm: Int = 1300
@@ -57,6 +63,7 @@ struct WindowSpec: Codable, Equatable {
     var extras: [String] = []
     var notes: String = ""
     var confidence: Double = 1
+    var alternatives: Alternatives? = nil
 
     var areaM2: Double { Double(widthMm) * Double(heightMm) / 1_000_000 }
     var perimeterM: Double { 2 * Double(widthMm + heightMm) / 1000 }

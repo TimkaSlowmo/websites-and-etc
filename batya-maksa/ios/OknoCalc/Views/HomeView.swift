@@ -11,12 +11,13 @@ struct HomeView: View {
     var body: some View {
         VStack(spacing: 0) {
             switch vm.phase {
-            case .idle: idle
-            case .analyzing: analyzing
-            case .failed(let msg): failed(msg)
-            case .ready: ResultView()
+            case .idle: idle.transition(.opacity.combined(with: .scale(scale: 0.97)))
+            case .analyzing: AnalyzingView(image: vm.drawing).transition(.opacity)
+            case .failed(let msg): failed(msg).transition(.opacity)
+            case .ready: ResultView().transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
+        .animation(.spring(response: 0.5, dampingFraction: 0.88), value: vm.phase)
         .navigationTitle(vm.phase == .idle ? "Проём" : "Расчёт")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -62,6 +63,7 @@ struct HomeView: View {
                 }
                 .buttonStyle(.borderedProminent).controlSize(.large)
                 .disabled(!CameraPicker.isAvailable)
+                .symbolEffect(.bounce, value: showCamera)
 
                 PhotosPicker(selection: $photoItem, matching: .images) {
                     Label("Выбрать из галереи", systemImage: "photo.on.rectangle").frame(maxWidth: .infinity)
@@ -90,19 +92,6 @@ struct HomeView: View {
                 .buttonStyle(.plain)
                 .padding(.horizontal, 24).padding(.bottom, 16)
             }
-        }
-    }
-
-    private var analyzing: some View {
-        VStack(spacing: 16) {
-            Spacer()
-            if let img = vm.drawing {
-                Image(uiImage: img).resizable().scaledToFit().frame(maxHeight: 280)
-                    .clipShape(RoundedRectangle(cornerRadius: 12)).padding(.horizontal, 24)
-            }
-            ProgressView()
-            Text("Читаю чертёж…").foregroundStyle(.secondary)
-            Spacer()
         }
     }
 

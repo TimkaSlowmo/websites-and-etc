@@ -1,0 +1,79 @@
+name: Проём Android (.apk)
+on:
+  push:
+    paths: ['batya-maksa/android/**', '.github/workflows/proyom-android.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: proyom-android
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: batya-maksa/android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+      # Один и тот же ключ подписи между сборками, чтобы APK ставился поверх старой версии.
+      # Постоянный вариант: секреты ANDROID_KEYSTORE_B64 / ANDROID_KEYSTORE_PASSWORD / ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD.
+      - name: Signing key cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: proyom-signing-key-v1
+      - name: Release key from secrets (optional)
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KS_B64" ]; then
+            echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+          fi
+      - name: Build APK
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          gradle --no-daemon assembleRelease
+          cp app/build/outputs/apk/release/app-release.apk Proyom.apk
+          ls -la Proyom.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Proyom-apk
+          path: batya-maksa/android/Proyom.apk
+      - name: Put .apk into the repository (batya-maksa/Proyom.apk)
+        if: github.ref == 'refs/heads/main'
+        working-directory: .
+        run: |
+          cp batya-maksa/android/Proyom.apk /tmp/Proyom.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          for i in 1 2 3 4 5; do
+            git fetch -q --depth=1 origin main && git reset -q --hard origin/main
+            cp /tmp/Proyom.apk batya-maksa/Proyom.apk
+            git add batya-maksa/Proyom.apk
+            git diff --cached --quiet && exit 0
+            git commit -qm "Проём: свежая сборка Proyom.apk [skip ci]"
+            git push -q origin HEAD:main && exit 0
+            sleep 5
+          done
+          exit 1
+      - name: Update release
+        if: github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view proyom -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+            gh release create proyom -R "$GITHUB_REPOSITORY" --latest --title "Проём для iPhone и Android" --notes "Proyom.ipa — iPhone, Proyom.apk — Android"
+          gh release upload proyom Proyom.apk --clobber -R "$GITHUB_REPOSITORY"

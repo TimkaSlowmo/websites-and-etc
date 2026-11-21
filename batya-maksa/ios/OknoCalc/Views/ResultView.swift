@@ -53,6 +53,22 @@ struct ResultView: View {
                     TextField("мм", value: $vm.spec.heightMm, format: .number.grouping(.never))
                         .keyboardType(.numberPad).multilineTextAlignment(.trailing)
                 }
+                if let alt = vm.spec.alternatives,
+                   !(alt.widthMm ?? []).isEmpty || !(alt.heightMm ?? []).isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("ИИ сомневается. Проверьте по чертежу:", systemImage: "questionmark.circle")
+                            .font(.footnote).foregroundStyle(.orange)
+                        HStack {
+                            ForEach(alt.widthMm ?? [], id: \.self) { w in
+                                altChip("Ширина \(w)") { vm.spec.widthMm = w; vm.spec.alternatives?.widthMm = [] }
+                            }
+                            ForEach(alt.heightMm ?? [], id: \.self) { h in
+                                altChip("Высота \(h)") { vm.spec.heightMm = h; vm.spec.alternatives?.heightMm = [] }
+                            }
+                        }
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
                 LabeledContent("Площадь", value: String(format: "%.2f м²", vm.spec.areaM2))
                 Picker("Вид", selection: $vm.spec.type) {
                     ForEach(WindowType.allCases) { Text($0.title).tag($0) }
@@ -118,7 +134,10 @@ struct ResultView: View {
                 HStack {
                     Text("Итого").font(.headline)
                     Spacer()
-                    Text(Money.format(b.total, currency: b.currency)).font(.title3.bold()).monospacedDigit()
+                    Text(Money.format(b.total, currency: b.currency)).font(.title2.bold()).monospacedDigit()
+                        .foregroundStyle(Theme.accent)
+                        .contentTransition(.numericText(value: b.total))
+                        .animation(.snappy(duration: 0.35), value: b.total)
                 }
             } header: { Text("Ориентировочная стоимость") }
             footer: { Text("Расчёт по каталогу «\(catalog.name)». Точную цену подтверждает замер.") }
@@ -145,12 +164,12 @@ struct ResultView: View {
             VStack(spacing: 8) {
                 Image(uiImage: img).resizable().scaledToFit().frame(maxHeight: 320)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
                 Text("Примерный вид, сгенерирован ИИ").font(.caption).foregroundStyle(.secondary)
                 regenerateButton
             }
         } else if vm.isRendering {
-            VStack(spacing: 10) { ProgressView(); Text("Генерирую фото…").font(.footnote).foregroundStyle(.secondary) }
-                .frame(maxWidth: .infinity, minHeight: 200)
+            ShimmerBox(text: "Рисую готовое окно…").frame(height: 240)
         } else {
             VStack(spacing: 10) {
                 placeholder(vm.renderError ?? "Фото ещё не создано")
@@ -164,6 +183,17 @@ struct ResultView: View {
             Label("Сгенерировать заново по параметрам", systemImage: "arrow.clockwise")
         }
         .buttonStyle(.bordered).disabled(vm.isRendering)
+    }
+
+    private func altChip(_ title: String, action: @escaping () -> Void) -> some View {
+        Button {
+            withAnimation(.spring) { action() }
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        } label: {
+            Text(title).font(.footnote.bold()).padding(.horizontal, 12).padding(.vertical, 6)
+                .background(Theme.accent.opacity(0.15), in: Capsule())
+        }
+        .buttonStyle(.plain)
     }
 
     private func placeholder(_ text: String) -> some View {

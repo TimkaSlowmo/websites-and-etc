@@ -55,7 +55,7 @@ final class EstimateViewModel: ObservableObject {
         drawing = image
         renderImage = nil
         renderError = nil
-        phase = .analyzing
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.9)) { phase = .analyzing }
         Task { await analyze(image) }
     }
 
@@ -83,12 +83,16 @@ final class EstimateViewModel: ObservableObject {
         do {
             let client = try APIClient(settings: settings)
             let result = try await client.analyze(drawing: image)
-            spec = result
             selection = PricingEngine.autoSelection(spec: result, catalog: catalog)
-            phase = .ready
+            UINotificationFeedbackGenerator().notificationOccurred(result.confidence < 0.6 ? .warning : .success)
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
+                spec = result
+                phase = .ready
+            }
             await renderPhoto()
         } catch {
-            phase = .failed(error.localizedDescription)
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            withAnimation(.spring) { phase = .failed(error.localizedDescription) }
         }
     }
 
@@ -98,7 +102,8 @@ final class EstimateViewModel: ObservableObject {
         defer { isRendering = false }
         do {
             let client = try APIClient(settings: settings)
-            renderImage = try await client.render(spec: spec)
+            let img = try await client.render(spec: spec)
+            withAnimation(.easeOut(duration: 0.5)) { renderImage = img }
         } catch {
             renderError = error.localizedDescription
         }

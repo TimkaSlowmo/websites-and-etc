@@ -1,0 +1,257 @@
+{
+  "name": "Пример каталога (замените своим)",
+  "currency": "KZT",
+  "vat_percent": 12,
+  "markup_percent": 20,
+  "min_area_m2": 0.5,
+  "glass_area_ratio": 0.85,
+  "profiles": [
+    {
+      "id": "pvc3",
+      "name": "ПВХ 3-камерный",
+      "keywords": [
+        "3-chamber",
+        "3 chamber",
+        "3-камер",
+        "эконом"
+      ],
+      "price_per_m2": 22000
+    },
+    {
+      "id": "pvc5",
+      "name": "ПВХ 5-камерный",
+      "keywords": [
+        "pvc",
+        "upvc",
+        "пвх",
+        "5-chamber",
+        "5 chamber",
+        "5-камер",
+        "rehau",
+        "kbe",
+        "veka",
+        "wds",
+        "brusbox"
+      ],
+      "price_per_m2": 28000,
+      "is_default": true
+    },
+    {
+      "id": "pvc6",
+      "name": "ПВХ 6-камерный (тёплый)",
+      "keywords": [
+        "6-chamber",
+        "6 chamber",
+        "6-камер",
+        "warm",
+        "70 мм",
+        "70mm",
+        "70 mm"
+      ],
+      "price_per_m2": 34000
+    },
+    {
+      "id": "alu_cold",
+      "name": "Алюминий холодный",
+      "keywords": [
+        "aluminium",
+        "aluminum",
+        "alu",
+        "алюмин"
+      ],
+      "price_per_m2": 42000
+    },
+    {
+      "id": "alu_warm",
+      "name": "Алюминий тёплый",
+      "keywords": [
+        "thermal break",
+        "тёплый алюм",
+        "теплый алюм"
+      ],
+      "price_per_m2": 62000
+    },
+    {
+      "id": "wood",
+      "name": "Дерево",
+      "keywords": [
+        "wood",
+        "wooden",
+        "дерев"
+      ],
+      "price_per_m2": 75000
+    }
+  ],
+  "glass": [
+    {
+      "id": "single",
+      "name": "Однокамерный стеклопакет",
+      "keywords": [
+        "single",
+        "1-chamber",
+        "однокамер"
+      ],
+      "price_per_m2": 9000,
+      "is_default": true
+    },
+    {
+      "id": "double",
+      "name": "Двухкамерный стеклопакет",
+      "keywords": [
+        "double",
+        "2-chamber",
+        "двухкамер"
+      ],
+      "price_per_m2": 13500
+    },
+    {
+      "id": "energy",
+      "name": "Энергосберегающий (i-стекло)",
+      "keywords": [
+        "low-e",
+        "energy",
+        "энергосбер",
+        "i-стекло",
+        "i-glass",
+        "мультифункц"
+      ],
+      "price_per_m2": 17000
+    },
+    {
+      "id": "triple",
+      "name": "Трёхкамерный",
+      "keywords": [
+        "triple",
+        "трёхкамер",
+        "трехкамер"
+      ],
+      "price_per_m2": 21000
+    }
+  ],
+  "hardware": [
+    {
+      "opening": "fixed",
+      "name": "Глухая створка",
+      "price": 0
+    },
+    {
+      "opening": "tilt",
+      "name": "Откидная фурнитура",
+      "price": 9000
+    },
+    {
+      "opening": "turn",
+      "name": "Поворотная фурнитура",
+      "price": 9000
+    },
+    {
+      "opening": "tilt_turn",
+      "name": "Поворотно-откидная фурнитура",
+      "price": 14000
+    },
+    {
+      "opening": "slide",
+      "name": "Раздвижная система",
+      "price": 35000
+    }
+  ],
+  "colors": [
+    {
+      "id": "white",
+      "name": "Белый",
+      "keywords": [
+        "white",
+        "бел"
+      ],
+      "surcharge_percent": 0,
+      "is_default": true
+    },
+    {
+      "id": "laminated",
+      "name": "Ламинация (дерево)",
+      "keywords": [
+        "wood grain",
+        "laminat",
+        "ламин",
+        "brown",
+        "коричн",
+        "oak",
+        "дуб"
+      ],
+      "surcharge_percent": 25
+    },
+    {
+      "id": "anthracite",
+      "name": "Антрацит",
+      "keywords": [
+        "anthracite",
+        "grey",
+        "gray",
+        "антрацит",
+        "сер"
+      ],
+      "surcharge_percent": 30
+    }
+  ],
+  "extras": [
+    {
+      "id": "sill",
+      "name": "Подоконник",
+      "keywords": [
+        "sill",
+        "подоконник"
+      ],
+      "price": 6000,
+      "unit": "width_m"
+    },
+    {
+      "id": "ebb",
+      "name": "Отлив",
+      "keywords": [
+        "ebb",
+        "drip",
+        "отлив",
+        "отлив"
+      ],
+      "price": 3500,
+      "unit": "width_m"
+    },
+    {
+      "id": "slopes",
+      "name": "Откосы",
+      "keywords": [
+        "slope",
+        "откос",
+        "slopes"
+      ],
+      "price": 5500,
+      "unit": "perimeter_m"
+    },
+    {
+      "id": "net",
+      "name": "Москитная сетка",
+      "keywords": [
+        "mosquito",
+        "net",
+        "москит",
+        "сетк"
+      ],
+      "price": 7000,
+      "unit": "pc"
+    },
+    {
+      "id": "child_lock",
+      "name": "Детский замок",
+      "keywords": [
+        "child",
+        "детск"
+      ],
+      "price": 4500,
+      "unit": "pc"
+    }
+  ],
+  "installation": {
+    "price_per_m2": 6000,
+    "min_price": 15000
+  }
+}

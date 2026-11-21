@@ -76,8 +76,8 @@ Read the drawing and return ONLY a JSON object, no markdown, with these keys:
  "profile": string (profile system or material written on the drawing, e.g. "PVC 5-chamber", "aluminium", "wood"; empty string if not written),
  "glass": string (e.g. "single", "double-glazed 24mm", "triple"; empty string if not written),
  "color": string (frame colour if written, else "white"),
- "extras": [string] (sill, mosquito net, handles, slopes, etc. if written),
- "notes": string (any other text from the drawing, short),
+ "extras": [string] (every extra item written: sill/подоконник, ebb/отлив, slopes/откосы, mosquito net/сетка, etc., in the original language),
+ "notes": string (ALL words written on the drawing, copied verbatim in the original language, e.g. "Профиль Rehau 70 мм, ламинация дуб, отлив, откосы"),
  "confidence": number from 0 to 1
 }
 How to read sashes: vertical/horizontal lines inside the frame (imposts) split it into sections. Diagonal lines inside a section show how it opens: lines meeting at the left or right side = "turn" (side-hung), lines meeting at the bottom center = "tilt", both patterns in one section = "tilt_turn", no diagonals = "fixed", arrows along the frame = "slide".
@@ -316,7 +316,7 @@ export function normalizeSpec(raw) {
     glass: String(raw.glass || "").slice(0, 80),
     color: String(raw.color || "white").slice(0, 40),
     extras: (Array.isArray(raw.extras) ? raw.extras : []).map(String).slice(0, 10),
-    notes: String(raw.notes || "").slice(0, 300),
+    notes: String(raw.notes || "").slice(0, 500),
     confidence: Math.min(1, Math.max(0, Number(raw.confidence) || 0.5)),
   };
 }
