@@ -137,7 +137,7 @@ fun SettingsScreen(vm: AppViewModel) {
         ScreenTitle("Настройки")
         Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SectionCard("Коммерческое предложение") {
-                OutlinedTextField(vm.company, vm::setCompany, label = { Text("Название компании") },
+                OutlinedTextField(vm.company, vm::changeCompany, label = { Text("Название компании") },
                     singleLine = true, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth())
             }
             SectionCard("Каталог и цены") {
@@ -153,7 +153,7 @@ fun SettingsScreen(vm: AppViewModel) {
                 message?.let { Text(it, fontSize = 13.sp, color = Accent) }
             }
             SectionCard("ИИ-сервер") {
-                OutlinedTextField(vm.workerUrl, vm::setWorkerUrl, label = { Text("Адрес") },
+                OutlinedTextField(vm.workerUrl, vm::changeWorkerUrl, label = { Text("Адрес") },
                     singleLine = true, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth())
                 Text("Уже настроено, менять не нужно.", fontSize = 12.sp, color = Color.Gray, modifier = Modifier.padding(top = 6.dp))
             }

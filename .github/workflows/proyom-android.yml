@@ -28,8 +28,8 @@ jobs:
       - name: Signing key cache
         uses: actions/cache@v4
         with:
-          path: ~/.android/debug.keystore
-          key: proyom-signing-key-v1
+          path: ~/proyom-ci.keystore
+          key: proyom-signing-key-v2
       - name: Release key from secrets (optional)
         env:
           KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
@@ -37,13 +37,24 @@ jobs:
           if [ -n "$KS_B64" ]; then
             echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
             echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+          else
+            # Ключ живёт только в кэше GitHub Actions (не в репозитории).
+            KS="$HOME/proyom-ci.keystore"
+            if [ ! -f "$KS" ]; then
+              keytool -genkeypair -keystore "$KS" -storepass android -keypass android -alias proyom \
+                -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Proyom, O=Batya Maksa, C=KZ"
+            fi
+            { echo "ANDROID_KEYSTORE_PATH=$KS"; echo "CI_KS_PASS=android"; echo "CI_KS_ALIAS=proyom"; } >> "$GITHUB_ENV"
           fi
       - name: Build APK
         env:
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          SECRET_KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          SECRET_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          SECRET_KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
+          export ANDROID_KEYSTORE_PASSWORD="${SECRET_KS_PASS:-$CI_KS_PASS}"
+          export ANDROID_KEY_ALIAS="${SECRET_KEY_ALIAS:-$CI_KS_ALIAS}"
+          export ANDROID_KEY_PASSWORD="${SECRET_KEY_PASS:-$CI_KS_PASS}"
           gradle --no-daemon assembleRelease
           cp app/build/outputs/apk/release/app-release.apk Proyom.apk
           ls -la Proyom.apk

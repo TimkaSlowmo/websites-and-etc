@@ -107,8 +107,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun thumbnail(item: HistoryItem): Bitmap? = historyStore.image(item.id, "r") ?: historyStore.image(item.id, "d")
 
-    fun setCompany(v: String) { company = v; prefs.company = v }
-    fun setWorkerUrl(v: String) { workerUrl = v; prefs.workerUrl = v }
+    fun changeCompany(v: String) { company = v; prefs.company = v }
+    fun changeWorkerUrl(v: String) { workerUrl = v; prefs.workerUrl = v }
 
     fun importCatalog(text: String): String = try {
         catalog = catalogStore.import(text); "Каталог загружен"
