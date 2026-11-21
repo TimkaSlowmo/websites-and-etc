@@ -1,7 +1,7 @@
 name: Проём iOS (.ipa)
 on:
   push:
-    paths: ['batya-maksa/**', '.github/workflows/batya-maksa-ios.yml']
+    paths: ['batya-maksa/ios/**', '.github/workflows/batya-maksa-ios.yml']
   workflow_dispatch:
 permissions:
   contents: write
