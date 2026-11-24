@@ -37,7 +37,7 @@ export default {
       return json({ error: "bad_json" }, 400);
     }
     try {
-      if (path === "/analyze" && Array.isArray(body.debug_models)) return json(await analyzeDebug(env, body.image, body.debug_models, body.debug_schema !== false));
+      if (path === "/analyze" && Array.isArray(body.debug_models)) return json(await analyzeDebug(env, body.image, body.debug_models, body.debug_schema !== false, body.debug_extra));
       if (path === "/analyze") return json({ spec: await analyze(env, body.image) });
       if (path === "/render") return json({ image: await render(env, body.spec) });
       return json({ error: "not_found" }, 404);
@@ -147,7 +147,12 @@ const responseText = (res) =>
     ? res
     : (res && (res.response ?? res.result?.response ?? res.description ?? res.choices?.[0]?.message?.content)) || "";
 
-async function tryModel(env, model, dataUri, withSchema) {
+// Настройки моделей: Gemma 4 по умолчанию долго рассуждает — ограничиваем.
+const MODEL_EXTRA = {
+  "@cf/google/gemma-4-26b-a4b-it": { reasoning_effort: "low", chat_template_kwargs: { enable_thinking: false } },
+};
+
+async function tryModel(env, model, dataUri, withSchema, extra) {
   const input = {
     messages: [
       { role: "system", content: "You read window/door shop drawings and reply with JSON only." },
@@ -163,6 +168,7 @@ async function tryModel(env, model, dataUri, withSchema) {
     temperature: 0.1,
   };
   if (withSchema) input.response_format = { type: "json_schema", json_schema: SPEC_SCHEMA };
+  Object.assign(input, MODEL_EXTRA[model] || {}, extra || {});
   const res = await env.AI.run(model, input);
   const out = res && typeof res.response === "object" && res.response !== null ? res.response : responseText(res);
   return extractJson(out);
@@ -242,13 +248,13 @@ async function analyze(env, imageB64) {
 }
 
 /** Для отладки: прогнать выбранные модели по очереди и вернуть нормализованный ответ каждой. */
-async function analyzeDebug(env, imageB64, models, withSchema) {
+async function analyzeDebug(env, imageB64, models, withSchema, extra) {
   const dataUri = "data:image/jpeg;base64," + String(imageB64).replace(/^data:[^,]+,/, "");
   const out = [];
   for (const m of models.filter((x) => VISION_MODELS.includes(x)).slice(0, 3)) {
     const t = Date.now();
     try {
-      const raw = await withTimeout(withSchema ? runModel(env, m, dataUri) : tryModel(env, m, dataUri, false), 110000);
+      const raw = await withTimeout(tryModel(env, m, dataUri, withSchema, extra && typeof extra === "object" ? extra : null), 110000);
       out.push({ model: m, ms: Date.now() - t, observations: String(raw.observations || "").slice(0, 1500), spec: normalizeSpec(raw) });
     } catch (e) {
       let rawText = "";
