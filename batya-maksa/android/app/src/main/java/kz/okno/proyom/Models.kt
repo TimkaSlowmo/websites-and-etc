@@ -35,8 +35,8 @@ enum class Opening(val key: String, val title: String) {
     companion object { fun of(k: String?) = entries.firstOrNull { it.key == k } ?: FIXED }
 }
 
-enum class Split(val key: String, val title: String, val sectionName: String) {
-    COLUMNS("columns", "Колонки (слева направо)", "Колонка"), ROWS("rows", "Ряды (сверху вниз)", "Ряд");
+enum class Split(val key: String, val title: String, val sectionName: String, val short: String) {
+    COLUMNS("columns", "Колонки (слева направо)", "Колонка", "Колонки"), ROWS("rows", "Ряды (сверху вниз)", "Ряд", "Ряды");
 
     companion object { fun of(k: String?) = if (k == "rows") ROWS else COLUMNS }
 }

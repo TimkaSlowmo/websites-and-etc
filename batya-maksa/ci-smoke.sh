@@ -16,6 +16,17 @@ start --ez demo true; shot 2-result-scheme 6
 adb shell input tap $((W*38/100)) $((H*36/100)); shot 3-cell-editor 3
 adb shell input keyevent KEYCODE_BACK; sleep 2
 for i in 4 5 6 7 8; do swipe; shot "$i-result-scroll" 2; done
+# КП (PDF): найти кнопку по тексту, нажать — должно открыться окно «Поделиться», без падения
+tap_text() {
+  adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
+  B=$(adb shell cat /sdcard/ui.xml | tr '>' '\n' | grep "text=\"$1" | grep -oE 'bounds="\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]"' | head -1 | grep -oE '[0-9]+')
+  [ -z "$B" ] && return 1
+  set -- $B
+  adb shell input tap $(( ($1 + $3) / 2 )) $(( ($2 + $4) / 2 ))
+}
+for i in 1 2 3 4; do tap_text "Создать и отправить КП" && break; swipe; sleep 1; done
+shot 8b-pdf-share 4
+adb shell input keyevent KEYCODE_BACK; sleep 1
 for t in history catalog settings; do start --es tab $t; shot "9-$t" 5; done
 adb logcat -d > screens/logcat.txt
 if grep -q "FATAL EXCEPTION" screens/logcat.txt; then

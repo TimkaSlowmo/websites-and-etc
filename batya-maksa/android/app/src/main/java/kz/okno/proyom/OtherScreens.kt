@@ -73,7 +73,8 @@ fun HistoryScreen(vm: AppViewModel) {
             Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 Icon(Icons.Filled.History, null, tint = Color.LightGray, modifier = Modifier.size(56.dp))
                 Text("Пока пусто", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp))
-                Text("Сохраняйте расчёты кнопкой «Сохранить в историю».", color = Color.Gray, fontSize = 14.sp)
+                Text("Сохраняйте расчёты кнопкой «Сохранить в историю».", color = Color.Gray, fontSize = 14.sp,
+                    textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 32.dp))
             }
         } else {
             LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {

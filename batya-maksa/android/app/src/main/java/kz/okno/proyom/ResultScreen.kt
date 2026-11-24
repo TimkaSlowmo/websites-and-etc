@@ -118,7 +118,7 @@ fun ResultView(vm: AppViewModel) {
                 TabRow(selectedTabIndex = tab, containerColor = Color.Transparent) {
                     Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Схема") })
                     Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Чертёж") })
-                    Tab(selected = tab == 2, onClick = { tab = 2 }, text = { Text("Готовый вид") })
+                    Tab(selected = tab == 2, onClick = { tab = 2 }, text = { Text("ИИ-фото") })
                 }
                 Spacer(Modifier.height(10.dp))
                 Crossfade(targetState = tab, label = "img") { t ->
@@ -242,7 +242,7 @@ fun ResultView(vm: AppViewModel) {
             SectionCard("Сетка и створки") {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Split.entries.forEach { s ->
-                        FilterChip(selected = spec.layout.split == s, onClick = { vm.setSplit(s) }, label = { Text(s.title, fontSize = 12.sp) })
+                        FilterChip(selected = spec.layout.split == s, onClick = { vm.setSplit(s) }, label = { Text(s.short) })
                     }
                 }
                 spec.layout.sections.forEachIndexed { si, s ->
@@ -421,7 +421,7 @@ private fun CellEditorSheet(vm: AppViewModel, section: Int, index: Int, onDone: 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     row.forEach { o ->
                         FilterChip(selected = cell.opening == o, onClick = { vm.updateCell(section, index) { it.copy(opening = o) } },
-                            label = { Text(o.title) }, modifier = Modifier.weight(1f))
+                            label = { Text(o.title, fontSize = 13.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) }, modifier = Modifier.weight(1f))
                     }
                 }
             }
@@ -430,7 +430,7 @@ private fun CellEditorSheet(vm: AppViewModel, section: Int, index: Int, onDone: 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     cell.opening.hinges.forEach { h ->
                         FilterChip(selected = cell.hinge == h, onClick = { vm.updateCell(section, index) { it.copy(hinge = h) } },
-                            label = { Text(h.title) }, modifier = Modifier.weight(1f))
+                            label = { Text(h.title, fontSize = 13.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) }, modifier = Modifier.weight(1f))
                     }
                 }
             }

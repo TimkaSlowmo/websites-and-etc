@@ -285,7 +285,7 @@ def main():
 
     catalog = {
         "version": 2,
-        "name": "BENKAM — прайс компании",
+        "name": "BENKAM",
         "currency": "KZT",
         "vat_percent": 16,
         "markup_percent": 30,

@@ -82,8 +82,8 @@ final class PricingEngineTests: XCTestCase {
     func testLayoutEditing() {
         var s = WindowSpec()
         s.widthMm = 1000; s.heightMm = 2000
-        s.layout = Layout(split: .rows, sections: [Section(sizeMm: 700, cells: [Cell(sizeMm: 1000, opening: .tilt)]),
-                                                   Section(sizeMm: 1300, cells: [Cell(sizeMm: 1000, opening: .turn, hinge: .left, door: true)])])
+        s.layout = Layout(split: .rows, sections: [GridSection(sizeMm: 700, cells: [Cell(sizeMm: 1000, opening: .tilt)]),
+                                                   GridSection(sizeMm: 1300, cells: [Cell(sizeMm: 1000, opening: .turn, hinge: .left, door: true)])])
         XCTAssertNil(s.layoutMismatch)
         let rects = s.cellRects
         XCTAssertEqual(rects.map { [$0.x, $0.y, $0.w, $0.h] }, [[0, 0, 1000, 700], [0, 700, 1000, 1300]])
@@ -96,5 +96,26 @@ final class PricingEngineTests: XCTestCase {
         var c = Cell(sizeMm: 100, opening: .tilt, hinge: .left)
         c.normalize()
         XCTAssertEqual(c.hinge, .bottom)
+    }
+}
+
+/// КП в PDF создаётся и не пустое (схема, фото, параметры, стоимость).
+final class PDFExporterTests: XCTestCase {
+    @MainActor
+    func testOfferPdf() throws {
+        let url = try XCTUnwrap(Bundle(for: PDFExporterTests.self).url(forResource: "catalog", withExtension: "json"))
+        let c = try Catalog.decode(Data(contentsOf: url))
+        var s = WindowSpec()
+        s.widthMm = 1200; s.heightMm = 2700
+        s.layout = Layout(split: .columns, sections: [
+            GridSection(sizeMm: 800, cells: [Cell(sizeMm: 1700, opening: .tilt_turn, hinge: .left), Cell(sizeMm: 1000)]),
+            GridSection(sizeMm: 400, cells: [Cell(sizeMm: 2700)]),
+        ])
+        s.info = [InfoItem(label: "Система", value: "BKT 77")]
+        let sel = PricingEngine.autoSelection(spec: s, catalog: c)
+        let b = PricingEngine.calculate(spec: s, selection: sel, catalog: c)
+        let pdf = try XCTUnwrap(PDFExporter.makeOffer(spec: s, selection: sel, breakdown: b, catalog: c, company: "Тест", drawing: nil, render: nil))
+        let size = try XCTUnwrap(try FileManager.default.attributesOfItem(atPath: pdf.path)[.size] as? Int)
+        XCTAssertGreaterThan(size, 10_000)
     }
 }

@@ -22,7 +22,7 @@ struct ResultView: View {
                     Picker("", selection: $tab) {
                         Text("Схема").tag(0)
                         Text("Чертёж").tag(1)
-                        Text("Готовый вид").tag(2)
+                        Text("ИИ-фото").tag(2)
                     }
                     .pickerStyle(.segmented)
 

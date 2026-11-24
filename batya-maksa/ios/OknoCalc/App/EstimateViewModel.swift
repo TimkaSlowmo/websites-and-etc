@@ -129,7 +129,7 @@ final class EstimateViewModel: ObservableObject {
         spec.layout = Layout(split: split, sections: (0..<max(1, n)).map { i in
             var c = Cell(sizeMm: cross, opening: i == 0 ? (opened?.opening ?? .fixed) : .fixed, hinge: i == 0 ? (opened?.hinge ?? .none) : .none)
             c.normalize()
-            return Section(sizeMm: main / max(1, n), cells: [c])
+            return GridSection(sizeMm: main / max(1, n), cells: [c])
         })
         spec.fitLayout()
     }
@@ -138,7 +138,7 @@ final class EstimateViewModel: ObservableObject {
         let n = spec.layout.sections.count + 1
         let size = spec.mainTotal / n
         for i in spec.layout.sections.indices { spec.layout.sections[i].sizeMm = Int(Double(spec.layout.sections[i].sizeMm) * Double(n - 1) / Double(n)) }
-        spec.layout.sections.append(Section(sizeMm: size, cells: [Cell(sizeMm: spec.crossTotal)]))
+        spec.layout.sections.append(GridSection(sizeMm: size, cells: [Cell(sizeMm: spec.crossTotal)]))
         spec.fitLayout()
     }
 
@@ -216,8 +216,8 @@ final class EstimateViewModel: ObservableObject {
             var s = WindowSpec()
             s.widthMm = 1200; s.heightMm = 2700; s.product = .window
             s.layout = Layout(split: .columns, sections: [
-                Section(sizeMm: 800, cells: [Cell(sizeMm: 1700, opening: .tilt_turn, hinge: .left), Cell(sizeMm: 1000)]),
-                Section(sizeMm: 400, cells: [Cell(sizeMm: 2700)]),
+                GridSection(sizeMm: 800, cells: [Cell(sizeMm: 1700, opening: .tilt_turn, hinge: .left), Cell(sizeMm: 1000)]),
+                GridSection(sizeMm: 400, cells: [Cell(sizeMm: 2700)]),
             ])
             s.system = "BKT 77"; s.fillMm = 32; s.color = "RAL 7024"; s.confidence = 0.9
             s.info = [InfoItem(label: "Система", value: "BKT 77"), InfoItem(label: "Заполнение", value: "32 мм"),

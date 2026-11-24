@@ -118,7 +118,7 @@ struct Cell: Codable, Identifiable, Hashable {
 }
 
 /// Секция сетки: колонка (size = ширина) или ряд (size = высота).
-struct Section: Codable, Identifiable, Hashable {
+struct GridSection: Codable, Identifiable, Hashable {
     var id = UUID()
     var sizeMm: Int
     var cells: [Cell]
@@ -136,12 +136,12 @@ struct Section: Codable, Identifiable, Hashable {
 
 struct Layout: Codable, Hashable {
     var split: Split = .columns
-    var sections: [Section]
+    var sections: [GridSection]
 
     static func single(width: Int, height: Int, opening: Opening = .tilt_turn) -> Layout {
         var cell = Cell(sizeMm: height, opening: opening)
         cell.normalize()
-        return Layout(split: .columns, sections: [Section(sizeMm: width, cells: [cell])])
+        return Layout(split: .columns, sections: [GridSection(sizeMm: width, cells: [cell])])
     }
 }
 
@@ -232,7 +232,7 @@ struct WindowSpec: Codable, Equatable, Hashable {
                 layout = Layout(split: .columns, sections: old.map { s in
                     var cell = Cell(sizeMm: heightMm, opening: s.opening ?? .fixed)
                     cell.normalize()
-                    return Section(sizeMm: s.widthMm ?? each, cells: [cell])
+                    return GridSection(sizeMm: s.widthMm ?? each, cells: [cell])
                 })
             }
         }
