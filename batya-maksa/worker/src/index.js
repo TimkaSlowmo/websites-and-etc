@@ -3,7 +3,8 @@
 // POST /render   {spec}                -> {image: base64 jpeg}
 // Без токена: защита — лимит запросов с IP и ограничение размера изображения.
 
-const VISION_MODELS = [
+export const VISION_MODELS = [
+  "@cf/google/gemma-4-26b-a4b-it",
   "@cf/meta/llama-4-scout-17b-16e-instruct",
   "@cf/mistralai/mistral-small-3.1-24b-instruct",
   "@cf/google/gemma-3-12b-it",
@@ -36,6 +37,7 @@ export default {
       return json({ error: "bad_json" }, 400);
     }
     try {
+      if (path === "/analyze" && Array.isArray(body.debug_models)) return json(await analyzeDebug(env, body.image, body.debug_models));
       if (path === "/analyze") return json({ spec: await analyze(env, body.image) });
       if (path === "/render") return json({ image: await render(env, body.spec) });
       return json({ error: "not_found" }, 404);
@@ -51,7 +53,8 @@ export const ANALYZE_PROMPT = `You are an estimator at an aluminium window and d
 
 Return ONLY a JSON object, no markdown:
 {
- "numbers": [string]  — FIRST copy every number written on the sheet exactly as written, digit by digit,
+ "observations": string — FIRST describe in words what you see: the outer rectangle, every line that crosses the whole frame, every shorter line and which part it divides, every dimension and which edge it belongs to, every opening symbol (where its lines meet) and every note next to the drawing,
+ "numbers": [string]  — then copy every number written on the sheet exactly as written, digit by digit,
  "width_mm": number   — overall width,
  "height_mm": number  — overall height,
  "product": one of ${JSON.stringify(PRODUCTS)},
@@ -102,6 +105,7 @@ const CELL_SCHEMA = {
 export const SPEC_SCHEMA = {
   type: "object",
   properties: {
+    observations: { type: "string" },
     numbers: { type: "array", items: { type: "string" } },
     width_mm: { type: "number" },
     height_mm: { type: "number" },
@@ -135,7 +139,7 @@ export const SPEC_SCHEMA = {
     notes: { type: "string" },
     confidence: { type: "number" },
   },
-  required: ["numbers", "width_mm", "height_mm", "product", "layout"],
+  required: ["observations", "numbers", "width_mm", "height_mm", "product", "layout"],
 };
 
 const responseText = (res) =>
@@ -155,7 +159,7 @@ async function tryModel(env, model, dataUri, withSchema) {
         ],
       },
     ],
-    max_tokens: 1400,
+    max_tokens: 2500,
     temperature: 0.1,
   };
   if (withSchema) input.response_format = { type: "json_schema", json_schema: SPEC_SCHEMA };
@@ -205,7 +209,7 @@ async function analyze(env, imageB64) {
   if (first) {
     results.push(first);
     const other = first.m === m1 ? p2 : p1;
-    const second = await withTimeout(other, 6000).catch(() => null);
+    const second = await withTimeout(other, 10000).catch(() => null);
     if (second) results.push(second);
   }
   if (results.length === 0) {
@@ -235,6 +239,22 @@ async function analyze(env, imageB64) {
   }
   const specs = results.map(({ r, m }) => ({ ...normalizeSpec(r), model: m }));
   return { ...reconcile(specs), ms: Date.now() - started };
+}
+
+/** Для отладки: прогнать выбранные модели по очереди и вернуть нормализованный ответ каждой. */
+async function analyzeDebug(env, imageB64, models) {
+  const dataUri = "data:image/jpeg;base64," + String(imageB64).replace(/^data:[^,]+,/, "");
+  const out = [];
+  for (const m of models.filter((x) => VISION_MODELS.includes(x)).slice(0, 3)) {
+    const t = Date.now();
+    try {
+      const raw = await withTimeout(runModel(env, m, dataUri), 60000);
+      out.push({ model: m, ms: Date.now() - t, observations: String(raw.observations || "").slice(0, 1500), spec: normalizeSpec(raw) });
+    } catch (e) {
+      out.push({ model: m, ms: Date.now() - t, error: String(e && e.message) });
+    }
+  }
+  return { results: out };
 }
 
 export function extractJson(text) {
@@ -338,6 +358,53 @@ export function normalizeLayout(raw, W, H, legacySashes, product, inward) {
   return { layout: { split, sections }, ok };
 }
 
+/** Сумма известных размеров с переводом единиц к мм (относительно общего размера). */
+function chainSum(values, total) {
+  const nums = (values || []).map((v) => parseNum(v));
+  if (nums.length < 2 || nums.some((n) => !(n > 0))) return null;
+  let sum = nums.reduce((a, b) => a + b, 0);
+  if (Math.max(...nums) < 10) sum *= 1000;
+  else if (Math.max(...nums) < 400 && sum * 10 <= total * 1.5) sum *= 10;
+  return Math.round(sum);
+}
+
+export function chainFix(raw, W, H) {
+  const lay = raw && raw.layout;
+  if (!lay || !Array.isArray(lay.sections)) return { W, H };
+  const nums = (Array.isArray(raw.numbers) ? raw.numbers : []).map(parseNum).filter((x) => x !== null);
+  const written = (v) => nums.some((n) => Math.abs(n - v) < 1 || Math.abs(n * 10 - v) < 1 || Math.abs(n * 1000 - v) < 1);
+  // Цепочке верим, если все её части выписаны на чертеже, или выписана её сумма, или общий размер не найден среди цифр.
+  const fix = (parts, sum, cur, lo, hi) => {
+    if (!sum || sum < lo || sum > hi) return cur;
+    if (Math.abs(sum - cur) / cur <= 0.03) return cur;
+    const partsWritten = parts.every((p) => written(parseNum(p)));
+    return partsWritten || written(sum) || !written(cur) ? sum : cur;
+  };
+  const cols = lay.split !== "rows";
+  const mainParts = lay.sections.map((x) => x && x.size_mm);
+  const mainSum = chainSum(mainParts, cols ? W : H);
+  if (cols) W = fix(mainParts, mainSum, W, 200, 12000);
+  else H = fix(mainParts, mainSum, H, 200, 6000);
+  // Поперечный размер: по самой подробной секции (больше всего ячеек).
+  const richest = [...lay.sections].filter((x) => x && Array.isArray(x.cells)).sort((a, b) => b.cells.length - a.cells.length)[0];
+  if (richest && richest.cells.length > 1) {
+    const crossParts = richest.cells.map((c) => c && c.size_mm);
+    const crossSum = chainSum(crossParts, cols ? H : W);
+    if (cols) H = fix(crossParts, crossSum, H, 200, 6000);
+    else W = fix(crossParts, crossSum, W, 200, 12000);
+  }
+  return { W, H };
+}
+
+/** Количество > 1 — только если на чертеже прямо написано «N шт» / «кол-во N». */
+export function explicitQuantity(raw) {
+  const q = Math.round(parseNum(raw.quantity) || 1);
+  if (q <= 1) return 1;
+  const text = [raw.notes, ...(Array.isArray(raw.info) ? raw.info.map((x) => `${x && x.label} ${x && x.value}`) : [])].join(" ").toLowerCase();
+  const re = new RegExp(`(\\b${q}\\s*(шт|штук|pcs|изд))|((кол-?во|количество|qty)[^\\d]{0,12}${q}\\b)`);
+  return re.test(text) && q <= 999 ? q : 1;
+}
+
 const LEGACY_PRODUCT = { balcony_door: "door", entrance_door: "door", interior_door: "door", balcony_block: "balcony_block" };
 
 export function normalizeSpec(raw) {
@@ -350,8 +417,11 @@ export function normalizeSpec(raw) {
     else if (w < 400 && h < 400) k = 10;
   }
   const clamp = (v, min, max, fb) => (Number.isFinite(v) && v > 0 ? Math.min(max, Math.max(min, Math.round(v))) : fb);
-  const W = clamp(w * k, 200, 12000, 1300);
-  const H = clamp(h * k, 200, 6000, 1400);
+  let W = clamp(w * k, 200, 12000, 1300);
+  let H = clamp(h * k, 200, 6000, 1400);
+
+  // Общий размер сверяем с суммой цепочки: если сумма секций выписана на чертеже, а общий размер — нет, верим цепочке.
+  ({ W, H } = chainFix(raw, W, H));
 
   let product = String(raw.product || "").toLowerCase();
   if (!PRODUCTS.includes(product)) product = LEGACY_PRODUCT[raw.type] || "window";
@@ -364,7 +434,7 @@ export function normalizeSpec(raw) {
     .filter((x) => x && (x.label || x.value))
     .slice(0, 24)
     .map((x) => ({ label: String(x.label || "").slice(0, 60), value: String(x.value ?? "").slice(0, 160) }));
-  const quantity = clamp(parseNum(raw.quantity), 1, 999, 1);
+  const quantity = explicitQuantity(raw);
 
   // Поля старого формата — для установленных ранее версий приложения.
   const opened = layout.sections.flatMap((s) =>

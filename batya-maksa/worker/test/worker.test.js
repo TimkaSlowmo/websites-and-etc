@@ -99,3 +99,19 @@ test("render prompt describes the grid and colour", () => {
   assert.match(p, /left 0\.80 m wide column: upper 1\.70 m tilt-and-turn sash and lower 1\.00 m fixed glazing/);
   assert.match(p, /right 0\.40 m wide column/);
 });
+
+import { chainFix, explicitQuantity } from "../src/index.js";
+
+test("chain fix: misread 1200 as 7200 is corrected by 800+400", () => {
+  const raw = { numbers: ["7200", "1700", "1000", "800", "400", "2700"], layout: { split: "columns", sections: [{ size_mm: 800, cells: [{ size_mm: 1700 }, { size_mm: 1000 }] }, { size_mm: 400, cells: [{}] }] } };
+  assert.deepEqual(chainFix(raw, 7200, 2700), { W: 1200, H: 2700 });
+  const s = normalizeSpec({ ...raw, width_mm: 7200, height_mm: 2700 });
+  assert.equal(s.width_mm, 1200);
+  assert.deepEqual(s.layout.sections.map((x) => x.size_mm), [800, 400]);
+});
+
+test("quantity only when written explicitly", () => {
+  assert.equal(explicitQuantity({ quantity: 61, notes: "6. Схема открывания" }), 1);
+  assert.equal(explicitQuantity({ quantity: 3, notes: "окно 3 шт" }), 3);
+  assert.equal(explicitQuantity({ quantity: 4, info: [{ label: "Количество", value: "4" }] }), 4);
+});
