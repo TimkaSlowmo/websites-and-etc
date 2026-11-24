@@ -37,7 +37,7 @@ export default {
       return json({ error: "bad_json" }, 400);
     }
     try {
-      if (path === "/analyze" && Array.isArray(body.debug_models)) return json(await analyzeDebug(env, body.image, body.debug_models));
+      if (path === "/analyze" && Array.isArray(body.debug_models)) return json(await analyzeDebug(env, body.image, body.debug_models, body.debug_schema !== false));
       if (path === "/analyze") return json({ spec: await analyze(env, body.image) });
       if (path === "/render") return json({ image: await render(env, body.spec) });
       return json({ error: "not_found" }, 404);
@@ -242,13 +242,13 @@ async function analyze(env, imageB64) {
 }
 
 /** Для отладки: прогнать выбранные модели по очереди и вернуть нормализованный ответ каждой. */
-async function analyzeDebug(env, imageB64, models) {
+async function analyzeDebug(env, imageB64, models, withSchema) {
   const dataUri = "data:image/jpeg;base64," + String(imageB64).replace(/^data:[^,]+,/, "");
   const out = [];
   for (const m of models.filter((x) => VISION_MODELS.includes(x)).slice(0, 3)) {
     const t = Date.now();
     try {
-      const raw = await withTimeout(runModel(env, m, dataUri), 60000);
+      const raw = await withTimeout(withSchema ? runModel(env, m, dataUri) : tryModel(env, m, dataUri, false), 110000);
       out.push({ model: m, ms: Date.now() - t, observations: String(raw.observations || "").slice(0, 1500), spec: normalizeSpec(raw) });
     } catch (e) {
       out.push({ model: m, ms: Date.now() - t, error: String(e && e.message) });
