@@ -251,7 +251,15 @@ async function analyzeDebug(env, imageB64, models, withSchema) {
       const raw = await withTimeout(withSchema ? runModel(env, m, dataUri) : tryModel(env, m, dataUri, false), 110000);
       out.push({ model: m, ms: Date.now() - t, observations: String(raw.observations || "").slice(0, 1500), spec: normalizeSpec(raw) });
     } catch (e) {
-      out.push({ model: m, ms: Date.now() - t, error: String(e && e.message) });
+      let rawText = "";
+      try {
+        const res = await withTimeout(env.AI.run(m, {
+          messages: [{ role: "user", content: [{ type: "text", text: ANALYZE_PROMPT }, { type: "image_url", image_url: { url: dataUri } }] }],
+          max_tokens: 2500, temperature: 0.1,
+        }), 110000);
+        rawText = JSON.stringify(res).slice(0, 4000);
+      } catch (e2) { rawText = "raw failed: " + String(e2 && e2.message); }
+      out.push({ model: m, ms: Date.now() - t, error: String(e && e.message), raw: rawText });
     }
   }
   return { results: out };
