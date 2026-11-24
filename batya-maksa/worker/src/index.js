@@ -1,6 +1,6 @@
-// Cloudflare Worker: ИИ-бэкенд приложения OknoCalc.
-// POST /analyze  {image: base64 jpeg}            -> {spec}
-// POST /render   {spec, image?: base64 jpeg}     -> {image: base64 jpeg/png}
+// Cloudflare Worker: ИИ-бэкенд приложения «Проём».
+// POST /analyze  {image: base64 jpeg}  -> {spec}
+// POST /render   {spec}                -> {image: base64 jpeg}
 // Без токена: защита — лимит запросов с IP и ограничение размера изображения.
 
 const VISION_MODELS = [
@@ -11,40 +11,23 @@ const VISION_MODELS = [
 const LEGACY_VISION_MODEL = "@cf/meta/llama-3.2-11b-vision-instruct";
 const IMAGE_MODEL = "@cf/black-forest-labs/flux-1-schnell";
 
-const WINDOW_TYPES = [
-  "fixed", // глухое
-  "single_sash", // одностворчатое
-  "double_sash", // двухстворчатое
-  "triple_sash", // трёхстворчатое
-  "balcony_door", // балконная дверь
-  "balcony_block", // балконный блок (дверь + окно)
-  "sliding", // раздвижное
-  "entrance_door", // входная дверь
-  "interior_door", // межкомнатная дверь
-];
-const OPENINGS = ["fixed", "tilt", "turn", "tilt_turn", "slide"];
+export const PRODUCTS = ["window", "door", "balcony_block", "facade", "partition"];
+export const OPENINGS = ["fixed", "turn", "tilt", "tilt_turn", "top_hung", "slide"];
+export const HINGES = ["left", "right", "top", "bottom", "none"];
 
-// Нативному приложению CORS не нужен; браузерам доступ не открываем.
 const CORS = {};
-
 const json = (data, status = 200) =>
-  new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": "application/json", ...CORS },
-  });
+  new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json", ...CORS } });
 
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
     if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
-
-    // Защита от злоупотреблений: лимит запросов с одного IP (если биндинг LIMITER подключён).
     if (env.LIMITER) {
       const ip = request.headers.get("CF-Connecting-IP") || "anon";
       const { success } = await env.LIMITER.limit({ key: ip });
       if (!success) return json({ error: "rate_limited", message: "Слишком много запросов, подождите минуту" }, 429);
     }
-
     const path = new URL(request.url).pathname;
     let body;
     try {
@@ -52,7 +35,6 @@ export default {
     } catch {
       return json({ error: "bad_json" }, 400);
     }
-
     try {
       if (path === "/analyze") return json({ spec: await analyze(env, body.image) });
       if (path === "/render") return json({ image: await render(env, body.spec) });
@@ -65,59 +47,106 @@ export default {
 
 // ---------- /analyze ----------
 
-const ANALYZE_PROMPT = `You are an expert in window and door manufacturing. The image is a technical drawing (sketch) of a window or door, usually with dimensions and notes written next to it.
-Read the drawing and return ONLY a JSON object, no markdown, with these keys:
-{
- "numbers": [string] (FIRST copy every dimension number exactly as written on the drawing, digit by digit, e.g. ["1800","1400","900"]),
- "width_mm": number (overall width in millimetres; convert cm/m to mm),
- "height_mm": number (overall height in millimetres),
- "type": one of ${JSON.stringify(WINDOW_TYPES)},
- "sashes": [ {"width_mm": number or null, "opening": one of ${JSON.stringify(OPENINGS)}} ] (one item per section/sash, left to right),
- "profile": string (profile system or material written on the drawing, e.g. "PVC 5-chamber", "aluminium", "wood"; empty string if not written),
- "glass": string (e.g. "single", "double-glazed 24mm", "triple"; empty string if not written),
- "color": string (frame colour if written, else "white"),
- "extras": [string] (every extra item written: sill/подоконник, ebb/отлив, slopes/откосы, mosquito net/сетка, etc., in the original language),
- "notes": string (ALL words written on the drawing, copied verbatim in the original language, e.g. "Профиль Rehau 70 мм, ламинация дуб, отлив, откосы"),
- "confidence": number from 0 to 1
-}
-How to read sashes: vertical/horizontal lines inside the frame (imposts) split it into sections. Diagonal lines inside a section show how it opens: lines meeting at the left or right side = "turn" (side-hung), lines meeting at the bottom center = "tilt", both patterns in one section = "tilt_turn", no diagonals = "fixed", arrows along the frame = "slide".
-The photo may be rotated, skewed or in shadow: read the numbers as written, the bigger horizontal dimension line is the width.
-"type" must match the number of sections (1 = single_sash or fixed, 2 = double_sash, 3 = triple_sash) unless it is clearly a door or balcony block.
-Width and height MUST be taken from "numbers": the overall dimension lines go along the whole frame. Section widths should add up to the overall width. Handwritten digits: 1 vs 7, 3 vs 8, 5 vs 6 — check carefully.
-If a value is not visible, make the most reasonable guess and lower "confidence". Output JSON only.`;
+export const ANALYZE_PROMPT = `You are an estimator at an aluminium window and door factory. The photo shows a hand-drawn sketch of ONE product (window, door, balcony block, facade / stained-glass, partition) with dimensions in millimetres (sometimes centimetres or metres, e.g. "1,80" = 1.80 m), and often extra notes next to the drawing: profile system ("BKT 77", "BKF 50"), filling / glass unit thickness ("Заполнение 32"), colour ("RAL 7024"), opening scheme, quantity, checklists.
 
-const SPEC_SCHEMA = {
+Return ONLY a JSON object, no markdown:
+{
+ "numbers": [string]  — FIRST copy every number written on the sheet exactly as written, digit by digit,
+ "width_mm": number   — overall width,
+ "height_mm": number  — overall height,
+ "product": one of ${JSON.stringify(PRODUCTS)},
+ "layout": {
+   "split": "columns" if the frame is first divided by vertical lines running the FULL height into sections left→right; "rows" if first divided by horizontal lines running the FULL width into sections top→bottom,
+   "sections": [ {
+      "size_mm": section width (columns) or height (rows),
+      "cells": [ {
+         "size_mm": cell height (columns: cells top→bottom) or width (rows: cells left→right),
+         "opening": one of ${JSON.stringify(OPENINGS)},
+         "hinge": one of ${JSON.stringify(HINGES)},
+         "door": true if this cell is a door leaf
+      } ]
+   } ]
+ },
+ "system": profile system exactly as written (e.g. "BKT 77"), "" if not written,
+ "fill_mm": filling / glass unit thickness in mm as a number, or null,
+ "glass": glass formula if written (e.g. "4-10-4-10-4"), else "",
+ "color": outside colour as written (e.g. "RAL 7024"), else "",
+ "color_inside": inside colour if a different one is written, else "",
+ "inward": false only if it says the sashes open outward ("наружу"), else true,
+ "quantity": number of identical products (default 1),
+ "info": [ {"label": string, "value": string} ] — EVERY piece of additional information written next to the drawing, in Russian, e.g. {"label":"Система","value":"BKT 77"}, {"label":"Заполнение","value":"32 мм"}, {"label":"Цвет","value":"RAL 7024"}, {"label":"Схема открывания","value":"поворотно-откидная, петли слева"},
+ "notes": ALL text written on the sheet, copied verbatim in the original language,
+ "confidence": number 0..1
+}
+
+How to read the layout:
+- Lines that cross the whole frame define the sections. A line that divides only ONE section (e.g. a short horizontal line inside the left column that does not continue into the right column) splits that section into cells. Example: 1200 wide, 2700 high, left column 800 split into 1700 (top) + 1000 (bottom), right column 400 not split → split "columns", sections [ {800, cells [1700, 1000]}, {400, cells [2700]} ].
+- Example: door 1000×2000 with a 700 transom on top → split "rows", sections [ {700, cells [1000]}, {1300, cells [1000 door]} ].
+- Dimension chains are written along the edges; section sizes must add up to the width (columns) or height (rows), and cell sizes must add up to the other dimension.
+- Opening symbols: two lines from the corners of a pane meeting at a point (apex). The apex points to the HANDLE side, the hinges are on the opposite side. Apex at the left or right edge → "turn", hinge on the other side. Apex at the top edge → "tilt", hinge "bottom". Apex at the bottom edge → "top_hung", hinge "top". A side apex AND a top apex in one pane → "tilt_turn", hinge = the side hinge. No lines → "fixed", hinge "none". Arrows → "slide".
+- A cell that reaches the floor in a door product and opens is a door leaf ("door": true).
+- Checklists like "1. Высота ✓ 2. Ширина ✓ 3. Система BKT 77 ..." — put every item with its value into "info".
+- Handwritten digits: 1 vs 7, 3 vs 8, 5 vs 6, 0 vs 6 — check carefully. If a value is not visible, make the most reasonable guess and lower "confidence". Output JSON only.`;
+
+const CELL_SCHEMA = {
+  type: "object",
+  properties: {
+    size_mm: { type: ["number", "null"] },
+    opening: { type: "string", enum: OPENINGS },
+    hinge: { type: "string", enum: HINGES },
+    door: { type: "boolean" },
+  },
+  required: ["opening"],
+};
+
+export const SPEC_SCHEMA = {
   type: "object",
   properties: {
     numbers: { type: "array", items: { type: "string" } },
     width_mm: { type: "number" },
     height_mm: { type: "number" },
-    type: { type: "string", enum: WINDOW_TYPES },
-    sashes: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: { width_mm: { type: ["number", "null"] }, opening: { type: "string", enum: OPENINGS } },
-        required: ["opening"],
+    product: { type: "string", enum: PRODUCTS },
+    layout: {
+      type: "object",
+      properties: {
+        split: { type: "string", enum: ["columns", "rows"] },
+        sections: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: { size_mm: { type: ["number", "null"] }, cells: { type: "array", items: CELL_SCHEMA } },
+            required: ["cells"],
+          },
+        },
       },
+      required: ["split", "sections"],
     },
-    profile: { type: "string" },
+    system: { type: "string" },
+    fill_mm: { type: ["number", "null"] },
     glass: { type: "string" },
     color: { type: "string" },
-    extras: { type: "array", items: { type: "string" } },
+    color_inside: { type: "string" },
+    inward: { type: "boolean" },
+    quantity: { type: "number" },
+    info: {
+      type: "array",
+      items: { type: "object", properties: { label: { type: "string" }, value: { type: "string" } }, required: ["label", "value"] },
+    },
     notes: { type: "string" },
     confidence: { type: "number" },
   },
-  required: ["numbers", "width_mm", "height_mm", "type", "sashes"],
+  required: ["numbers", "width_mm", "height_mm", "product", "layout"],
 };
 
 const responseText = (res) =>
-  typeof res === "string" ? res : (res && (res.response ?? res.result?.response ?? res.description ?? res.choices?.[0]?.message?.content)) || "";
+  typeof res === "string"
+    ? res
+    : (res && (res.response ?? res.result?.response ?? res.description ?? res.choices?.[0]?.message?.content)) || "";
 
 async function tryModel(env, model, dataUri, withSchema) {
   const input = {
     messages: [
-      { role: "system", content: "You read window/door technical drawings and reply with JSON only." },
+      { role: "system", content: "You read window/door shop drawings and reply with JSON only." },
       {
         role: "user",
         content: [
@@ -126,7 +155,7 @@ async function tryModel(env, model, dataUri, withSchema) {
         ],
       },
     ],
-    max_tokens: 600,
+    max_tokens: 1400,
     temperature: 0.1,
   };
   if (withSchema) input.response_format = { type: "json_schema", json_schema: SPEC_SCHEMA };
@@ -137,7 +166,7 @@ async function tryModel(env, model, dataUri, withSchema) {
 
 async function tryLegacy(env, bytes) {
   const run = () =>
-    env.AI.run(LEGACY_VISION_MODEL, { image: [...bytes], prompt: ANALYZE_PROMPT, max_tokens: 700, temperature: 0.1 });
+    env.AI.run(LEGACY_VISION_MODEL, { image: [...bytes], prompt: ANALYZE_PROMPT, max_tokens: 1200, temperature: 0.1 });
   let res;
   try {
     res = await run();
@@ -167,23 +196,22 @@ async function analyze(env, imageB64) {
   const dataUri = "data:image/jpeg;base64," + String(imageB64).replace(/^data:[^,]+,/, "");
   const started = Date.now();
 
-  // Две модели параллельно: сверяем цифры. Вторую ждём не дольше 5 с после первой.
+  // Две модели параллельно: сверяем цифры и сетку. Вторую ждём не дольше 6 с после первой.
   const [m1, m2] = VISION_MODELS;
-  const p1 = withTimeout(runModel(env, m1, dataUri), 30000).then((r) => ({ r, m: m1 }));
-  const p2 = withTimeout(runModel(env, m2, dataUri), 30000).then((r) => ({ r, m: m2 }));
+  const p1 = withTimeout(runModel(env, m1, dataUri), 40000).then((r) => ({ r, m: m1 }));
+  const p2 = withTimeout(runModel(env, m2, dataUri), 40000).then((r) => ({ r, m: m2 }));
   const results = [];
   const first = await Promise.any([p1, p2]).catch(() => null);
   if (first) {
     results.push(first);
     const other = first.m === m1 ? p2 : p1;
-    const second = await withTimeout(other, 5000).catch(() => null);
+    const second = await withTimeout(other, 6000).catch(() => null);
     if (second) results.push(second);
   }
-
   if (results.length === 0) {
     for (const m of VISION_MODELS.slice(2)) {
       try {
-        results.push({ r: await withTimeout(runModel(env, m, dataUri), 30000), m });
+        results.push({ r: await withTimeout(runModel(env, m, dataUri), 40000), m });
         break;
       } catch {}
     }
@@ -194,8 +222,11 @@ async function analyze(env, imageB64) {
     } catch {}
   }
   if (results.length === 0) {
+    const empty = normalizeSpec({});
+    delete empty.numbers;
+    delete empty._layout_ok;
     return {
-      ...normalizeSpec({}),
+      ...empty,
       confidence: 0,
       notes: "ИИ не смог прочитать чертёж. Проверьте размеры и параметры вручную.",
       model: "none",
@@ -204,47 +235,6 @@ async function analyze(env, imageB64) {
   }
   const specs = results.map(({ r, m }) => ({ ...normalizeSpec(r), model: m }));
   return { ...reconcile(specs), ms: Date.now() - started };
-}
-
-/** Насколько спецификация сама с собой согласована (0..3). */
-export function selfScore(s) {
-  let score = 0;
-  const widths = s.sashes.map((x) => x.width_mm).filter(Boolean);
-  if (widths.length === s.sashes.length && widths.length > 1) {
-    const sum = widths.reduce((a, b) => a + b, 0);
-    if (Math.abs(sum - s.width_mm) / s.width_mm < 0.04) score += 1;
-  }
-  const nums = (s.numbers || []).map(Number);
-  if (nums.includes(s.width_mm)) score += 1;
-  if (nums.includes(s.height_mm)) score += 1;
-  return score;
-}
-
-const close = (a, b) => Math.abs(a - b) / Math.max(a, b) < 0.03;
-
-/** Сверка ответов моделей: согласие повышает уверенность, расхождение — варианты на выбор. */
-export function reconcile(specs) {
-  const ranked = [...specs].sort((a, b) => selfScore(b) - selfScore(a) || b.confidence - a.confidence);
-  const best = { ...ranked[0] };
-  delete best.numbers;
-  if (ranked.length < 2) {
-    best.confidence = Math.min(best.confidence, selfScore(ranked[0]) >= 2 ? 0.85 : 0.6);
-    return best;
-  }
-  const other = ranked[1];
-  const wOk = close(best.width_mm, other.width_mm);
-  const hOk = close(best.height_mm, other.height_mm);
-  if (wOk && hOk) {
-    best.confidence = Math.max(best.confidence, 0.9);
-    if (best.sashes.length !== other.sashes.length) best.confidence = 0.75;
-    return best;
-  }
-  best.confidence = Math.min(best.confidence, 0.5);
-  best.alternatives = {
-    width_mm: wOk ? [] : [other.width_mm],
-    height_mm: hOk ? [] : [other.height_mm],
-  };
-  return best;
 }
 
 export function extractJson(text) {
@@ -257,113 +247,259 @@ export function extractJson(text) {
   return JSON.parse(raw);
 }
 
+// ---------- нормализация ----------
+
+/** Число из числа или строки ("1,80", "1 800", "2700мм"). */
+export function parseNum(v) {
+  if (typeof v === "number") return Number.isFinite(v) ? v : null;
+  if (typeof v !== "string") return null;
+  const m = v.replace(/\s/g, "").replace(",", ".").match(/-?\d+(\.\d+)?/);
+  return m ? Number(m[0]) : null;
+}
+
+/** Подгоняет размеры частей под общий размер: единицы, пропуски, сумма. Возвращает {sizes, ok}. */
+export function fitSizes(values, total) {
+  let nums = values.map((v) => {
+    const n = parseNum(v);
+    return n && n > 0 ? n : null;
+  });
+  const known = nums.filter((n) => n !== null);
+  let ok = known.length === nums.length;
+  if (known.length) {
+    const sum = known.reduce((a, b) => a + b, 0);
+    let k = 1;
+    // Размеры в метрах или сантиметрах при общем размере в мм.
+    if (Math.max(...known) < 10 && total >= 200) k = 1000;
+    else if (sum * 10 <= total * 1.05 && Math.max(...known) < 400 && total >= 400) k = 10;
+    nums = nums.map((n) => (n === null ? null : n * k));
+  }
+  const knownSum = nums.reduce((a, b) => a + (b || 0), 0);
+  const missing = nums.filter((n) => n === null).length;
+  if (missing > 0) {
+    const rem = total - knownSum;
+    if (rem > 50 * missing) nums = nums.map((n) => (n === null ? rem / missing : n));
+    else nums = nums.map(() => total / nums.length);
+  } else if (Math.abs(knownSum - total) / total > 0.02) {
+    ok = false;
+    nums = nums.map((n) => (n * total) / knownSum);
+  }
+  const ints = nums.map((n) => Math.max(1, Math.round(n)));
+  ints[ints.length - 1] += total - ints.reduce((a, b) => a + b, 0);
+  return { sizes: ints, ok };
+}
+
+const OPENING_ALIASES = {
+  tilt_and_turn: "tilt_turn", "tilt-turn": "tilt_turn", tiltturn: "tilt_turn", side_hung: "turn", casement: "turn",
+  bottom_hung: "tilt", hopper: "tilt", awning: "top_hung", top: "top_hung", sliding: "slide", none: "fixed",
+};
+const normOpening = (v) => {
+  const s = String(v || "fixed").toLowerCase().trim();
+  const o = OPENING_ALIASES[s] || s;
+  return OPENINGS.includes(o) ? o : "fixed";
+};
+const defaultHinge = (opening) =>
+  ({ turn: "left", tilt_turn: "left", tilt: "bottom", top_hung: "top", slide: "none", fixed: "none" })[opening];
+function normHinge(v, opening) {
+  if (opening === "fixed" || opening === "slide") return "none";
+  if (opening === "tilt") return "bottom";
+  if (opening === "top_hung") return "top";
+  const h = String(v || "").toLowerCase();
+  return h === "left" || h === "right" ? h : defaultHinge(opening);
+}
+
+export function normalizeLayout(raw, W, H, legacySashes, product, inward) {
+  const split = raw && raw.split === "rows" ? "rows" : "columns";
+  let secs = raw && Array.isArray(raw.sections) ? raw.sections.filter((x) => x && typeof x === "object").slice(0, 8) : [];
+  if (secs.length === 0 && Array.isArray(legacySashes) && legacySashes.length) {
+    secs = legacySashes.slice(0, 8).map((s) => ({ size_mm: s && s.width_mm, cells: [{ opening: s && s.opening }] }));
+    return normalizeLayout({ split: "columns", sections: secs }, W, H, null, product, inward);
+  }
+  if (secs.length === 0) secs = [{ size_mm: split === "columns" ? W : H, cells: [{ opening: "fixed" }] }];
+  const main = split === "columns" ? W : H;
+  const cross = split === "columns" ? H : W;
+  const top = fitSizes(secs.map((s) => s.size_mm), main);
+  let ok = top.ok;
+  const sections = secs.map((s, i) => {
+    let cells = Array.isArray(s.cells) ? s.cells.filter((c) => c && typeof c === "object").slice(0, 8) : [];
+    if (cells.length === 0) cells = [{ opening: "fixed" }];
+    const fit = fitSizes(cells.map((c) => c.size_mm), cross);
+    ok = ok && fit.ok;
+    return {
+      size_mm: top.sizes[i],
+      cells: cells.map((c, j) => {
+        const opening = normOpening(c.opening);
+        const touchesFloor = split === "columns" ? j === cells.length - 1 : i === secs.length - 1;
+        const cellHeight = split === "columns" ? fit.sizes[j] : top.sizes[i];
+        const door = opening !== "fixed" && (c.door === true || (product === "door" && touchesFloor && cellHeight >= 1000));
+        return { size_mm: fit.sizes[j], opening, hinge: normHinge(c.hinge, opening), inward: c.inward === false ? false : inward, door };
+      }),
+    };
+  });
+  return { layout: { split, sections }, ok };
+}
+
+const LEGACY_PRODUCT = { balcony_door: "door", entrance_door: "door", interior_door: "door", balcony_block: "balcony_block" };
+
 export function normalizeSpec(raw) {
   raw = raw || {};
-  // Единицы: если оба размера < 400, значит в сантиметрах; < 10 — в метрах.
-  let w = Number(raw.width_mm), h = Number(raw.height_mm), k = 1;
+  let w = parseNum(raw.width_mm);
+  let h = parseNum(raw.height_mm);
+  let k = 1;
   if (w > 0 && h > 0) {
     if (w < 10 && h < 10) k = 1000;
     else if (w < 400 && h < 400) k = 10;
   }
-  if (k !== 1) {
-    raw = { ...raw, width_mm: w * k, height_mm: h * k,
-      sashes: (raw.sashes || []).map((x) => ({ ...x, width_mm: x && x.width_mm ? x.width_mm * k : null })) };
-  }
-  const num = (v, min, max, fallback) => {
-    const n = Number(v);
-    if (!Number.isFinite(n) || n <= 0) return fallback;
-    return Math.min(max, Math.max(min, Math.round(n)));
-  };
-  const type = WINDOW_TYPES.includes(raw.type) ? raw.type : "single_sash";
-  const sashes = (Array.isArray(raw.sashes) ? raw.sashes : [])
-    .slice(0, 6)
-    .map((s) => ({
-      width_mm: s && s.width_mm ? num(s.width_mm, 100, 5000, null) : null,
-      opening: OPENINGS.includes(s && s.opening) ? s.opening : "fixed",
-    }));
-  if (sashes.length === 0) sashes.push({ width_mm: null, opening: "tilt_turn" });
-  const widthMm = num(raw.width_mm, 200, 6000, 1300);
-  // Ширины створок: если сумма не сходится с общей шириной — делим поровну.
-  const given = sashes.map((x) => x.width_mm);
-  const sum = given.reduce((a, b) => a + (b || 0), 0);
-  if (given.some((x) => !x) || Math.abs(sum - widthMm) / widthMm > 0.06) {
-    const missing = given.filter((x) => !x).length;
-    const known = given.reduce((a, b) => a + (b || 0), 0);
-    if (missing > 0 && known < widthMm && known > 0) {
-      const each = Math.round((widthMm - known) / missing);
-      sashes.forEach((x) => { if (!x.width_mm) x.width_mm = each; });
-    } else {
-      sashes.forEach((x) => { x.width_mm = Math.round(widthMm / sashes.length); });
-    }
-  }
+  const clamp = (v, min, max, fb) => (Number.isFinite(v) && v > 0 ? Math.min(max, Math.max(min, Math.round(v))) : fb);
+  const W = clamp(w * k, 200, 12000, 1300);
+  const H = clamp(h * k, 200, 6000, 1400);
 
-  // Тип окна согласуем с количеством секций (кроме дверей и балконных блоков).
-  let fixedType = type;
-  const windowTypes = ["fixed", "single_sash", "double_sash", "triple_sash"];
-  if (windowTypes.includes(type)) {
-    const n = sashes.length;
-    const allFixed = sashes.every((x) => x.opening === "fixed");
-    fixedType = n >= 3 ? "triple_sash" : n === 2 ? "double_sash" : allFixed ? "fixed" : "single_sash";
-  }
+  let product = String(raw.product || "").toLowerCase();
+  if (!PRODUCTS.includes(product)) product = LEGACY_PRODUCT[raw.type] || "window";
+  const inward = raw.inward === false ? false : true;
+  const { layout, ok } = normalizeLayout(raw.layout, W, H, raw.sashes, product, inward);
+
+  let fill = parseNum(raw.fill_mm);
+  if (!(fill >= 2 && fill <= 80)) fill = null;
+  const info = (Array.isArray(raw.info) ? raw.info : [])
+    .filter((x) => x && (x.label || x.value))
+    .slice(0, 24)
+    .map((x) => ({ label: String(x.label || "").slice(0, 60), value: String(x.value ?? "").slice(0, 160) }));
+  const quantity = clamp(parseNum(raw.quantity), 1, 999, 1);
+
+  // Поля старого формата — для установленных ранее версий приложения.
+  const opened = layout.sections.flatMap((s) =>
+    s.cells.map((c) => ({ width_mm: layout.split === "columns" ? s.size_mm : c.size_mm, opening: c.opening === "top_hung" ? "tilt" : c.opening }))
+  );
+  const n = layout.split === "columns" ? layout.sections.length : Math.max(...layout.sections.map((s) => s.cells.length));
+  const legacyType = product === "door" ? "entrance_door" : product === "balcony_block" ? "balcony_block" : n >= 3 ? "triple_sash" : n === 2 ? "double_sash" : opened.every((x) => x.opening === "fixed") ? "fixed" : "single_sash";
 
   return {
-    numbers: (Array.isArray(raw.numbers) ? raw.numbers : []).map(String).slice(0, 20),
-    width_mm: widthMm,
-    height_mm: num(raw.height_mm, 200, 3500, 1400),
-    type: fixedType,
-    sashes,
-    profile: String(raw.profile || "").slice(0, 80),
-    glass: String(raw.glass || "").slice(0, 80),
-    color: String(raw.color || "white").slice(0, 40),
+    numbers: (Array.isArray(raw.numbers) ? raw.numbers : []).map(String).slice(0, 40),
+    width_mm: W,
+    height_mm: H,
+    product,
+    quantity,
+    layout,
+    system: String(raw.system || "").slice(0, 60),
+    fill_mm: fill,
+    glass: String(raw.glass || "").slice(0, 60),
+    color: String(raw.color || "").slice(0, 60),
+    color_inside: String(raw.color_inside || "").slice(0, 60),
+    inward,
+    info,
+    notes: String(raw.notes || "").slice(0, 800),
     extras: (Array.isArray(raw.extras) ? raw.extras : []).map(String).slice(0, 10),
-    notes: String(raw.notes || "").slice(0, 500),
     confidence: Math.min(1, Math.max(0, Number(raw.confidence) || 0.5)),
+    type: legacyType,
+    sashes: opened,
+    _layout_ok: ok,
   };
+}
+
+/** Согласованность ответа (0..4): размеры есть среди выписанных цифр, сетка сходится без подгонки. */
+export function selfScore(s) {
+  const nums = (s.numbers || []).map((x) => parseNum(x)).filter((x) => x !== null);
+  const has = (v) => nums.some((n) => n === v || n * 10 === v || n * 1000 === v);
+  let score = 0;
+  if (has(s.width_mm)) score += 1;
+  if (has(s.height_mm)) score += 1;
+  if (s._layout_ok) score += 1;
+  if (s.layout.sections.length > 1 || s.layout.sections.some((x) => x.cells.length > 1)) score += 1;
+  return score;
+}
+
+const close = (a, b) => Math.abs(a - b) / Math.max(a, b) < 0.03;
+const layoutKey = (l) => l.split + ":" + l.sections.map((s) => s.cells.length).join(",");
+
+/** Сверка ответов моделей: согласие повышает уверенность, расхождение даёт варианты на выбор, доп. информация объединяется. */
+export function reconcile(specs) {
+  const ranked = [...specs].sort((a, b) => selfScore(b) - selfScore(a) || b.confidence - a.confidence);
+  const best = { ...ranked[0] };
+  delete best.numbers;
+  delete best._layout_ok;
+  if (ranked.length < 2) {
+    best.confidence = Math.min(best.confidence, selfScore(ranked[0]) >= 3 ? 0.85 : 0.6);
+    return best;
+  }
+  const other = ranked[1];
+  // Доп. информация и текст: объединяем, чтобы ничего не потерять.
+  const labels = new Set(best.info.map((x) => x.label.toLowerCase()));
+  best.info = [...best.info, ...other.info.filter((x) => !labels.has(x.label.toLowerCase()))].slice(0, 24);
+  if ((other.notes || "").length > (best.notes || "").length) best.notes = other.notes;
+  for (const f of ["system", "glass", "color", "color_inside"]) if (!best[f] && other[f]) best[f] = other[f];
+  if (best.fill_mm == null && other.fill_mm != null) best.fill_mm = other.fill_mm;
+
+  const wOk = close(best.width_mm, other.width_mm);
+  const hOk = close(best.height_mm, other.height_mm);
+  const gridOk = layoutKey(best.layout) === layoutKey(other.layout);
+  if (wOk && hOk) {
+    best.confidence = gridOk ? Math.max(best.confidence, 0.9) : Math.min(Math.max(best.confidence, 0.7), 0.75);
+    return best;
+  }
+  best.confidence = Math.min(best.confidence, 0.5);
+  best.alternatives = { width_mm: wOk ? [] : [other.width_mm], height_mm: hOk ? [] : [other.height_mm] };
+  return best;
 }
 
 // ---------- /render ----------
 
 const OPENING_TEXT = {
-  fixed: "fixed pane",
-  tilt: "tilt-only sash",
+  fixed: "fixed glazing",
+  tilt: "tilt-in (bottom-hinged) sash",
   turn: "side-hung opening sash",
   tilt_turn: "tilt-and-turn sash",
+  top_hung: "top-hung vent",
   slide: "sliding sash",
 };
+const RAL_EN = {
+  "9016": "traffic white", "9010": "pure white", "9003": "signal white", "9001": "cream", "7035": "light grey",
+  "7040": "window grey", "7001": "silver grey", "7012": "basalt grey", "7015": "slate grey", "7024": "graphite grey",
+  "7016": "anthracite grey", "7021": "black grey", "9005": "jet black", "9006": "white aluminium", "9007": "grey aluminium",
+  "8017": "chocolate brown", "8019": "grey brown", "8014": "sepia brown", "3005": "wine red", "6005": "moss green",
+};
+
+function colourText(c) {
+  const s = String(c || "");
+  const ral = s.match(/(\d{4})/);
+  if (/ral/i.test(s) && ral) return `RAL ${ral[1]} ${RAL_EN[ral[1]] || ""} powder-coated`.replace(/\s+/g, " ").trim();
+  if (/дуб|oak|дерев|wood|орех|махагон/i.test(s)) return "wood-grain decor";
+  if (/анод|anod/i.test(s)) return "anodised silver";
+  if (/черн|чёрн|black/i.test(s)) return "matte black";
+  if (/антрацит|anthrac/i.test(s)) return "anthracite grey";
+  if (/бел|white/i.test(s) || !s) return "white";
+  return s;
+}
 
 export function buildRenderPrompt(spec) {
-  const w = (spec.width_mm / 1000).toFixed(2);
-  const h = (spec.height_mm / 1000).toFixed(2);
-  const ratio = spec.width_mm / spec.height_mm;
-  const shape = ratio > 1.15 ? "wide landscape" : ratio < 0.85 ? "tall portrait" : "nearly square";
-  const sashes = spec.sashes
-    .map((s, i) => `section ${i + 1}: ${OPENING_TEXT[s.opening] || "fixed pane"}`)
-    .join(", ");
-  const material = /alu/i.test(spec.profile)
-    ? "aluminium"
-    : /wood|дерев/i.test(spec.profile)
-    ? "wooden"
-    : "white PVC (uPVC)";
-  const color = spec.color && !/white|бел/i.test(spec.color) ? `${spec.color} colour frame` : "white frame";
-  const glass = /triple|тр[её]х/i.test(spec.glass) ? "triple glazing" : "double glazing";
-  const extras = spec.extras && spec.extras.length ? `, with ${spec.extras.join(", ")}` : "";
+  const W = spec.width_mm || 1300;
+  const H = spec.height_mm || 1400;
+  const m = (v) => (v / 1000).toFixed(2) + " m";
+  const lay = spec.layout || normalizeLayout(null, W, H, spec.sashes, spec.product, true).layout;
+  const parts = lay.sections.map((s, i) => {
+    const pos = lay.split === "columns" ? (i === 0 ? "left" : i === lay.sections.length - 1 ? "right" : "middle") : i === 0 ? "top" : i === lay.sections.length - 1 ? "bottom" : "middle";
+    const cells = s.cells
+      .map((c, j) => {
+        const where = s.cells.length === 1 ? "" : lay.split === "columns" ? (j === 0 ? "upper " : j === s.cells.length - 1 ? "lower " : "middle ") : j === 0 ? "left " : "right ";
+        const what = c.door ? "glazed door leaf" : OPENING_TEXT[c.opening] || "fixed glazing";
+        return `${where}${m(c.size_mm)} ${what}`;
+      })
+      .join(" and ");
+    return `${pos} ${m(s.size_mm)} ${lay.split === "columns" ? "wide column" : "high row"}: ${cells}`;
+  });
+  const kind = { door: "aluminium entrance door with glazed panels", facade: "aluminium curtain-wall facade glazing", balcony_block: "aluminium balcony door and window block", partition: "aluminium glazed partition" }[spec.product] || "aluminium window";
+  const frame = colourText(spec.color);
   return (
-    `Professional product photo of a finished ${material} ${spec.type.replace(/_/g, " ")} ` +
-    `${shape} window, ${w} m wide by ${h} m high, ${sashes}, ${color}, ${glass}, ` +
-    `modern hardware handle${extras}. Front view, centered, straight-on, evenly lit, ` +
-    `clean neutral studio background, sharp details, realistic reflections in the glass, ` +
-    `catalog photography, no text, no watermark.`
+    `Professional architectural product photo of a finished ${kind}, ${m(W)} wide by ${m(H)} high, slim thermally broken aluminium profiles, ${frame} frame. ` +
+    `Layout: ${parts.join("; ")}. Exact proportions as described, mullions and transoms exactly where described. ` +
+    `Front view, centered, straight-on, evenly lit, clean neutral studio background, realistic glass reflections, modern aluminium handles, catalog photography, no text, no people, no watermark.`
   );
 }
 
 async function render(env, spec) {
   if (!spec) throw new Error("spec is required");
-  const out = await env.AI.run(IMAGE_MODEL, {
-    prompt: buildRenderPrompt(spec),
-    steps: 4,
-  });
+  const out = await env.AI.run(IMAGE_MODEL, { prompt: buildRenderPrompt(spec), steps: 4 });
   if (!out || !out.image) throw new Error("image model returned nothing");
-  return out.image; // base64 JPEG
+  return out.image;
 }
 
 function b64ToBytes(b64) {

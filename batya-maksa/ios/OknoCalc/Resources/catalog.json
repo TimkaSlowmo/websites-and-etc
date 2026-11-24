@@ -1,257 +1,5590 @@
 {
-  "name": "Пример каталога (замените своим)",
-  "currency": "KZT",
-  "vat_percent": 12,
-  "markup_percent": 20,
-  "min_area_m2": 0.5,
-  "glass_area_ratio": 0.85,
-  "profiles": [
-    {
-      "id": "pvc3",
-      "name": "ПВХ 3-камерный",
-      "keywords": [
-        "3-chamber",
-        "3 chamber",
-        "3-камер",
-        "эконом"
-      ],
-      "price_per_m2": 22000
-    },
-    {
-      "id": "pvc5",
-      "name": "ПВХ 5-камерный",
-      "keywords": [
-        "pvc",
-        "upvc",
-        "пвх",
-        "5-chamber",
-        "5 chamber",
-        "5-камер",
-        "rehau",
-        "kbe",
-        "veka",
-        "wds",
-        "brusbox"
-      ],
-      "price_per_m2": 28000,
-      "is_default": true
-    },
-    {
-      "id": "pvc6",
-      "name": "ПВХ 6-камерный (тёплый)",
-      "keywords": [
-        "6-chamber",
-        "6 chamber",
-        "6-камер",
-        "warm",
-        "70 мм",
-        "70mm",
-        "70 mm"
-      ],
-      "price_per_m2": 34000
-    },
-    {
-      "id": "alu_cold",
-      "name": "Алюминий холодный",
-      "keywords": [
-        "aluminium",
-        "aluminum",
-        "alu",
-        "алюмин"
-      ],
-      "price_per_m2": 42000
-    },
-    {
-      "id": "alu_warm",
-      "name": "Алюминий тёплый",
-      "keywords": [
-        "thermal break",
-        "тёплый алюм",
-        "теплый алюм"
-      ],
-      "price_per_m2": 62000
-    },
-    {
-      "id": "wood",
-      "name": "Дерево",
-      "keywords": [
-        "wood",
-        "wooden",
-        "дерев"
-      ],
-      "price_per_m2": 75000
-    }
-  ],
-  "glass": [
-    {
-      "id": "single",
-      "name": "Однокамерный стеклопакет",
-      "keywords": [
-        "single",
-        "1-chamber",
-        "однокамер"
-      ],
-      "price_per_m2": 9000,
-      "is_default": true
-    },
-    {
-      "id": "double",
-      "name": "Двухкамерный стеклопакет",
-      "keywords": [
-        "double",
-        "2-chamber",
-        "двухкамер"
-      ],
-      "price_per_m2": 13500
-    },
-    {
-      "id": "energy",
-      "name": "Энергосберегающий (i-стекло)",
-      "keywords": [
-        "low-e",
-        "energy",
-        "энергосбер",
-        "i-стекло",
-        "i-glass",
-        "мультифункц"
-      ],
-      "price_per_m2": 17000
-    },
-    {
-      "id": "triple",
-      "name": "Трёхкамерный",
-      "keywords": [
-        "triple",
-        "трёхкамер",
-        "трехкамер"
-      ],
-      "price_per_m2": 21000
-    }
-  ],
-  "hardware": [
-    {
-      "opening": "fixed",
-      "name": "Глухая створка",
-      "price": 0
-    },
-    {
-      "opening": "tilt",
-      "name": "Откидная фурнитура",
-      "price": 9000
-    },
-    {
-      "opening": "turn",
-      "name": "Поворотная фурнитура",
-      "price": 9000
-    },
-    {
-      "opening": "tilt_turn",
-      "name": "Поворотно-откидная фурнитура",
-      "price": 14000
-    },
-    {
-      "opening": "slide",
-      "name": "Раздвижная система",
-      "price": 35000
-    }
-  ],
-  "colors": [
-    {
-      "id": "white",
-      "name": "Белый",
-      "keywords": [
-        "white",
-        "бел"
-      ],
-      "surcharge_percent": 0,
-      "is_default": true
-    },
-    {
-      "id": "laminated",
-      "name": "Ламинация (дерево)",
-      "keywords": [
-        "wood grain",
-        "laminat",
-        "ламин",
-        "brown",
-        "коричн",
-        "oak",
-        "дуб"
-      ],
-      "surcharge_percent": 25
-    },
-    {
-      "id": "anthracite",
-      "name": "Антрацит",
-      "keywords": [
-        "anthracite",
-        "grey",
-        "gray",
-        "антрацит",
-        "сер"
-      ],
-      "surcharge_percent": 30
-    }
-  ],
-  "extras": [
-    {
-      "id": "sill",
-      "name": "Подоконник",
-      "keywords": [
-        "sill",
-        "подоконник"
-      ],
-      "price": 6000,
-      "unit": "width_m"
-    },
-    {
-      "id": "ebb",
-      "name": "Отлив",
-      "keywords": [
-        "ebb",
-        "drip",
-        "отлив",
-        "отлив"
-      ],
-      "price": 3500,
-      "unit": "width_m"
-    },
-    {
-      "id": "slopes",
-      "name": "Откосы",
-      "keywords": [
-        "slope",
-        "откос",
-        "slopes"
-      ],
-      "price": 5500,
-      "unit": "perimeter_m"
-    },
-    {
-      "id": "net",
-      "name": "Москитная сетка",
-      "keywords": [
-        "mosquito",
-        "net",
-        "москит",
-        "сетк"
-      ],
-      "price": 7000,
-      "unit": "pc"
-    },
-    {
-      "id": "child_lock",
-      "name": "Детский замок",
-      "keywords": [
-        "child",
-        "детск"
-      ],
-      "price": 4500,
-      "unit": "pc"
-    }
-  ],
-  "installation": {
-    "price_per_m2": 6000,
-    "min_price": 15000
+ "version": 2,
+ "name": "BENKAM — прайс компании",
+ "currency": "KZT",
+ "vat_percent": 16,
+ "markup_percent": 30,
+ "waste_percent": 10,
+ "labor_per_m2": 12000,
+ "install_per_m2": 9000,
+ "install_min": 25000,
+ "two_color_percent": 15,
+ "color_groups": [
+  {
+   "id": "ral",
+   "name": "RAL (порошковая покраска)",
+   "surcharge_percent": 0
+  },
+  {
+   "id": "anod",
+   "name": "Анодирование",
+   "surcharge_percent": 10
+  },
+  {
+   "id": "decor",
+   "name": "Декор под дерево",
+   "surcharge_percent": 25
   }
+ ],
+ "glass": [
+  {
+   "fill_mm": 6,
+   "name": "Стекло 6 мм (закалённое)",
+   "price_per_m2": 9000
+  },
+  {
+   "fill_mm": 24,
+   "name": "Стеклопакет 24 мм (4-16-4)",
+   "price_per_m2": 13000
+  },
+  {
+   "fill_mm": 28,
+   "name": "Стеклопакет 28 мм (4-20-4)",
+   "price_per_m2": 14500
+  },
+  {
+   "fill_mm": 32,
+   "name": "Стеклопакет 32 мм (4-10-4-10-4)",
+   "price_per_m2": 17000
+  },
+  {
+   "fill_mm": 36,
+   "name": "Стеклопакет 36 мм (4-12-4-12-4)",
+   "price_per_m2": 18500
+  },
+  {
+   "fill_mm": 40,
+   "name": "Стеклопакет 40 мм (4-14-4-14-4)",
+   "price_per_m2": 20000
+  },
+  {
+   "fill_mm": 44,
+   "name": "Стеклопакет 44 мм (4-16-4-16-4)",
+   "price_per_m2": 22000
+  },
+  {
+   "fill_mm": 52,
+   "name": "Стеклопакет 52 мм (6-18-4-18-6)",
+   "price_per_m2": 26000
+  }
+ ],
+ "hardware": [
+  {
+   "opening": "tilt_turn",
+   "name": "Фурнитура поворотно-откидная",
+   "price": 28000
+  },
+  {
+   "opening": "turn",
+   "name": "Фурнитура поворотная",
+   "price": 20000
+  },
+  {
+   "opening": "tilt",
+   "name": "Фурнитура откидная",
+   "price": 15000
+  },
+  {
+   "opening": "top_hung",
+   "name": "Фурнитура верхнеподвесная",
+   "price": 18000
+  },
+  {
+   "opening": "slide",
+   "name": "Раздвижной механизм",
+   "price": 45000
+  },
+  {
+   "opening": "door",
+   "name": "Дверная фурнитура (петли, замок, ручки)",
+   "price": 65000
+  }
+ ],
+ "colors": [
+  {
+   "id": "ral9016",
+   "code": "RAL 9016",
+   "name": "Транспортный белый",
+   "hex": "#F1F0EA",
+   "group": "ral",
+   "keywords": [
+    "ral 9016",
+    "ral9016",
+    "9016",
+    "белый",
+    "white"
+   ]
+  },
+  {
+   "id": "ral9010",
+   "code": "RAL 9010",
+   "name": "Чистый белый",
+   "hex": "#F1ECE1",
+   "group": "ral",
+   "keywords": [
+    "ral 9010",
+    "ral9010",
+    "9010"
+   ]
+  },
+  {
+   "id": "ral9003",
+   "code": "RAL 9003",
+   "name": "Сигнальный белый",
+   "hex": "#ECECE7",
+   "group": "ral",
+   "keywords": [
+    "ral 9003",
+    "ral9003",
+    "9003"
+   ]
+  },
+  {
+   "id": "ral9001",
+   "code": "RAL 9001",
+   "name": "Кремово-белый",
+   "hex": "#E9E0D2",
+   "group": "ral",
+   "keywords": [
+    "ral 9001",
+    "ral9001",
+    "9001"
+   ]
+  },
+  {
+   "id": "ral1013",
+   "code": "RAL 1013",
+   "name": "Жемчужно-белый",
+   "hex": "#E3D9C6",
+   "group": "ral",
+   "keywords": [
+    "ral 1013",
+    "ral1013",
+    "1013"
+   ]
+  },
+  {
+   "id": "ral1015",
+   "code": "RAL 1015",
+   "name": "Светлая слоновая кость",
+   "hex": "#E6D2B5",
+   "group": "ral",
+   "keywords": [
+    "ral 1015",
+    "ral1015",
+    "1015"
+   ]
+  },
+  {
+   "id": "ral1014",
+   "code": "RAL 1014",
+   "name": "Слоновая кость",
+   "hex": "#DDC49A",
+   "group": "ral",
+   "keywords": [
+    "ral 1014",
+    "ral1014",
+    "1014"
+   ]
+  },
+  {
+   "id": "ral7035",
+   "code": "RAL 7035",
+   "name": "Светло-серый",
+   "hex": "#CBD0CC",
+   "group": "ral",
+   "keywords": [
+    "ral 7035",
+    "ral7035",
+    "7035"
+   ]
+  },
+  {
+   "id": "ral7047",
+   "code": "RAL 7047",
+   "name": "Телегрей 4",
+   "hex": "#D0D0D0",
+   "group": "ral",
+   "keywords": [
+    "ral 7047",
+    "ral7047",
+    "7047"
+   ]
+  },
+  {
+   "id": "ral7040",
+   "code": "RAL 7040",
+   "name": "Серое окно",
+   "hex": "#989EA1",
+   "group": "ral",
+   "keywords": [
+    "ral 7040",
+    "ral7040",
+    "7040"
+   ]
+  },
+  {
+   "id": "ral7004",
+   "code": "RAL 7004",
+   "name": "Сигнальный серый",
+   "hex": "#969992",
+   "group": "ral",
+   "keywords": [
+    "ral 7004",
+    "ral7004",
+    "7004"
+   ]
+  },
+  {
+   "id": "ral7001",
+   "code": "RAL 7001",
+   "name": "Серебристо-серый",
+   "hex": "#8C969D",
+   "group": "ral",
+   "keywords": [
+    "ral 7001",
+    "ral7001",
+    "7001"
+   ]
+  },
+  {
+   "id": "ral7037",
+   "code": "RAL 7037",
+   "name": "Пыльно-серый",
+   "hex": "#7D7F7D",
+   "group": "ral",
+   "keywords": [
+    "ral 7037",
+    "ral7037",
+    "7037"
+   ]
+  },
+  {
+   "id": "ral7030",
+   "code": "RAL 7030",
+   "name": "Каменно-серый",
+   "hex": "#939388",
+   "group": "ral",
+   "keywords": [
+    "ral 7030",
+    "ral7030",
+    "7030"
+   ]
+  },
+  {
+   "id": "ral7039",
+   "code": "RAL 7039",
+   "name": "Кварцевый серый",
+   "hex": "#6B695F",
+   "group": "ral",
+   "keywords": [
+    "ral 7039",
+    "ral7039",
+    "7039"
+   ]
+  },
+  {
+   "id": "ral7022",
+   "code": "RAL 7022",
+   "name": "Серая умбра",
+   "hex": "#4C4A44",
+   "group": "ral",
+   "keywords": [
+    "ral 7022",
+    "ral7022",
+    "7022"
+   ]
+  },
+  {
+   "id": "ral7012",
+   "code": "RAL 7012",
+   "name": "Базальтово-серый",
+   "hex": "#5D6970",
+   "group": "ral",
+   "keywords": [
+    "ral 7012",
+    "ral7012",
+    "7012"
+   ]
+  },
+  {
+   "id": "ral7015",
+   "code": "RAL 7015",
+   "name": "Сланцево-серый",
+   "hex": "#51565C",
+   "group": "ral",
+   "keywords": [
+    "ral 7015",
+    "ral7015",
+    "7015"
+   ]
+  },
+  {
+   "id": "ral7024",
+   "code": "RAL 7024",
+   "name": "Графитовый серый",
+   "hex": "#45494E",
+   "group": "ral",
+   "keywords": [
+    "ral 7024",
+    "ral7024",
+    "7024",
+    "графит",
+    "graphite"
+   ]
+  },
+  {
+   "id": "ral7016",
+   "code": "RAL 7016",
+   "name": "Антрацитово-серый",
+   "hex": "#383E42",
+   "group": "ral",
+   "keywords": [
+    "ral 7016",
+    "ral7016",
+    "7016",
+    "антрацит",
+    "anthracite"
+   ]
+  },
+  {
+   "id": "ral7021",
+   "code": "RAL 7021",
+   "name": "Чёрно-серый",
+   "hex": "#2F3234",
+   "group": "ral",
+   "keywords": [
+    "ral 7021",
+    "ral7021",
+    "7021"
+   ]
+  },
+  {
+   "id": "ral9004",
+   "code": "RAL 9004",
+   "name": "Сигнальный чёрный",
+   "hex": "#2B2B2C",
+   "group": "ral",
+   "keywords": [
+    "ral 9004",
+    "ral9004",
+    "9004"
+   ]
+  },
+  {
+   "id": "ral9005",
+   "code": "RAL 9005",
+   "name": "Чёрный янтарь (глубокий чёрный)",
+   "hex": "#0E0E10",
+   "group": "ral",
+   "keywords": [
+    "ral 9005",
+    "ral9005",
+    "9005",
+    "чёрный",
+    "черный",
+    "black"
+   ]
+  },
+  {
+   "id": "ral9006",
+   "code": "RAL 9006",
+   "name": "Бело-алюминиевый",
+   "hex": "#A1A1A0",
+   "group": "ral",
+   "keywords": [
+    "ral 9006",
+    "ral9006",
+    "9006",
+    "серебр",
+    "silver"
+   ]
+  },
+  {
+   "id": "ral9007",
+   "code": "RAL 9007",
+   "name": "Серый алюминий",
+   "hex": "#878581",
+   "group": "ral",
+   "keywords": [
+    "ral 9007",
+    "ral9007",
+    "9007"
+   ]
+  },
+  {
+   "id": "ral8017",
+   "code": "RAL 8017",
+   "name": "Шоколадно-коричневый",
+   "hex": "#45322E",
+   "group": "ral",
+   "keywords": [
+    "ral 8017",
+    "ral8017",
+    "8017",
+    "коричнев",
+    "brown"
+   ]
+  },
+  {
+   "id": "ral8019",
+   "code": "RAL 8019",
+   "name": "Серо-коричневый",
+   "hex": "#403A3A",
+   "group": "ral",
+   "keywords": [
+    "ral 8019",
+    "ral8019",
+    "8019"
+   ]
+  },
+  {
+   "id": "ral8014",
+   "code": "RAL 8014",
+   "name": "Сепия коричневая",
+   "hex": "#49392D",
+   "group": "ral",
+   "keywords": [
+    "ral 8014",
+    "ral8014",
+    "8014"
+   ]
+  },
+  {
+   "id": "ral8022",
+   "code": "RAL 8022",
+   "name": "Чёрно-коричневый",
+   "hex": "#1A1718",
+   "group": "ral",
+   "keywords": [
+    "ral 8022",
+    "ral8022",
+    "8022"
+   ]
+  },
+  {
+   "id": "ral8011",
+   "code": "RAL 8011",
+   "name": "Орехово-коричневый",
+   "hex": "#5A3A29",
+   "group": "ral",
+   "keywords": [
+    "ral 8011",
+    "ral8011",
+    "8011"
+   ]
+  },
+  {
+   "id": "ral8028",
+   "code": "RAL 8028",
+   "name": "Земельно-коричневый",
+   "hex": "#4E3B2B",
+   "group": "ral",
+   "keywords": [
+    "ral 8028",
+    "ral8028",
+    "8028"
+   ]
+  },
+  {
+   "id": "ral8003",
+   "code": "RAL 8003",
+   "name": "Глиняный коричневый",
+   "hex": "#7E4B26",
+   "group": "ral",
+   "keywords": [
+    "ral 8003",
+    "ral8003",
+    "8003"
+   ]
+  },
+  {
+   "id": "ral3005",
+   "code": "RAL 3005",
+   "name": "Винно-красный",
+   "hex": "#5E2028",
+   "group": "ral",
+   "keywords": [
+    "ral 3005",
+    "ral3005",
+    "3005"
+   ]
+  },
+  {
+   "id": "ral3004",
+   "code": "RAL 3004",
+   "name": "Пурпурно-красный",
+   "hex": "#6B1C23",
+   "group": "ral",
+   "keywords": [
+    "ral 3004",
+    "ral3004",
+    "3004"
+   ]
+  },
+  {
+   "id": "ral3009",
+   "code": "RAL 3009",
+   "name": "Оксидно-красный",
+   "hex": "#642424",
+   "group": "ral",
+   "keywords": [
+    "ral 3009",
+    "ral3009",
+    "3009"
+   ]
+  },
+  {
+   "id": "ral6005",
+   "code": "RAL 6005",
+   "name": "Зелёный мох",
+   "hex": "#0F4336",
+   "group": "ral",
+   "keywords": [
+    "ral 6005",
+    "ral6005",
+    "6005"
+   ]
+  },
+  {
+   "id": "ral6009",
+   "code": "RAL 6009",
+   "name": "Пихтовый зелёный",
+   "hex": "#27352A",
+   "group": "ral",
+   "keywords": [
+    "ral 6009",
+    "ral6009",
+    "6009"
+   ]
+  },
+  {
+   "id": "ral6021",
+   "code": "RAL 6021",
+   "name": "Бледно-зелёный",
+   "hex": "#89AC76",
+   "group": "ral",
+   "keywords": [
+    "ral 6021",
+    "ral6021",
+    "6021"
+   ]
+  },
+  {
+   "id": "ral5010",
+   "code": "RAL 5010",
+   "name": "Горечавково-синий",
+   "hex": "#0E4C96",
+   "group": "ral",
+   "keywords": [
+    "ral 5010",
+    "ral5010",
+    "5010"
+   ]
+  },
+  {
+   "id": "ral5011",
+   "code": "RAL 5011",
+   "name": "Стальной синий",
+   "hex": "#1A2B3C",
+   "group": "ral",
+   "keywords": [
+    "ral 5011",
+    "ral5011",
+    "5011"
+   ]
+  },
+  {
+   "id": "ral5003",
+   "code": "RAL 5003",
+   "name": "Сапфирово-синий",
+   "hex": "#1D334A",
+   "group": "ral",
+   "keywords": [
+    "ral 5003",
+    "ral5003",
+    "5003"
+   ]
+  },
+  {
+   "id": "anodc0",
+   "code": "C-0",
+   "name": "Анодирование: натуральное серебро",
+   "hex": "#C9CCCE",
+   "group": "anod",
+   "keywords": [
+    "c-0",
+    "анод"
+   ]
+  },
+  {
+   "id": "anodc31",
+   "code": "C-31",
+   "name": "Анодирование: светлая бронза",
+   "hex": "#B08D57",
+   "group": "anod",
+   "keywords": [
+    "c-31"
+   ]
+  },
+  {
+   "id": "anodc32",
+   "code": "C-32",
+   "name": "Анодирование: бронза",
+   "hex": "#8C6A3F",
+   "group": "anod",
+   "keywords": [
+    "c-32"
+   ]
+  },
+  {
+   "id": "anodc33",
+   "code": "C-33",
+   "name": "Анодирование: средняя бронза",
+   "hex": "#6E5134",
+   "group": "anod",
+   "keywords": [
+    "c-33"
+   ]
+  },
+  {
+   "id": "anodc34",
+   "code": "C-34",
+   "name": "Анодирование: тёмная бронза",
+   "hex": "#4B3625",
+   "group": "anod",
+   "keywords": [
+    "c-34"
+   ]
+  },
+  {
+   "id": "anodc35",
+   "code": "C-35",
+   "name": "Анодирование: чёрный",
+   "hex": "#1E1B18",
+   "group": "anod",
+   "keywords": [
+    "c-35"
+   ]
+  },
+  {
+   "id": "decor2178001",
+   "code": "2178-001",
+   "name": "Декор: золотой дуб",
+   "hex": "#B47A3C",
+   "group": "decor",
+   "keywords": [
+    "2178-001",
+    "золотой дуб",
+    "дуб",
+    "oak",
+    "под дерево"
+   ]
+  },
+  {
+   "id": "decor2178007",
+   "code": "2178-007",
+   "name": "Декор: орех",
+   "hex": "#6B4226",
+   "group": "decor",
+   "keywords": [
+    "2178-007",
+    "орех"
+   ]
+  },
+  {
+   "id": "decor2097013",
+   "code": "2097-013",
+   "name": "Декор: махагон",
+   "hex": "#5A2A1D",
+   "group": "decor",
+   "keywords": [
+    "2097-013",
+    "махагон"
+   ]
+  },
+  {
+   "id": "decor2052089",
+   "code": "2052-089",
+   "name": "Декор: мореный дуб",
+   "hex": "#4A3326",
+   "group": "decor",
+   "keywords": [
+    "2052-089",
+    "мореный дуб"
+   ]
+  }
+ ],
+ "systems": [
+  {
+   "id": "bkt77",
+   "name": "BKT 77",
+   "description": "Тёплая оконно-дверная система (рама 69 мм, створка 77 мм), WDT.77",
+   "keywords": [
+    "bkt 77",
+    "bkt77",
+    "bkt-77",
+    "бкт 77",
+    "бкт77",
+    "вкт 77",
+    "вкт77",
+    "wdt.77",
+    "wdt 77"
+   ],
+   "products": [
+    "window",
+    "door",
+    "balcony_block",
+    "partition"
+   ],
+   "fill_min": 20,
+   "fill_max": 52,
+   "fill_default": 32,
+   "deduction_fixed_mm": 70,
+   "deduction_sash_mm": 190,
+   "deduction_door_mm": 230,
+   "rules": [
+    {
+     "role": "Рама",
+     "code": "WDT.77.F0002",
+     "base": "frame_perimeter_m",
+     "qty": 1,
+     "profile": true,
+     "door_code": "WDT.77.F0004"
+    },
+    {
+     "role": "Импост",
+     "code": "WDT.77.M0002",
+     "base": "impost_length_m",
+     "qty": 1,
+     "profile": true
+    },
+    {
+     "role": "Створка оконная",
+     "code": "WDT.77.V0003",
+     "base": "sash_perimeter_m",
+     "qty": 1,
+     "profile": true
+    },
+    {
+     "role": "Створка дверная",
+     "code": "WDT.77.V0007",
+     "base": "door_perimeter_m",
+     "qty": 1,
+     "profile": true
+    },
+    {
+     "role": "Порог",
+     "code": "WDT.77.P0002",
+     "base": "door_width_m",
+     "qty": 1,
+     "profile": true
+    },
+    {
+     "role": "Штапик",
+     "base": "glass_perimeter_m",
+     "qty": 1,
+     "profile": true,
+     "by_fill": [
+      {
+       "min": 20,
+       "max": 28,
+       "code": "WDT.67.G0004"
+      },
+      {
+       "min": 29,
+       "max": 32,
+       "code": "WDT.67.G0003"
+      },
+      {
+       "min": 33,
+       "max": 36,
+       "code": "WDT.67.G0002"
+      },
+      {
+       "min": 37,
+       "max": 40,
+       "code": "WDT.67.G0001"
+      },
+      {
+       "min": 41,
+       "max": 44,
+       "code": "WDT.67.G0009"
+      },
+      {
+       "min": 45,
+       "max": 48,
+       "code": "WDT.67.G0010"
+      },
+      {
+       "min": 49,
+       "max": 52,
+       "code": "WDT.67.G0011"
+      }
+     ]
+    },
+    {
+     "role": "Уплотнитель стекла наружный",
+     "code": "EPDM0001",
+     "base": "glass_perimeter_m",
+     "qty": 1,
+     "profile": false
+    },
+    {
+     "role": "Уплотнитель стекла внутренний",
+     "base": "glass_perimeter_m",
+     "qty": 1,
+     "profile": false,
+     "by_fill": [
+      {
+       "min": 20,
+       "max": 26,
+       "code": "EPDM0005"
+      },
+      {
+       "min": 27,
+       "max": 28,
+       "code": "EPDM0004"
+      },
+      {
+       "min": 29,
+       "max": 30,
+       "code": "EPDM0005"
+      },
+      {
+       "min": 31,
+       "max": 32,
+       "code": "EPDM0004"
+      },
+      {
+       "min": 33,
+       "max": 34,
+       "code": "EPDM0005"
+      },
+      {
+       "min": 35,
+       "max": 36,
+       "code": "EPDM0004"
+      },
+      {
+       "min": 37,
+       "max": 38,
+       "code": "EPDM0005"
+      },
+      {
+       "min": 39,
+       "max": 40,
+       "code": "EPDM0004"
+      },
+      {
+       "min": 41,
+       "max": 42,
+       "code": "EPDM0005"
+      },
+      {
+       "min": 43,
+       "max": 44,
+       "code": "EPDM0004"
+      },
+      {
+       "min": 45,
+       "max": 46,
+       "code": "EPDM0005"
+      },
+      {
+       "min": 47,
+       "max": 48,
+       "code": "EPDM0004"
+      },
+      {
+       "min": 49,
+       "max": 50,
+       "code": "EPDM0005"
+      },
+      {
+       "min": 51,
+       "max": 52,
+       "code": "EPDM0004"
+      }
+     ]
+    },
+    {
+     "role": "Уплотнительный жгут штапика",
+     "code": "EPDM0024",
+     "base": "glass_perimeter_m",
+     "qty": 1,
+     "profile": false
+    },
+    {
+     "role": "Центральный уплотнитель",
+     "code": "EPDM0041",
+     "base": "sash_perimeter_m",
+     "qty": 1,
+     "profile": false
+    },
+    {
+     "role": "Уплотнитель притвора",
+     "code": "EPDM0057",
+     "base": "sash_perimeter_m",
+     "qty": 1,
+     "profile": false
+    },
+    {
+     "role": "Уплотнитель пылезащитный",
+     "code": "EPDM0044",
+     "base": "sash_perimeter_m",
+     "qty": 1,
+     "profile": false
+    },
+    {
+     "role": "Уплотнитель притвора двери",
+     "code": "EPDM0057",
+     "base": "door_perimeter_m",
+     "qty": 2,
+     "profile": false
+    },
+    {
+     "role": "Уплотнитель порога",
+     "code": "EPDM0047",
+     "base": "door_width_m",
+     "qty": 1,
+     "profile": false
+    },
+    {
+     "role": "Закладная угловая рамы (наружная)",
+     "code": "CLX.03.W0280.L18",
+     "base": "frame_corners",
+     "qty": 1,
+     "profile": false,
+     "door_code": "CLX.03.W0440.L21"
+    },
+    {
+     "role": "Закладная угловая рамы (внутренняя)",
+     "code": "CLX.03.W0280.L9",
+     "base": "frame_corners",
+     "qty": 1,
+     "profile": false,
+     "door_code": "CLX.03.W0380.L5"
+    },
+    {
+     "role": "Закладная угловая створки (25,8 мм)",
+     "code": "CLX.03.W0280.L25.8",
+     "base": "sashes",
+     "qty": 4,
+     "profile": false
+    },
+    {
+     "role": "Закладная угловая створки (5 мм)",
+     "code": "CLX.03.W0240.L5",
+     "base": "sashes",
+     "qty": 4,
+     "profile": false
+    },
+    {
+     "role": "Закладная угловая двери (21 мм)",
+     "code": "CLX.03.W0440.L21",
+     "base": "doors",
+     "qty": 4,
+     "profile": false
+    },
+    {
+     "role": "Закладная угловая двери (5 мм)",
+     "code": "CLX.03.W0380.L5",
+     "base": "doors",
+     "qty": 4,
+     "profile": false
+    },
+    {
+     "role": "Выравнивающий уголок створки",
+     "code": "CLS.00.W12.4x13-K-Tech",
+     "base": "sashes",
+     "qty": 4,
+     "profile": false
+    },
+    {
+     "role": "Закладная импоста внутренняя",
+     "code": "Q14*27.9-K-Tech",
+     "base": "imposts",
+     "qty": 2,
+     "profile": false
+    },
+    {
+     "role": "Закладная импоста наружная",
+     "code": "K14*27.9-K-Tech",
+     "base": "imposts",
+     "qty": 2,
+     "profile": false
+    },
+    {
+     "role": "Соединитель импоста стягивающий",
+     "code": "CLS.00.W20.5-K-Tech",
+     "base": "imposts",
+     "qty": 2,
+     "profile": false
+    },
+    {
+     "role": "Подкладка под стеклопакет",
+     "code": "PVI.CP.GH005.L100",
+     "base": "panes",
+     "qty": 4,
+     "profile": false
+    }
+   ]
+  },
+  {
+   "id": "bkf50",
+   "name": "BKF 50",
+   "description": "Фасадная стоечно-ригельная система 50 мм (FST.50), открывание — верхнеподвесные створки FWT.50",
+   "keywords": [
+    "bkf 50",
+    "bkf50",
+    "bkf-50",
+    "бкф 50",
+    "бкф50",
+    "вкф 50",
+    "fst.50",
+    "fst 50",
+    "фасад",
+    "витраж"
+   ],
+   "products": [
+    "facade"
+   ],
+   "fill_min": 10,
+   "fill_max": 62,
+   "fill_default": 32,
+   "deduction_fixed_mm": 30,
+   "deduction_sash_mm": 150,
+   "deduction_door_mm": 150,
+   "rules": [
+    {
+     "role": "Стойка 86 мм",
+     "code": "FST.50.S0005",
+     "base": "vert_len_m",
+     "qty": 1,
+     "profile": true
+    },
+    {
+     "role": "Ригель 70 мм",
+     "code": "FST.50.R0004",
+     "base": "horiz_len_m",
+     "qty": 1,
+     "profile": true
+    },
+    {
+     "role": "Прижимная планка",
+     "code": "FST.50.PP001",
+     "base": "grid_len_m",
+     "qty": 1,
+     "profile": true
+    },
+    {
+     "role": "Декоративная крышка стойки",
+     "code": "FST.50.CP002",
+     "base": "vert_len_m",
+     "qty": 1,
+     "profile": true
+    },
+    {
+     "role": "Декоративная крышка ригеля",
+     "code": "FST.50.CP001",
+     "base": "horiz_len_m",
+     "qty": 1,
+     "profile": true
+    },
+    {
+     "role": "Термомост",
+     "base": "grid_len_m",
+     "qty": 1,
+     "profile": false,
+     "by_fill": [
+      {
+       "min": 16,
+       "max": 20,
+       "code": "PVI.CP.AF012"
+      },
+      {
+       "min": 21,
+       "max": 26,
+       "code": "PVI.CP.AF018"
+      },
+      {
+       "min": 27,
+       "max": 32,
+       "code": "PVI.CP.AF024"
+      },
+      {
+       "min": 33,
+       "max": 38,
+       "code": "PVI.CP.AF030"
+      },
+      {
+       "min": 39,
+       "max": 44,
+       "code": "PVI.CP.AF036"
+      },
+      {
+       "min": 45,
+       "max": 50,
+       "code": "PVI.CP.AF042"
+      }
+     ]
+    },
+    {
+     "role": "Подстекольник (2 × 100 мм на стекло)",
+     "base": "panes",
+     "qty": 0.2,
+     "profile": false,
+     "by_fill": [
+      {
+       "min": 10,
+       "max": 14,
+       "code": "FST.50.G0001"
+      },
+      {
+       "min": 15,
+       "max": 20,
+       "code": "FST.50.G0002"
+      },
+      {
+       "min": 21,
+       "max": 26,
+       "code": "FST.50.G0003"
+      },
+      {
+       "min": 27,
+       "max": 32,
+       "code": "FST.50.G0004"
+      },
+      {
+       "min": 33,
+       "max": 38,
+       "code": "FST.50.G0005"
+      },
+      {
+       "min": 39,
+       "max": 44,
+       "code": "FST.50.G0006"
+      },
+      {
+       "min": 45,
+       "max": 50,
+       "code": "FST.50.G0007"
+      },
+      {
+       "min": 51,
+       "max": 56,
+       "code": "FST.50.G0008"
+      },
+      {
+       "min": 57,
+       "max": 62,
+       "code": "FST.50.G0009"
+      }
+     ]
+    },
+    {
+     "role": "Уплотнитель прижимной планки",
+     "code": "EPDM0049",
+     "base": "grid_len_m",
+     "qty": 2,
+     "profile": false
+    },
+    {
+     "role": "Уплотнитель внутренний",
+     "code": "EPDM0051",
+     "base": "grid_len_m",
+     "qty": 2,
+     "profile": false
+    },
+    {
+     "role": "Ригельный соединитель",
+     "code": "FST.50.JR001",
+     "base": "imposts",
+     "qty": 0.1,
+     "profile": false
+    },
+    {
+     "role": "Рама верхнеподвесной створки",
+     "code": "FWT.50.F0001",
+     "base": "sash_perimeter_m",
+     "qty": 1,
+     "profile": true
+    },
+    {
+     "role": "Створка верхнеподвесная",
+     "code": "FWT.50.V0001",
+     "base": "sash_perimeter_m",
+     "qty": 1,
+     "profile": true
+    },
+    {
+     "role": "Уплотнитель верхнеподвесной створки",
+     "code": "EPDM2803",
+     "base": "sash_perimeter_m",
+     "qty": 2,
+     "profile": false
+    },
+    {
+     "role": "Закладная угловая створки FWT.50",
+     "code": "CLX.02.W0140.L38",
+     "base": "sashes",
+     "qty": 4,
+     "profile": false
+    },
+    {
+     "role": "Закладная угловая рамы FWT.50",
+     "code": "CLX.02.W0140.L46",
+     "base": "sashes",
+     "qty": 4,
+     "profile": false
+    }
+   ]
+  },
+  {
+   "id": "bko45",
+   "name": "BKO 45",
+   "description": "Холодная оконно-дверная система 45 мм (одинарное стекло 6 мм)",
+   "keywords": [
+    "bko 45",
+    "bko45",
+    "бко 45",
+    "бко45",
+    "холодн"
+   ],
+   "products": [
+    "window",
+    "door",
+    "balcony_block",
+    "partition"
+   ],
+   "fill_min": 4,
+   "fill_max": 8,
+   "fill_default": 6,
+   "deduction_fixed_mm": 60,
+   "deduction_sash_mm": 150,
+   "deduction_door_mm": 180,
+   "rules": [
+    {
+     "role": "Рама",
+     "code": "EXHW1711",
+     "base": "frame_perimeter_m",
+     "qty": 1,
+     "profile": true,
+     "door_code": "EXHW1710"
+    },
+    {
+     "role": "Импост",
+     "code": "EXHW4444",
+     "base": "impost_length_m",
+     "qty": 1,
+     "profile": true
+    },
+    {
+     "role": "Створка оконная",
+     "code": "КПС265",
+     "base": "sash_perimeter_m",
+     "qty": 1,
+     "profile": true
+    },
+    {
+     "role": "Створка дверная",
+     "code": "EXHW1709",
+     "base": "door_perimeter_m",
+     "qty": 1,
+     "profile": true
+    },
+    {
+     "role": "Порог",
+     "code": "EXHW1657",
+     "base": "door_width_m",
+     "qty": 1,
+     "profile": true
+    },
+    {
+     "role": "Штапик",
+     "code": "EXSD1656",
+     "base": "glass_perimeter_m",
+     "qty": 1,
+     "profile": true
+    },
+    {
+     "role": "Уплотнитель стекла наружный",
+     "code": "ТПУ-002ММ",
+     "base": "glass_perimeter_m",
+     "qty": 1,
+     "profile": false
+    },
+    {
+     "role": "Уплотнитель стекла внутренний",
+     "code": "ТПУ-004ММ",
+     "base": "glass_perimeter_m",
+     "qty": 1,
+     "profile": false
+    },
+    {
+     "role": "Уплотнитель притвора окна",
+     "code": "КПУ-243",
+     "base": "sash_perimeter_m",
+     "qty": 1,
+     "profile": false
+    },
+    {
+     "role": "Уплотнитель притвора двери",
+     "code": "КПУ-215",
+     "base": "door_perimeter_m",
+     "qty": 1,
+     "profile": false
+    },
+    {
+     "role": "Закладная угловая рамы",
+     "code": "EXHW1680.L41",
+     "base": "frame_corners",
+     "qty": 1,
+     "profile": false,
+     "door_code": "EXHW1758.L32.4"
+    },
+    {
+     "role": "Закладная угловая двери",
+     "code": "EXHW1758.L32.4",
+     "base": "doors",
+     "qty": 4,
+     "profile": false
+    }
+   ]
+  },
+  {
+   "id": "opc40",
+   "name": "OPC 40",
+   "description": "Холодные двери и перегородки 40 мм (OPC.40)",
+   "keywords": [
+    "opc 40",
+    "opc40",
+    "опс 40",
+    "перегородк"
+   ],
+   "products": [
+    "door",
+    "partition"
+   ],
+   "fill_min": 4,
+   "fill_max": 32,
+   "fill_default": 6,
+   "deduction_fixed_mm": 50,
+   "deduction_sash_mm": 120,
+   "deduction_door_mm": 120,
+   "rules": [
+    {
+     "role": "Рама дверная",
+     "code": "OPC.40.F0003",
+     "base": "frame_perimeter_m",
+     "qty": 1,
+     "profile": true
+    },
+    {
+     "role": "Импост",
+     "code": "OPC.40.M0003",
+     "base": "impost_length_m",
+     "qty": 1,
+     "profile": true
+    },
+    {
+     "role": "Створка дверная",
+     "code": "OPC.40.V0001",
+     "base": "door_perimeter_m",
+     "qty": 1,
+     "profile": true
+    },
+    {
+     "role": "Створка",
+     "code": "OPC.40.V0001",
+     "base": "sash_perimeter_m",
+     "qty": 1,
+     "profile": true
+    },
+    {
+     "role": "Адаптер остекления",
+     "code": "OPC.40.A0001",
+     "base": "glass_perimeter_m",
+     "qty": 1,
+     "profile": true
+    },
+    {
+     "role": "Уплотнитель",
+     "code": "EPDM0050",
+     "base": "glass_perimeter_m",
+     "qty": 2,
+     "profile": false
+    }
+   ]
+  },
+  {
+   "id": "wdc47",
+   "name": "WDC 47",
+   "description": "Холодная оконная система 47 мм (одинарное стекло 6 мм)",
+   "keywords": [
+    "wdc 47",
+    "wdc47",
+    "wdc.47"
+   ],
+   "products": [
+    "window",
+    "partition"
+   ],
+   "fill_min": 4,
+   "fill_max": 8,
+   "fill_default": 6,
+   "deduction_fixed_mm": 50,
+   "deduction_sash_mm": 130,
+   "deduction_door_mm": 130,
+   "rules": [
+    {
+     "role": "Рама оконная",
+     "code": "WDC.47.F0003",
+     "base": "frame_perimeter_m",
+     "qty": 1,
+     "profile": true
+    },
+    {
+     "role": "Импост (рамный профиль)",
+     "code": "WDC.47.F0003",
+     "base": "impost_length_m",
+     "qty": 1,
+     "profile": true
+    },
+    {
+     "role": "Створка оконная усиленная",
+     "code": "WDC.47.V0004",
+     "base": "sash_perimeter_m",
+     "qty": 1,
+     "profile": true
+    },
+    {
+     "role": "Штапик 19 мм",
+     "code": "WDC.47.G0004",
+     "base": "glass_perimeter_m",
+     "qty": 1,
+     "profile": true
+    },
+    {
+     "role": "Уплотнитель внутреннего остекления",
+     "code": "EPDM0059",
+     "base": "glass_perimeter_m",
+     "qty": 1,
+     "profile": false
+    },
+    {
+     "role": "Уплотнитель стекла наружный",
+     "code": "EPDM0001",
+     "base": "glass_perimeter_m",
+     "qty": 1,
+     "profile": false
+    },
+    {
+     "role": "Уплотнитель притвора",
+     "code": "EPDM0043",
+     "base": "sash_perimeter_m",
+     "qty": 1,
+     "profile": false
+    }
+   ]
+  }
+ ],
+ "articles": [
+  {
+   "code": "FST.50.S0001",
+   "name": "Стойка 12 мм",
+   "price": 3188.07,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.S0004",
+   "name": "Стойка 66 мм",
+   "price": 6548.46,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.S0005",
+   "name": "Стойка 86 мм",
+   "price": 7603.97,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.S0006",
+   "name": "Стойка 106 мм",
+   "price": 8616.4,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.S0007",
+   "name": "Стойка 121 мм",
+   "price": 8659.48,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.S0008",
+   "name": "Стойка 131 мм",
+   "price": 9564.2,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.S0009",
+   "name": "Стойка 141 мм",
+   "price": 10684.33,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.S0011",
+   "name": "Стойка 156 мм",
+   "price": 12579.94,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.S0013",
+   "name": "Стойка 171 мм",
+   "price": 14346.3,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.S0014",
+   "name": "Стойка 181 мм",
+   "price": 15337.19,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.S0016",
+   "name": "Стойка 196 мм",
+   "price": 15251.02,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.S0017",
+   "name": "Стойка 211 мм",
+   "price": 16801.98,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.S0103",
+   "name": "Стойка 41 мм, монтажная",
+   "price": 5428.33,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.SC001",
+   "name": "Стойка 66 мм, 90°",
+   "price": 7280.86,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.SC003",
+   "name": "Стойка 86 мм, 90°",
+   "price": 9047.22,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.R0001",
+   "name": "Ригель 17 мм",
+   "price": 3403.48,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.R0002",
+   "name": "Ригель 25 мм",
+   "price": 3791.22,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.R0003",
+   "name": "Ригель 45 мм",
+   "price": 5169.84,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.R0004",
+   "name": "Ригель 70 мм",
+   "price": 6376.13,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.R0005",
+   "name": "Ригель 90 мм",
+   "price": 7108.53,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.R0006",
+   "name": "Ригель 110 мм",
+   "price": 7970.17,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.R0007",
+   "name": "Ригель 125 мм",
+   "price": 8659.48,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.R0008",
+   "name": "Ригель 135 мм",
+   "price": 8788.73,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.R0009",
+   "name": "Ригель 145 мм",
+   "price": 9693.45,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.R0010",
+   "name": "Ригель облегчённый 145 мм",
+   "price": 8530.23,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.R0011",
+   "name": "Ригель облегчёный 160 мм",
+   "price": 10641.25,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.R0012",
+   "name": "Ригель 160 мм",
+   "price": 10684.33,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.R0013",
+   "name": "Ригель 175 мм",
+   "price": 12536.86,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.R0014",
+   "name": "Ригель облегчённый 185 мм",
+   "price": 11158.24,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.R0015",
+   "name": "Ригель 185 мм",
+   "price": 12321.45,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.R0016",
+   "name": "Ригель 200 мм",
+   "price": 12967.68,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.R0017",
+   "name": "Ригель 215 мм",
+   "price": 14173.97,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.R0020",
+   "name": "Ригель 45 мм, поворотный",
+   "price": 3877.38,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.R0021",
+   "name": "Ригель 45 мм, поворотный",
+   "price": 4049.71,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.R0101",
+   "name": "Ригель 9 мм, монтажный",
+   "price": 2197.18,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.R0103",
+   "name": "Фальш-ригель 45 мм",
+   "price": 3403.48,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.R0104",
+   "name": "Фальш-ригель 70 мм",
+   "price": 3834.3,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.R0105",
+   "name": "Фальш-ригель 90 мм",
+   "price": 4523.61,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.R0106",
+   "name": "Фальш-ригель 110 мм",
+   "price": 7065.45,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.R0107",
+   "name": "Фальш-ригель 125 мм",
+   "price": 7754.76,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.J0004",
+   "name": "Соединитель стойки S0004",
+   "price": 6106.11,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.J0005",
+   "name": "Соединитель стойки S0005",
+   "price": 7449.46,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.J0006",
+   "name": "Соединитель стойки S0006",
+   "price": 8597.41,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.J0007",
+   "name": "Соединитель стойки S0007",
+   "price": 9077.75,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.J0008",
+   "name": "Соединитель стойки S0008",
+   "price": 9566.24,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.J0009",
+   "name": "Соединитель стойки S0009",
+   "price": 10095.44,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.J0011",
+   "name": "Соединитель стойки S0011",
+   "price": 11316.66,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.J0013",
+   "name": "Соединитель стойки S0013",
+   "price": 12049.4,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.J0014",
+   "name": "Соединитель стойки S0014",
+   "price": 12130.81,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.J0016",
+   "name": "Соединитель стойки S0016",
+   "price": 14613.96,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.J0017",
+   "name": "Соединитель стойки S0017",
+   "price": 15346.7,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.JS001",
+   "name": "Стоечный соединитель угловой",
+   "price": 22714.74,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.JS002",
+   "name": "Стоечный соединитель поворотный",
+   "price": 16527.21,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.JR001",
+   "name": "Ригельный соединитель 90°",
+   "price": 4579.58,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.JR002",
+   "name": "Ригельный соединитель 10°-50°",
+   "price": 4884.89,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.JR003",
+   "name": "Ригельный угловой соединитель",
+   "price": 22877.57,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.JR004",
+   "name": "Ригельный соединитель эркерный",
+   "price": 4884.89,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.JR005",
+   "name": "Ригельный соединитель усиленный 90°",
+   "price": 9525.54,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.AF001",
+   "name": "Дистанционный адаптер 6 мм",
+   "price": 341.94,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.AF002",
+   "name": "Дистанционный адаптер 12 мм",
+   "price": 533.27,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.AF003",
+   "name": "Дистанционный адаптер 24 мм",
+   "price": 944.41,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.AF004",
+   "name": "Дистанционный адаптер 30 мм",
+   "price": 1200.87,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.AR001",
+   "name": "Адаптер наружного угла 15°",
+   "price": 569.9,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.AR002",
+   "name": "Адаптер наружного угла 30°",
+   "price": 610.61,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.AR003",
+   "name": "Адаптер наружного угла 45°",
+   "price": 651.32,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.AR011",
+   "name": "Адаптер наружного угла 15°",
+   "price": 447.78,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.AR012",
+   "name": "Адаптер наружного угла 30°",
+   "price": 447.78,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.AR013",
+   "name": "Адаптер наружного угла 45°",
+   "price": 488.49,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.AR014",
+   "name": "Адаптер внутреннего угла 15°",
+   "price": 2768.1,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.AR015",
+   "name": "Адаптер внутреннего угла 30°",
+   "price": 3622.96,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.AR016",
+   "name": "Адаптер внутреннего угла 45°",
+   "price": 4152.16,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.PP001",
+   "name": "Прижимная планка стандартная",
+   "price": 1343.34,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.PP002",
+   "name": "Прижимная планка усиленная",
+   "price": 1994.66,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.PP010",
+   "name": "Прижимная планка наклонная",
+   "price": 1180.52,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.PP011",
+   "name": "Прижимная планка 81 мм, для наружного угла 15°",
+   "price": 3460.13,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.PP012",
+   "name": "Прижимная планка 90 мм, для наружного угла 15°",
+   "price": 3704.38,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.PP013",
+   "name": "Прижимная планка 98 мм, для наружного угла 15°",
+   "price": 3948.62,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.PP014",
+   "name": "Прижимная планка 98 мм, для наружного угла 30°",
+   "price": 4070.74,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.PP015",
+   "name": "Прижимная планка 110 мм, для наружного угла 30°",
+   "price": 4396.4,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.PP016",
+   "name": "Прижимная планка 122 мм, для наружного угла 30°",
+   "price": 5210.55,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.PP017",
+   "name": "Прижимная планка 134 мм, для наружного угла 30°",
+   "price": 5576.92,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.PP018",
+   "name": "Прижимная планка 116 мм, для наружного угла 45°",
+   "price": 4762.77,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.PP019",
+   "name": "Прижимная планка 133 мм, для наружного угла 45°",
+   "price": 5739.75,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.PP020",
+   "name": "Прижимная планка 150 мм, для наружного угла 45°",
+   "price": 6268.94,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.PP021",
+   "name": "Прижимная планка 167 мм, для наружного угла 45°",
+   "price": 7245.92,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.PP022",
+   "name": "Прижимная планка 73 мм, для внутреннего угла 15°",
+   "price": 3256.59,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.PP023",
+   "name": "Прижимная планка 64 мм, для внутреннего угла 15°",
+   "price": 2930.93,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.PP024",
+   "name": "Прижимная планка 70 мм, для внутреннего угла 30°",
+   "price": 3012.35,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.PP025",
+   "name": "Прижимная планка 58 мм, для внутреннего угла 30°",
+   "price": 2564.57,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.PP026",
+   "name": "Прижимная планка 49 мм, для внутреннего угла 45°",
+   "price": 1791.13,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.CP001",
+   "name": "Декоративная крышка ригеля 12 мм",
+   "price": 1120.13,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.CP002",
+   "name": "Декоративная крышка стойки 15 мм",
+   "price": 1335.54,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.CP003",
+   "name": "Декоративная крышка 17 мм",
+   "price": 1464.79,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.CP004",
+   "name": "Декоративная крышка 19 мм",
+   "price": 1507.87,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.CP005",
+   "name": "Декоративная крышка 23 мм",
+   "price": 1637.12,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.CP006",
+   "name": "Декоративная крышка 25 мм",
+   "price": 1680.2,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.CP007",
+   "name": "Декоративная крышка овальная 35 мм",
+   "price": 1507.87,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.CP008",
+   "name": "Декоративная крышка овальная 50 мм",
+   "price": 2671.08,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.CP009",
+   "name": "Декоративная крышка 50 мм",
+   "price": 3360.4,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.CP010",
+   "name": "Декоративная крышка 75 мм",
+   "price": 4695.94,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.CP011",
+   "name": "Декоративная крышка 100 мм",
+   "price": 5600.66,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.CP012",
+   "name": "Декоративная крышка 155 мм",
+   "price": 9521.12,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.CP013",
+   "name": "Декоративная крышка фигурная 110 мм",
+   "price": 5083.67,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.CP014",
+   "name": "Декоративная крышка фигурная 150 мм",
+   "price": 7410.1,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.CP015",
+   "name": "Декоративная крышка фигурная 200 мм",
+   "price": 10253.51,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.CP016",
+   "name": "Декоративная крышка 200 мм",
+   "price": 10512.01,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.CP017",
+   "name": "Декоративная крышка 205 мм",
+   "price": 11718.3,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.CP021",
+   "name": "Декоративная крышка 12 мм, наклонная",
+   "price": 947.8,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.CP022",
+   "name": "Декоративная крышка 9,8 мм",
+   "price": 516.98,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.CP023",
+   "name": "Декоративная крышка 8,2 мм",
+   "price": 818.56,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.G0001",
+   "name": "Подстекольник 10-14 мм алюминиевый",
+   "price": 651.32,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.G0002",
+   "name": "Подстекольник 16-20 мм алюминиевый",
+   "price": 773.44,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.G0003",
+   "name": "Подстекольник 22-26 мм алюминиевый",
+   "price": 936.27,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.G0004",
+   "name": "Подстекольник 28-32 мм алюминиевый",
+   "price": 1058.39,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.G0005",
+   "name": "Подстекольник 34-38 мм алюминиевый",
+   "price": 1221.22,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.G0006",
+   "name": "Подстекольник 40-44 мм алюминиевый",
+   "price": 1913.25,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.G0007",
+   "name": "Подстекольник 46-50 мм алюминиевый",
+   "price": 2076.08,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.G0008",
+   "name": "Подстекольник 52-56 мм алюминиевый",
+   "price": 2320.32,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.G0009",
+   "name": "Подстекольник 58-62 мм алюминиевый",
+   "price": 2564.57,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.GFH00",
+   "name": "Подстекольник усиленный 28-32 мм алюминиевый",
+   "price": 2279.62,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.GFH01",
+   "name": "Подстекольник усиленный 34-38 мм алюминиевый",
+   "price": 2849.52,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.GFH02",
+   "name": "Подстекольник усиленный 40-44 мм алюминиевый",
+   "price": 3175.18,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.GFH03",
+   "name": "Подстекольник усиленный 46-50 мм алюминиевый",
+   "price": 3745.08,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.GFH04",
+   "name": "Подстекольник усиленный 52-56 мм алюминиевый",
+   "price": 4111.45,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.GFH05",
+   "name": "Подстекольник усиленный 58-62 мм алюминиевый",
+   "price": 4437.11,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.GFV01",
+   "name": "Опора усиленного подстекольника 34-38 мм алюминиевый",
+   "price": 5943.28,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.GFV02",
+   "name": "Опора усиленного подстекольника 40-44 мм алюминиевый",
+   "price": 6553.89,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.GFV03",
+   "name": "Опора усиленного подстекольника 46-50 мм алюминиевый",
+   "price": 7368.04,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.GFV04",
+   "name": "Опора усиленного подстекольника 52-56 мм алюминиевый",
+   "price": 7937.95,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.GFV05",
+   "name": "Опора усиленного подстекольника 58-62 мм алюминиевый",
+   "price": 8548.56,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CLC.85.H0013",
+   "name": "Кронштейн алюминиевый 80 мм",
+   "price": 2712.32,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CLC.85.H0014",
+   "name": "Кронштейн алюминиевый 110 мм",
+   "price": 2972.13,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CLC.85.H0015",
+   "name": "Кронштейн алюминиевый 150 мм",
+   "price": 4046.33,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CLC.85.H0016",
+   "name": "Кронштейн алюминиевый 190 мм",
+   "price": 4671.33,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CLC.85.A0009",
+   "name": "Втулка ∅15 мм, под М10",
+   "price": 936.27,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CLC.85.H0008",
+   "name": "Опорная пластина 66 мм, алюминиевая",
+   "price": 5194.27,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CLC.85.Z5004",
+   "name": "Соединитель стойки с опорной пластиной (комплект)",
+   "price": 2533.37,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.Z5004.S",
+   "name": "Соединитель стойки с опорной пластиной (комплект)",
+   "price": 2533.37,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.Z5005",
+   "name": "Соединитель стойки с опорной пластиной (комплект)",
+   "price": 2701.83,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.Z5005.S",
+   "name": "Соединитель стойки с опорной пластиной (комплект)",
+   "price": 2701.83,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.Z5006",
+   "name": "Соединитель стойки с опорной пластиной (комплект)",
+   "price": 2867.78,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.Z5006.S",
+   "name": "Соединитель стойки с опорной пластиной (комплект)",
+   "price": 2867.78,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.Z5007",
+   "name": "Соединитель стойки с опорной пластиной (комплект)",
+   "price": 2995.86,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.Z5007.S",
+   "name": "Соединитель стойки с опорной пластиной (комплект)",
+   "price": 2995.86,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.Z5008",
+   "name": "Соединитель стойки с опорной пластиной (комплект)",
+   "price": 3072.21,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.Z5008.S",
+   "name": "Соединитель стойки с опорной пластиной (комплект)",
+   "price": 3072.21,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.Z5009",
+   "name": "Соединитель стойки с опорной пластиной (комплект)",
+   "price": 3153.6,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.Z5009.S",
+   "name": "Соединитель стойки с опорной пластиной (комплект)",
+   "price": 3153.6,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.Z5011",
+   "name": "Соединитель стойки с опорной пластиной (комплект)",
+   "price": 3273.49,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.Z5011.S",
+   "name": "Соединитель стойки с опорной пластиной (комплект)",
+   "price": 3273.49,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.Z5013",
+   "name": "Соединитель стойки с опорной пластиной (комплект)",
+   "price": 3385.17,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.Z5013.S",
+   "name": "Соединитель стойки с опорной пластиной (комплект)",
+   "price": 3385.17,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.Z5014",
+   "name": "Соединитель стойки с опорной пластиной (комплект)",
+   "price": 3465.93,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.Z5014.S",
+   "name": "Соединитель стойки с опорной пластиной (комплект)",
+   "price": 3465.93,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.Z5016",
+   "name": "Соединитель стойки с опорной пластиной (комплект)",
+   "price": 3849.56,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.Z5016.S",
+   "name": "Соединитель стойки с опорной пластиной (комплект)",
+   "price": 3849.56,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.Z5017",
+   "name": "Соединитель стойки с опорной пластиной (комплект)",
+   "price": 3965.02,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.Z5017.S",
+   "name": "Соединитель стойки с опорной пластиной (комплект)",
+   "price": 3965.02,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.A0009.L60",
+   "name": "Втулка ∅15 мм, под М10",
+   "price": 60.86,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.A0009.L50",
+   "name": "Втулка ∅15 мм, под М10",
+   "price": 51.49,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "FST.50.J0004.L300",
+   "name": "Соединитель стойки S0004",
+   "price": 1831.83,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "FST.50.J0005.L300",
+   "name": "Соединитель стойки S0005",
+   "price": 2234.84,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "FST.50.J0006.L300",
+   "name": "Соединитель стойки S0006",
+   "price": 2579.22,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "FST.50.J0007.L300",
+   "name": "Соединитель стойки S0007",
+   "price": 2723.33,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "FST.50.J0008.L300",
+   "name": "Соединитель стойки S0008",
+   "price": 2869.87,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "FST.50.J0009.L300",
+   "name": "Соединитель стойки S0009",
+   "price": 3028.63,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "FST.50.J0011.L300",
+   "name": "Соединитель стойки S0011",
+   "price": 3395.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "FST.50.J0013.L300",
+   "name": "Соединитель стойки S0013",
+   "price": 3614.82,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "FST.50.J0014.L300",
+   "name": "Соединитель стойки S0014",
+   "price": 3639.24,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "FST.50.J0016.L300",
+   "name": "Соединитель стойки S0016",
+   "price": 4384.19,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "FST.50.J0017.L300",
+   "name": "Соединитель стойки S0017",
+   "price": 4604.01,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.H0013.L150.S",
+   "name": "CLC.85.H0013.L 150.S Кронштейн алюминиевый 80 мм",
+   "price": 2712.32,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.H0013.L150.W",
+   "name": "CLC.85.H0013.L 150.W Кронштейн алюминиевый 80 мм",
+   "price": 2712.32,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.H0014.L150.S",
+   "name": "CLC.85.H0014.L 150.S Кронштейн алюминиевый 110 мм",
+   "price": 2972.13,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.H0014.L150.W",
+   "name": "CLC.85.H0014.L 150.W Кронштейн алюминиевый 110 мм",
+   "price": 2972.13,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.H0016.L150.S",
+   "name": "CLC.85.H0016.L 150.S Кронштейн алюминиевый 190 мм",
+   "price": 4671.33,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.H0016.L150.W",
+   "name": "CLC.85.H0016.L 150.W Кронштейн алюминиевый 190 мм",
+   "price": 4671.33,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.H0015.L150.S",
+   "name": "CLC.85.H0015.L 150.S Кронштейн алюминиевый 150 мм",
+   "price": 4046.33,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.H0015.L150.W",
+   "name": "CLC.85.H0015.L 150.W Кронштейн алюминиевый 150 мм",
+   "price": 4046.33,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "FST.50.S0019",
+   "name": "Стойка 196 мм",
+   "price": 26977.94,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CLC85.H0008.L230",
+   "name": "Опора усилителя стойки (S0005/6/7)",
+   "price": 1586.92,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "WDT.77.F0001",
+   "name": "Рама оконная 50 мм.",
+   "price": 5582.14,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.F0002",
+   "name": "Рама оконная 64 мм.",
+   "price": 7445.94,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.F0003",
+   "name": "Рама оконная 80 мм.",
+   "price": 8412.53,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.F0004",
+   "name": "Рама дверная T 69 мм.",
+   "price": 8518.9,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.F0005",
+   "name": "Рама дверная Z 69 мм.",
+   "price": 8065.67,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.F0006",
+   "name": "Рама оконная деформационная 60 мм.",
+   "price": 6502.48,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.F0007",
+   "name": "Рама оконная усиленная 80x161 мм.",
+   "price": 13620.06,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.F0008",
+   "name": "Расширитель 58 мм.",
+   "price": 7802.05,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.V0001",
+   "name": "Створка оконная 77 мм.",
+   "price": 6451.61,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.V0003",
+   "name": "Створка оконная 81 мм.",
+   "price": 7737.3,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.V0004",
+   "name": "Створка оконная PVC 81 мм.",
+   "price": 7880.67,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.V0005",
+   "name": "Створка оконная 97 мм.",
+   "price": 9138.62,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.V0006",
+   "name": "Створка оконная PVC 97 мм.",
+   "price": 9392.99,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.V0007",
+   "name": "Створка дверная Т 91 мм.",
+   "price": 9064.62,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.V0008",
+   "name": "Створка дверная Z 91 мм.",
+   "price": 8602.14,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.V0009",
+   "name": "Створка балконной двери 97 мм.",
+   "price": 9434.61,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.M0001",
+   "name": "Импост 72 мм.",
+   "price": 6192.62,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.M0002",
+   "name": "Импост 86 мм.",
+   "price": 7908.42,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.M0003",
+   "name": "Импост 102 мм.",
+   "price": 9018.38,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.M0004",
+   "name": "Импост под саморез 72 мм.",
+   "price": 6548.73,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.M0005",
+   "name": "Импост под саморез 86 мм.",
+   "price": 7852.92,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.M0006",
+   "name": "Импост под саморез 102 мм.",
+   "price": 9406.86,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.M0007",
+   "name": "Импост усиленный 102x151 мм.",
+   "price": 14244.41,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.M0008",
+   "name": "Импост усиленный 102x206 мм.",
+   "price": 18300.37,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.M0010",
+   "name": "Импост усил. с наруж. пилоном 32 мм. - 79x101 мм.",
+   "price": 9527.11,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.A0001",
+   "name": "Штульп оконный 62 мм.",
+   "price": 5855.01,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.A0002",
+   "name": "Штульп оконный 62 мм. PVC",
+   "price": 5771.76,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.A0003",
+   "name": "Штульп дверной Т 39 мм.",
+   "price": 5041.04,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.A0004",
+   "name": "Штульп дверной Z 39 мм.",
+   "price": 4925.42,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.67.A0005",
+   "name": "Адаптер 27 мм.",
+   "price": 855.59,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.A0006",
+   "name": "Труба поворота 90-180 град.",
+   "price": 7293.32,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.A0007",
+   "name": "Профиль поворота 90 град.",
+   "price": 9573.35,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.67.A0008",
+   "name": "Рамный соединитель 12,4 мм.",
+   "price": 351.49,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.A0009",
+   "name": "Усилитель внешний 162x22",
+   "price": 10428.94,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.67.A0010",
+   "name": "Декор универсального порога P01",
+   "price": 512.68,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.67.A0011",
+   "name": "Декор для варианта без порога",
+   "price": 697.93,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.67.A0012",
+   "name": "Декор для порогов P02 и P03",
+   "price": 572.99,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.A0013",
+   "name": "Реверсивный профиль рамы 50,8 мм.",
+   "price": 5323.15,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.67.A0014",
+   "name": "Декор порога балконной двери P04",
+   "price": 652.1,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.P0001",
+   "name": "Порог универсальный 18 мм",
+   "price": 4342.7,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.P0002",
+   "name": "Порог 12 мм (Внутреннее открывание) Anod 15020",
+   "price": 2839.63,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.P0003",
+   "name": "Порог 12 мм (Наружнее открывание) Anod 15020",
+   "price": 2959.88,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.P0004",
+   "name": "Порог балконной двери 24 мм. Anod 15020",
+   "price": 5720.89,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.67.G0005",
+   "name": "Штапик с уплотнителем 17 мм. (Заменить на WDT.67.G0001)",
+   "price": 1115.82,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.67.G0006",
+   "name": "Штапик с уплотнителем 21 мм. (Заменить на WDT.67.G0002)",
+   "price": 1249.38,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.67.G0007",
+   "name": "Штапик с уплотнителем 25 мм. (Заменить на WDT.67.G0003)",
+   "price": 1305.38,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.67.G0008",
+   "name": "Штапик с уплотнителем 29 мм. (Заменить на WDT.67.G0004)",
+   "price": 1404.47,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.67.G0009",
+   "name": "Штапик с уплотнителем 13 мм.",
+   "price": 1068.43,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.67.G0010",
+   "name": "Штапик с уплотнителем 9 мм.",
+   "price": 1012.43,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.67.G0011",
+   "name": "Штапик с уплотнителем 5 мм.",
+   "price": 969.34,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.67.J0001",
+   "name": "Опора трубы поворота",
+   "price": 2755.89,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.67.J0002",
+   "name": "Закладная для импоста (Внешняя чашка)",
+   "price": 3403.14,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.67.J0003",
+   "name": "Закладная для импоста (Наружная чашка)",
+   "price": 1844.05,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.22.J0001",
+   "name": "Закладная",
+   "price": 4518.52,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CLX.03.W0100",
+   "name": "Соединитель угловой 10 мм.",
+   "price": 8833.51,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CLX.03.W0140",
+   "name": "Соединитель угловой 14 мм.",
+   "price": 10950.3,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CLX.03.W0200",
+   "name": "Соединитель угловой 20 мм.",
+   "price": 13746.9,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CLX.03.W0240",
+   "name": "Соединитель угловой 24 мм.",
+   "price": 14499.98,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CLX.03.W0280",
+   "name": "Соединитель угловой 28 мм.",
+   "price": 16702.25,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CLX.03.W0340",
+   "name": "Соединитель угловой 34 мм.",
+   "price": 18839.39,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CLX.03.W0380",
+   "name": "Соединитель угловой 38 мм.",
+   "price": 20194.95,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CLX.03.W0400",
+   "name": "Соединитель угловой 40 мм.",
+   "price": 21522.01,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CLX.03.W0440",
+   "name": "Соединитель угловой 44 мм.",
+   "price": 22796.16,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDC.47.A0009",
+   "name": "Мувиль алюминиевый Anod 15020",
+   "price": 516.98,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.F0009",
+   "name": "Рама дверная в фасад",
+   "price": 9203.37,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.F0010",
+   "name": "Рама оконная в фасад",
+   "price": 7214.7,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.V0018",
+   "name": "Створка оконная 81 мм.",
+   "price": 8278.41,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.V0019",
+   "name": "Створка оконная усиленная 97 мм.",
+   "price": 9013.75,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.M0009",
+   "name": "Импост усил. с наруж. пилоном 52,6 мм. - 86x121,6 мм.",
+   "price": 10914.55,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.A0015",
+   "name": "Адаптер",
+   "price": 4393.57,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.F0016",
+   "name": "Рама оконная 64 мм. (Термомост NEW)",
+   "price": 7669.32,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.M0018",
+   "name": "Импост 86 мм. (Термомост NEW)",
+   "price": 7612.16,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.M0019",
+   "name": "Импост 102 мм. (Термомост NEW)",
+   "price": 9198.42,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.M0020",
+   "name": "Импост усил. с наруж. пилоном 32 мм. - 79x101 мм. (Термомост NEW)",
+   "price": 9322.27,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.V0023",
+   "name": "Створка оконная 81 мм. (Термомост NEW)",
+   "price": 7864.63,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.V0024",
+   "name": "Створка оконная усиленная 97 мм. (Термомост NEW)",
+   "price": 9274.64,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.77.M0021",
+   "name": "Импост усил. с наруж. пилоном 52,6 мм. - 86x121,6 мм. (Термомост NEW)",
+   "price": 11094.31,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FWT.50.F0001",
+   "name": "Рама Верхнеподвесной системы",
+   "price": 7015.83,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FWT.50.F0002",
+   "name": "Рама Верхнеподвесной системы",
+   "price": 8084.17,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FWC.50.F0003",
+   "name": "Рама Верхнеподвесной системы",
+   "price": 4014.33,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FWT.50.V0001",
+   "name": "Створка Верхнеподвесной системы",
+   "price": 6793.84,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FWT.50.V0002",
+   "name": "Створка Верхнеподвесной системы",
+   "price": 6997.34,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FWC.50.V0003",
+   "name": "Створка Верхнеподвесной системы",
+   "price": 3810.84,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FWC.50.G0001",
+   "name": "Адаптер заполнения Верхнеподвесной системы",
+   "price": 924.96,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FWC.50.G0002",
+   "name": "Адаптер заполнения Верхнеподвесной системы",
+   "price": 924.96,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FWC.50.G0003",
+   "name": "Адаптер заполнения Верхнеподвесной системы",
+   "price": 1109.95,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FWC.50.G0008",
+   "name": "Адаптер заполнения Верхнеподвесной системы",
+   "price": 2081.16,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.48.AF001",
+   "name": "Адаптер дистанционный Верхнеподвесной системы",
+   "price": 647.47,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.AV001",
+   "name": "Адаптер заполнения Верхнеподвесной системы",
+   "price": 1142.33,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FWC.50.V0001",
+   "name": "Створка Верхнеподвесной системы",
+   "price": 4439.82,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FWC.50.F0001",
+   "name": "Рама Верхнеподвесной системы",
+   "price": 4532.31,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FWC.50.F0002",
+   "name": "Рама Верхнеподвесной системы",
+   "price": 4023.58,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FWT.50.G0001",
+   "name": "FWC.50.G0001. Адаптер заполнения Верхнеподвесной системы",
+   "price": 2682.39,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "PVI.CP.A0009",
+   "name": "Адаптер Рамы Верхнеподвесной системы",
+   "price": 4998.08,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CLX.03.W0100.L5",
+   "name": "Закладная угловая cтворки оконной V0001",
+   "price": 199.6,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.03.W0140.L9",
+   "name": "Закладная угловая рамы оконной F0001",
+   "price": 270.22,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.03.W0140.L18",
+   "name": "Закладная угловая рамы оконной F0001",
+   "price": 373.96,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.03.W0140.L25.8",
+   "name": "Закладная угловая cтворки оконной V0001",
+   "price": 463.87,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.03.W0200.L25.6",
+   "name": "Закладная угловая створки оконной V0004",
+   "price": 554.58,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.03.W0240.L5",
+   "name": "Закладная угловая створки оконной V0004/3/18",
+   "price": 265.21,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.03.W0280.L9",
+   "name": "Закладная угловая рамы оконной F0002",
+   "price": 361.04,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.03.W0280.L18",
+   "name": "Закладная угловая рамы оконной F0002",
+   "price": 519.27,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.03.W0280.L25.8",
+   "name": "Закладная угловая cтворки оконной V0003",
+   "price": 656.4,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.03.W0340.L25.6",
+   "name": "Закладная угловая створки оконной PVC V0006",
+   "price": 723.98,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.03.W0380.L5",
+   "name": "Закладная угловая рамы дверной F0004-F0005. Створки дверной V0007/8",
+   "price": 331.15,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.03.W0400.L5",
+   "name": "Закладная угловая cтворки оконной V0005/6/9/19",
+   "price": 346.52,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.03.W0440.L9",
+   "name": "Закладная угловая рамы оконной F0003",
+   "price": 457.26,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.03.W0440.L18",
+   "name": "Закладная угловая рамы оконной F0003",
+   "price": 673.22,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.03.W0440.L18.4",
+   "name": "Закладная угловая cтворки балконной V0009",
+   "price": 745.21,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.03.W0440.L21",
+   "name": "Закладная угловая рамы дверной F0004-F0005. Створки дверной V0007/8",
+   "price": 745.21,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.03.W0440.L25.8",
+   "name": "Закладная угловая cтворки оконной V0005",
+   "price": 860.39,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "WDT.67.J0002.L14",
+   "name": "Закладная Т-образн. импоста M0001. Рамы оконной F0001 (Заменить на Q14*14-K-Tech) Нет в наличии!!!",
+   "price": 360.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "WDT.67.J0002.L28",
+   "name": "Закладная Т-образн. импоста M0002. Рамы оконной F0002 (Заменить на Q14*27.9-K-Tech)",
+   "price": 410.15,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "WDT.67.J0002.L44",
+   "name": "Закладная Т-образн. импоста M0003/7/8. Рамы оконной F0003/7/8 (Заменить на Q14*44-K-Tech)",
+   "price": 467.46,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "WDT.67.J0003.L14",
+   "name": "Закладная Т-образн. импоста M0001. Рамы оконной F0001 (Заменить на (x2) CLS.00.W20.5-K-Tech)",
+   "price": 327.17,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "WDT.67.J0003.L28",
+   "name": "Закладная Т-образн.импоста M0002. Рамы оконной F0002 (Заменить на (x2) CLS.00.W20.5-K-Tech)",
+   "price": 354.35,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "WDT.67.J0003.L44",
+   "name": "Закладная Т-образн. импоста M0003/7/8. Рамы оконной F0003/7/8 (Заменить на (x2) CLS.00.W20.5-K-Tech)",
+   "price": 385.41,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "WDT.67.J0001.L100",
+   "name": "Опора трубы поворота",
+   "price": 591.31,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLS.00.W0086",
+   "name": "Выравнивающий уголок Створки FWT.50.V0001 (Верхнеподвестн.)",
+   "price": 97.32,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLS.00.W0120",
+   "name": "Выравнивающий уголок створки V0001/3/4/5/6/7/8/9 (Заменить на CLS.00.W12.4x13-K-Tech)",
+   "price": 97.32,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.02.W0100.L6",
+   "name": "Закладная угловая створки FWT.50.V0001 (Верхнеподвестн.)",
+   "price": 208.73,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.02.W0140.L38",
+   "name": "Закладная угловая створки FWT.50.V0001 (Верхнеподвестн.)",
+   "price": 870.33,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.02.W0140.L39",
+   "name": "Закладная угловая",
+   "price": 887.9,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.02.W0140.L40",
+   "name": "Reinforced corner bracket 38.0 mm Length: 5.0 mm",
+   "price": 905.47,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.02.W0140.L41",
+   "name": "Подкладка под стеклопакет",
+   "price": 923.04,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.H0007.L200",
+   "name": "Опорная пластина L=200 мм.",
+   "price": 1160.98,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.02.W0140.L46",
+   "name": "Закладная угловая рамы FWT.50.F0001 (Верхнеподвестн.)",
+   "price": 1010.88,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.02.W0140.L3.5",
+   "name": "Закладная угловая створки верхнеподвесной V0001",
+   "price": 264.22,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.02.W0100.L6.5",
+   "name": "Закладная угловая рамы верхнеподвесной F0001",
+   "price": 316.92,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.03.W0240.L25.8",
+   "name": "Закладная угловая створки оконной V0018",
+   "price": 582.69,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.03.W0400.L25.8",
+   "name": "Закладная угловая створки оконной V0019",
+   "price": 817.74,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.03.W0200.L18",
+   "name": "Закладная угловая рамы оконной F0010",
+   "price": 444.61,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.03.W0200.L9",
+   "name": "Закладная угловая рамы оконной F0010",
+   "price": 314.37,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.03.W0440.L21.2",
+   "name": "CLX.03.W0440.L21 Закладная угловая рамы дверной F0004-F0005. Створки дверной V0007/8",
+   "price": 750.01,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "WDT.67.J0002.L21",
+   "name": "Закладная Т-образн. импоста усил. с наруж. пилоном 32 мм. - 79x101 мм. M0010 (Заменить на Q14*21-K-Tech)",
+   "price": 194.04,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "WDT.67.J0003.L21",
+   "name": "Закладная Т-образн. импоста усил. с наруж. пилоном 32 мм. - 79x101 мм. M0010 (Заменить на (x2) CLS.00.W20.5-K-Tech)",
+   "price": 149.73,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "EXHW1680.L41",
+   "name": "BKO45 Закладная рамы оконной угловая",
+   "price": 860.39,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "EXHW1758.L32.4",
+   "name": "BKO45 Закладная угловая Дверная Рама/Створка",
+   "price": 1010.88,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "EPDM0001",
+   "name": "Упл. заполнения внеш. 2.0 mm (370 м/15 кг)",
+   "price": 136.25,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0002",
+   "name": "Упл. заполнения внеш. 4.0 mm (240 м/15 кг)",
+   "price": 210.26,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0003",
+   "name": "Упл. заполнения внут. 4.0 mm (290 м/15 кг)",
+   "price": 173.92,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0004",
+   "name": "Упл. заполнения внут. 6.0 mm (Замена на EPDM5504) (180 м/15 кг)",
+   "price": 280.23,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0005",
+   "name": "Упл. заполнения внут. 8.0 mm (160 м/15 кг)",
+   "price": 315.55,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0015",
+   "name": "Упл. заполнения внеш. 2.0 мм (Premium) (210 м/15 кг)",
+   "price": 240.2,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0018",
+   "name": "Упл. заполнения внеш. 4.0 мм (Premium) (180 м/15 кг)",
+   "price": 280.23,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0024",
+   "name": "Уплотнительный жгут Ø4.0 мм (штапик паз) (50 м)",
+   "price": 36.04,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0039",
+   "name": "Центральный уплотнитель BKT 77 (пористый) (20 м.)",
+   "price": 1182.24,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0041",
+   "name": "Центральный уплотнитель BKT 77 (120 м/15 кг)",
+   "price": 420.51,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0043",
+   "name": "Упл. притвора внут. 4.9 мм (510 м/15 кг)",
+   "price": 97.56,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0044",
+   "name": "Упл. пылезащитный внеш. 1.5 мм BKT 67 / 77 (300 м)",
+   "price": 42.05,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0047",
+   "name": "Уплотнитель притвора порога (50 м)",
+   "price": 180.22,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0049",
+   "name": "Уплотнитель прижимной планки 3,2 мм (230 м/15 кг)",
+   "price": 228.76,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0050",
+   "name": "Уплотнитель 3 мм (340 м/15 кг)",
+   "price": 155.27,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0051",
+   "name": "Уплотнитель отрывной 5 мм (210 м/15 кг)",
+   "price": 240.29,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0052",
+   "name": "Уплотнитель отрывной 7 мм (180 м/15 кг)",
+   "price": 280.34,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0053",
+   "name": "Уплотнитель отрывной 8 мм (160 м/15 кг)",
+   "price": 305.83,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0054",
+   "name": "Уплотнитель отрывной 10 мм (140 м/15 кг)",
+   "price": 360.44,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0055",
+   "name": "Уплотнитель отрывной 12 мм (120 м/15 кг)",
+   "price": 403.69,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0057",
+   "name": "Уплотнитель притвора 5.5 мм (пористый) (250 м)",
+   "price": 149.94,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0059",
+   "name": "Уплотнитель внутреннего остекления 3,8 мм. (300 м/15 кг)",
+   "price": 165.45,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0060",
+   "name": "Уплотнитель внутреннего остекления 5,8 мм. (280 м/15 кг)",
+   "price": 180.22,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0061",
+   "name": "Уплотнитель внутреннего остекления 7,8 мм. (250 м/15 кг)",
+   "price": 201.85,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0202",
+   "name": "Уплотнитель Кронштейна (80 м/15 кг)",
+   "price": 615.38,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM5403",
+   "name": "Декор Упл. паза штапика 16.4 мм (170 м/15 кг)",
+   "price": 296.83,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM1830",
+   "name": "Уплотнитель (490 м/15 кг)",
+   "price": 102.98,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0116",
+   "name": "Уплотнитель прижимной планки центральный 3,2 мм (320 м/15 кг)",
+   "price": 157.69,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0108",
+   "name": "Уплотнитель прижимной планки 3 мм, эркерный ±7,5° (220 м/15 кг)",
+   "price": 229.37,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0110",
+   "name": "Уплотнитель отрывной 10 мм, эркерный ±7,5° (120 м/15 кг)",
+   "price": 388.16,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0111",
+   "name": "Уплотнитель отрывной 12 мм, эркерный ±7,5° (120 м/15 кг)",
+   "price": 420.51,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0039R",
+   "name": "Центральный уплотнитель BKT 77 (EPDM) (48 м.)",
+   "price": 881.39,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0113",
+   "name": "Уплотнитель 3 мм, с лотком для конденсата",
+   "price": 0.0,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0114",
+   "name": "Уплотнитель 5 мм, с лотком для конденсата",
+   "price": 0.0,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0115",
+   "name": "Уплотнитель 7 мм, с лотком для конденсата",
+   "price": 0.0,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM1030",
+   "name": "Уплотнитель клиновидный 2 мм (460 м/15 кг)",
+   "price": 109.7,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM3031",
+   "name": "Уплотнитель клиновидный 3 мм (420 м/15 кг) УДАЛИТЬ!",
+   "price": 117.74,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0112",
+   "name": "Уплотнитель выравнивающий 2 мм",
+   "price": 305.83,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDC0039",
+   "name": "Угловой уплотнитель (Опционально)",
+   "price": 600.73,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "EPDM2803",
+   "name": "Уплотнитель Верхнеподвестн. (160 м/15 кг)",
+   "price": 315.38,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM2703",
+   "name": "Уплотнитель Верхнеподвестн. (150 м/15 кг)",
+   "price": 336.41,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM2603",
+   "name": "Уплотнитель Верхнеподвестн. (160 м/15 кг)",
+   "price": 315.38,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM2503",
+   "name": "Уплотнитель Верхнеподвестн. (170 м/15 кг)",
+   "price": 296.83,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM2038",
+   "name": "Уплотнитель Верхнеподвестн. (260 м/15 кг)",
+   "price": 194.08,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM0048",
+   "name": "Уплотнитель притвора торцевых заглушек порога (50 м/15 кг)",
+   "price": 0.0,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM7702",
+   "name": "Уплотнитель-подкладка под импост BKT77 (5 м)",
+   "price": 1009.23,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM5504",
+   "name": "Упл. заполнения внут. 6.0 mm (Заменить на EPDM0003) (210 м/15 кг)",
+   "price": 234.7,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "ТПУ-002ММ",
+   "name": "Уплотнитель стекла наружний СИАЛ (200 м.)",
+   "price": 252.31,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "ТПУ-004ММ",
+   "name": "Уплотнитель стекла внутренний СИАЛ (200 м.)",
+   "price": 185.03,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "КПУ-215",
+   "name": "Уплотнитель притвора двери СИАЛ (200 м.)",
+   "price": 148.02,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "EPDM ICF30",
+   "name": "Уплотнитель клиновидный 3 мм (390 м/15 кг)",
+   "price": 117.74,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "PETL001",
+   "name": "Вспененная термоподклака под стеклопакеты (2 м.)",
+   "price": 770.0,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "КПУ-06",
+   "name": "Уплотнитель притвора (260 м)",
+   "price": 320.88,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "PETL001 Tech",
+   "name": "Вспененная термоподклака под стеклопакеты (2 м.)",
+   "price": 1820.0,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "КПУ-243",
+   "name": "Уплотнитель притвора 5.5 мм (460 м./15 кг.)",
+   "price": 149.94,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "PVI.CP.AF012",
+   "name": "Термомост 12 мм (заполнение 16-20 мм)",
+   "price": 1066.91,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "PVI.CP.AF018",
+   "name": "FST.50.PVI.BN 18/5 Термомост L=3,0 (заполнение 22-26 мм)",
+   "price": 1066.91,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "PVI.CP.AF024",
+   "name": "FST.50.PVI.BN 24/5 Термомост L=3,0 (заполнение 28-32 мм)",
+   "price": 1066.91,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "PVI.CP.AF030",
+   "name": "Термомост 30 мм (заполнение 34-38 мм)",
+   "price": 1066.16,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "PVI.CP.AF036",
+   "name": "-K-Tech Термомост 36 мм (заполнение 40-44 мм)",
+   "price": 925.4,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "PVI.CP.AF042",
+   "name": "Термомост 42 мм (заполнение 46-50 мм)",
+   "price": 1030.4,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "PVI.CP.AF106",
+   "name": "ПВХ адаптер 6 мм",
+   "price": 480.59,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "PVI.CP.AF112",
+   "name": "ПВХ адаптер 12 мм",
+   "price": 1066.91,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "PVI.CP.AF118",
+   "name": "ПВХ адаптер 18 мм",
+   "price": 1066.91,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "PVI.CP.AF124",
+   "name": "ПВХ адаптер 24 мм",
+   "price": 1066.91,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CCEP0082",
+   "name": "дренажный носик (Опционально)",
+   "price": 687.24,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CCEP0109",
+   "name": "дренажный носик под силикон (Опционально)",
+   "price": 687.24,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CCEP0083",
+   "name": "заглушка стыка стоек (Опционально)",
+   "price": 656.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "КПП-17",
+   "name": "Заглушка штульпа BKO45",
+   "price": 144.18,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CCPV0107",
+   "name": "заглушка наклонной ригельной клипсы",
+   "price": 519.03,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CCPV0107_A",
+   "name": "заглушка наклонной ригельной клипсы",
+   "price": 519.03,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CCPV0107_B",
+   "name": "заглушка наклонной ригельной клипсы",
+   "price": 519.03,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CCEP0108",
+   "name": "заглушка Т-соединения стойка-ригель (Опционально)",
+   "price": 519.03,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "PVI.CP.GH005.L100",
+   "name": "подстекольник Polyamide",
+   "price": 234.29,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "PVI.CP.GH006.L100",
+   "name": "подстекольник Polyamide",
+   "price": 257.71,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "ССEP0012",
+   "name": "заглушка штульпа (WDT.77.A0001)",
+   "price": 562.28,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "ССEP0012_A",
+   "name": "CCEP0012_A заглушка штульпа (WDT.77.A0001)",
+   "price": 656.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "ССEP0012_B",
+   "name": "CCEP0012_B заглушка штульпа (WDT.77.A0001)",
+   "price": 656.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "ССEP0014",
+   "name": "заглушка штульпа (WDT.77.A0002)",
+   "price": 656.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CCEP0014_A",
+   "name": "заглушка штульпа (WDT.77.A0002)",
+   "price": 656.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CCEP0014_B",
+   "name": "заглушка штульпа (WDT.77.A0002)",
+   "price": 656.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "ССEP0064",
+   "name": "заглушка порога балконной двери (WDT.77.P0004)",
+   "price": 656.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CCPV0020",
+   "name": "ССPV0020 ответная планка заглушки порога",
+   "price": 124.95,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "ССPV0024",
+   "name": "заглушка дверного порога (WDT.77.P0002-P0003)",
+   "price": 86.51,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CCPV0024_A",
+   "name": "ССPV0024_A заглушка дверного порога (WDT.77.P0002-P0003)",
+   "price": 86.51,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CCPV0024_B",
+   "name": "ССPV0024_B заглушка дверного порога (WDT.77.P0002-P0003)",
+   "price": 86.51,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "ССPV0017",
+   "name": "заглушка штульпа двери (WDT.77.A0003-A0004)",
+   "price": 144.18,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CCPV0017_A",
+   "name": "заглушка штульпа двери (WDT.77.A0003-A0004)",
+   "price": 144.18,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CCPV0017_B",
+   "name": "ССPV0017_B заглушка штульпа двери (WDT.77.A0003-A0004)",
+   "price": 144.18,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "ССPV0015",
+   "name": "заглушка торца компланарной двери",
+   "price": 0.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "ССPV0015_A",
+   "name": "заглушка торца компланарной двери",
+   "price": 0.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "ССPV0015_B",
+   "name": "заглушка торца компланарной двери",
+   "price": 0.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CCEP0079",
+   "name": "ССEP0079 заглушка адаптера порога (WDT.67.A0010)",
+   "price": 656.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "EPFT0006",
+   "name": "Щетка 4,3х0,8х8,2 mm",
+   "price": 324.24,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "EPFT0005",
+   "name": "ОП Щеточный уплотнитель",
+   "price": 324.24,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CCEP0173",
+   "name": "Заглушка-Манжета торца ригеля (Опционально)",
+   "price": 531.05,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "FST.50.СП24",
+   "name": "ПВХ адаптер (Спейсер 24) 17х25 Труба L=3000 BN",
+   "price": 234.0,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.СП32",
+   "name": "ПВХ адаптер (Спейсер 32) 20х32 Труба L=3000 BN",
+   "price": 273.0,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.PVI.BN 18/5",
+   "name": "Термомост L=3,0 (заполнение 22-26 мм)",
+   "price": 234.0,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.PVI.BN 24/5",
+   "name": "Термомост L=3,0 (заполнение 28-32 мм)",
+   "price": 312.0,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "PVI.CP.AF010",
+   "name": "(адаптер верхнеподвестных створок)",
+   "price": 1066.91,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "КПП-17-1",
+   "name": "Заглушка штульпа BKO45",
+   "price": 144.18,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "5,5X13-A2 DIN 7981",
+   "name": "Саморезы с полукруглой головкой",
+   "price": 22.4,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "5,5X16-A2 DIN 7982",
+   "name": "Потай (Заменить 5,5X16-A2 DIN 7981)",
+   "price": 25.2,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "5,5X55-A2 DIN 7981",
+   "name": "Саморезы с полукруглой головкой (Заменить DIN 7976)",
+   "price": 91.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "5,5X45-A2 DIN 7981",
+   "name": "Саморезы с полукруглой головкой (Заменить DIN 7976)",
+   "price": 63.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "5,5X50-A2 DIN 7981",
+   "name": "Саморезы с полукруглой головкой (Заменить DIN 7976)",
+   "price": 84.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "M10X80 DIN933 A2",
+   "name": "Болт M10X80 DIN933 A2",
+   "price": 329.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "DIN9021 A2",
+   "name": "Шайба с увелич. диам. DIN9021 A2",
+   "price": 95.2,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "M10X90 DIN933 A2",
+   "name": "Болт M10X90 DIN933 A2",
+   "price": 426.58,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "5,5X16-A2 DIN 7981",
+   "name": "Саморезы с полукруглой головкой",
+   "price": 25.2,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "M5X8 DIN 914",
+   "name": "Гужон для закладной импоста",
+   "price": 29.4,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "A10 DIN 128",
+   "name": "Шайба гровер M10 DIN127 A2",
+   "price": 14.7,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "M8-A2 DIN 9081",
+   "name": "Шайба потай для винта M8 (Сборка / усиленная закладная JR005)",
+   "price": 189.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "M8X20-A2 DIN 7991",
+   "name": "Винт (Сборка / усиленная закладная JR005)",
+   "price": 70.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "3,9X16-A2 DIN 7981",
+   "name": "Саморезы с полукруглой головкой (Заменить на 3,9X13-A2 DIN)",
+   "price": 14.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "3,9X13-A2 DIN 7981",
+   "name": "Саморезы с полукруглой головкой",
+   "price": 12.6,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "3.9X16 DIN7981",
+   "name": "Саморезы с полукруглой головкой",
+   "price": 14.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "4.2X60 DIN7981",
+   "name": "Саморезы с полукруглой головкой",
+   "price": 53.09,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "A10.4 - A4 DIN 125A",
+   "name": "Шайба DIN125 A2",
+   "price": 40.35,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "5,5X65-A2 DIN 7981",
+   "name": "Саморезы с полукруглой головкой (Заменить DIN 7976)",
+   "price": 98.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "5,5X70-A2 DIN 7981",
+   "name": "Саморезы с полукруглой головкой (Заменить DIN 7976)",
+   "price": 105.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "5,5X75-A2 DIN 7981",
+   "name": "Саморезы с полукруглой головкой (Заменить DIN 7976)",
+   "price": 112.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "5X12 DIN 6325D",
+   "name": "DR1015.10 штифт/нагель А2 5х10",
+   "price": 63.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "5,5X38-A2 DIN 7981",
+   "name": "Саморезы с полукруглой головкой (Заменить DIN 7976)",
+   "price": 56.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "M10 DIN934 A2",
+   "name": "Гайка M10 DIN934 A2",
+   "price": 56.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "M10 DIN127 A2",
+   "name": "Шайба гровер M10 DIN127 A2",
+   "price": 14.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "DIN125 A2",
+   "name": "Шайба DIN125 A2",
+   "price": 14.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "M10X80-A2 DIN 931",
+   "name": "(заменить на M10X80 DIN933 A2)",
+   "price": 329.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CCEP0084",
+   "name": "манжета торца ригеля",
+   "price": 0.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "AKF 02282",
+   "name": "Крышка дренажная RAL9005",
+   "price": 72.09,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "FST.50.G0003.L100",
+   "name": "Подстекольник",
+   "price": 93.22,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "FST.50.G0004.L100",
+   "name": "Подстекольник",
+   "price": 105.43,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "FST.50.G0005.L100",
+   "name": "Подстекольник",
+   "price": 120.09,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "FST.50.G0006.L100",
+   "name": "Подстекольник",
+   "price": 190.1,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "FST.50.G0007.L100",
+   "name": "Подстекольник",
+   "price": 208.42,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "FST.50.G0008.L100",
+   "name": "Подстекольник",
+   "price": 233.25,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "OPC.40.G0001",
+   "name": "Прижимная крышка",
+   "price": 805.63,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "OPC.40.G0003",
+   "name": "Декоративная крышка NEW",
+   "price": 607.46,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "OPC.40.J0008",
+   "name": "Кронштейн универсальный NEW",
+   "price": 4404.54,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "OPC.40.S0002",
+   "name": "Стойка-Ригель 56,9 мм.",
+   "price": 3446.56,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "OPC.40.S0003",
+   "name": "Стойка-Ригель 43,8 мм.",
+   "price": 3614.58,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "OPC.40.M0003",
+   "name": "Импост 35,5 мм под саморез",
+   "price": 3834.3,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "PVI.CP.H0005",
+   "name": "Прижимная NEW",
+   "price": 1349.48,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "GJC.40.A0001",
+   "name": "Адаптер Крыло",
+   "price": 659.15,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "OPC.40.F0003",
+   "name": "Рама Дверная 31 мм.",
+   "price": 5630.82,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "OPC.40.A0001",
+   "name": "Адаптер остекления 31,8 мм.",
+   "price": 1413.09,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "OPC.40.A0002",
+   "name": "Адаптер Двойного остекления 15,6 мм",
+   "price": 1184.75,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.70.G0002",
+   "name": "Штапик скрытой створки",
+   "price": 435.13,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "OPC.40.V0001",
+   "name": "Створка дверная 53 мм.",
+   "price": 4308.2,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CLX.03.W0160",
+   "name": "Закладная угл. Рама",
+   "price": 11906.92,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CLS.00.W0052",
+   "name": "Стальной выравнивающий уголок",
+   "price": 97.32,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "OPC.40.J0008.L16.4",
+   "name": "Кронштейн универсальный NEW",
+   "price": 199.97,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "PVI.CP.H0005.L30",
+   "name": "Прижимная NEW",
+   "price": 47.23,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.03.W0160 L44,4",
+   "name": "Закладная угл. Рама",
+   "price": 1010.88,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLX.03.W0380 L44,4",
+   "name": "Закладная угл. Створка",
+   "price": 817.74,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "EXHW1711",
+   "name": "BKO45 Профиль рамы оконной 65 мм",
+   "price": 4868.26,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "EXHW1710",
+   "name": "BKO45 Профиль рамы дверной 68 мм",
+   "price": 4713.17,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "EXSD1656",
+   "name": "BKO45 Профиль штапика 23 мм (под стекло 6 мм)",
+   "price": 1206.3,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "EXHW1709",
+   "name": "BKO45 Профиль дверной створки Т 85 мм",
+   "price": 5299.08,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "EXHW1657",
+   "name": "BKO45 Профиль порога 14 мм",
+   "price": 2757.25,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "SSC.23.F0004",
+   "name": "Рама вентиляционной решетки для уст. в фасад",
+   "price": 1275.23,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "SSC.23.LS002",
+   "name": "Ламель вентиляционной решетки",
+   "price": 1718.97,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.JR004.L107,5",
+   "name": "Ригельный соединитель эркерный",
+   "price": 586.19,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "FST.50.JR004.L33",
+   "name": "Ригельный соединитель эркерный",
+   "price": 244.24,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "4513.04",
+   "name": "Крышка дренажная RAL9005",
+   "price": 72.09,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "EXHW1680",
+   "name": "BKO45 Закладная рамы оконной угловая",
+   "price": 13913.8,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "EXHW1758",
+   "name": "BKO45 Закладная угловая Дверная Рама/Створка",
+   "price": 24729.76,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "SSC.40.S0003",
+   "name": "Накладной пилон 35х65",
+   "price": 4936.68,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "SSC.40.CP001",
+   "name": "Крышка накладного пилона",
+   "price": 1163.21,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CLC85.H0008.L260",
+   "name": "Опора усилителя стойки (S0008/9/11) (Заменить на CLC85.H0008.L260 Steel)",
+   "price": 1742.75,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC85.H0008.L320",
+   "name": "Опора усилителя стойки (S0013/14/16/17) (Заменить на CLC85.H0008.L320 Steel)",
+   "price": 2106.34,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "FST.60.GFA02",
+   "name": "Опора подстекольника",
+   "price": 1180.52,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CLC85.H0008/225x66",
+   "name": "Паронитовая прокладка опоры 225x66",
+   "price": 253.5,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC85.H0008/260x66",
+   "name": "Паронитовая прокладка опоры 260x66",
+   "price": 278.85,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC85.H0008/320x66",
+   "name": "Паронитовая прокладка опоры 320x66",
+   "price": 306.74,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.H0015.L150",
+   "name": "Навесной кронштейн 150",
+   "price": 2972.13,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "WDT.70.A0011",
+   "name": "Адаптер соеденитель рам",
+   "price": 689.31,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "PVI.CP.AF024 CN",
+   "name": "Термомост 30 мм (заполнение 28-32 мм)",
+   "price": 0.0,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "PVI.CP.AF030 CN",
+   "name": "Термомост 30 мм (заполнение 34-38 мм)",
+   "price": 0.0,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "PVI.CP.AF036 CN",
+   "name": "Термомост 36 мм (заполнение 40-44 мм)",
+   "price": 0.0,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "PVI.CP.AF042 CN",
+   "name": "Термомост 42 мм (заполнение 46-50 мм)",
+   "price": 0.0,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "SSC.40.H0002 (L50)",
+   "name": "Кронштейн для Ламелей (15 гр.)",
+   "price": 4062.75,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "SSC.40.LS005",
+   "name": "Ламель усиленная 150 мм.",
+   "price": 7797.84,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "SSC.40.LS006",
+   "name": "SSC.40.LS005 Ламель 150 мм.",
+   "price": 6246.89,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "SSC.40.H0002",
+   "name": "Кронштейн для Ламелей (15 гр.)",
+   "price": 13189.2,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "SSC.40.J0002 (L54)",
+   "name": "Опорный кронштейн СП28-32 для крышки CP0002",
+   "price": 4258.79,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "SSC.40.J0004 (L110)",
+   "name": "Прижимная планка",
+   "price": 1141.37,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "SSC.40.J0004",
+   "name": "Прижимная планка",
+   "price": 1221.22,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "SSC.40.J0002",
+   "name": "SSC.40.J0002",
+   "price": 10421.1,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "EXSD1708",
+   "name": "BKO45 Штульп дверной",
+   "price": 2653.85,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CLS.00.W12.4x13-K-Tech",
+   "name": "Выр-щий уголок створки внутр. нерж BKT77",
+   "price": 97.32,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLS.00.W11.8-K-Tech",
+   "name": "Уголок наруж. стягивающий створки-рамы BKT77",
+   "price": 391.3,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLS.00.W20.5-K-Tech",
+   "name": "Соединитель Импоста стягивающий BKT77",
+   "price": 463.32,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "Q14*21-K-Tech",
+   "name": "Закладная Т-образн. Импоста внутр. BKT77 (M0010)",
+   "price": 479.05,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "Q14*27.9-K-Tech",
+   "name": "Закладная Т-образн. Импоста внутр. BKT77 (M0002)",
+   "price": 556.27,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "Q14*44-K-Tech",
+   "name": "Закладная Т-образн. Импоста внутр. BKT77 (M0003)",
+   "price": 805.09,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "K14*21-K-Tech",
+   "name": "Закладная Т-образн. Импоста наруж. BKT77 (M0010)",
+   "price": 353.21,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "K14*27.9-K-Tech",
+   "name": "Закладная Т-образн. Импоста наруж. BKT77 (M0002)",
+   "price": 416.13,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "K14*44-K-Tech",
+   "name": "Закладная Т-образн. Импоста наруж. BKT77 (M0003)",
+   "price": 490.49,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "5,5X38-A2 DIN 7976",
+   "name": "Саморезы с шестигранной головкой (Заменить на 5,5X45-A2 DIN 7976)",
+   "price": 56.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "5,5X45-A2 DIN 7976",
+   "name": "Саморезы с шестигранной головкой",
+   "price": 63.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "5,5X60-A2 DIN 7976",
+   "name": "Саморезы с шестигранной головкой",
+   "price": 98.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "BKSL.40.F01",
+   "name": "Рама вентиляционной решетки для уст. в фасад (Заменить на SSC.23.F0003)",
+   "price": 2403.98,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FSC.47.AL002",
+   "name": "Уголок алюминиевый 40х40",
+   "price": 1434.63,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CLC85.H0008.L230 Steel",
+   "name": "Опора усилителя стойки (S0005/6/7)",
+   "price": 2079.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC85.H0008.L260 Steel",
+   "name": "Опора усилителя стойки (S0008/9/11)",
+   "price": 2286.9,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC85.H0008.L320 Steel",
+   "name": "Опора усилителя стойки (S0013/14/16/17)",
+   "price": 2515.59,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.H100 Steel",
+   "name": "Кронштейн навесной стальной 100 мм",
+   "price": 2926.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.H150 Steel",
+   "name": "Кронштейн навесной стальной 150 мм",
+   "price": 3388.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.H200 Steel",
+   "name": "Кронштейн навесной стальной 200 мм",
+   "price": 4620.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.H250 Steel",
+   "name": "Кронштейн навесной стальной 250 мм",
+   "price": 5082.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC.85.H0014.L110",
+   "name": "Навесной кронштейн 110",
+   "price": 2972.13,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "SSC.23.F0003",
+   "name": "Рама вентиляционной решетки для уст. в фасад",
+   "price": 2403.98,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "EXHW4444",
+   "name": "BKO45 Профиль импоста 65 мм (открыть артикул)",
+   "price": 5299.08,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "SSC.23.F0005C",
+   "name": "Рама вентиляционной решетки для уст. в фасад",
+   "price": 1671.58,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "SSC.23.SL003C",
+   "name": "Ламель вентиляционной решетки",
+   "price": 1563.88,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "5,5X65-A2 DIN 7976",
+   "name": "Саморезы с шестигранной головкой",
+   "price": 98.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "5,5X70-A2 DIN 7976",
+   "name": "Саморезы с шестигранной головкой",
+   "price": 105.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "5,5X75-A2 DIN 7976",
+   "name": "Саморезы с шестигранной головкой",
+   "price": 112.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "5,5X50-A2 DIN 7976",
+   "name": "Саморезы с шестигранной головкой",
+   "price": 78.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "5,5X55-A2 DIN 7976",
+   "name": "Саморезы с шестигранной головкой",
+   "price": 87.1,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "FSC.47.HL006 L150",
+   "name": "Кронштейн СНВФ Несущий",
+   "price": 1966.85,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "FSC.47.HL006 L75",
+   "name": "Кронштейн СНВФ Опорный",
+   "price": 1159.88,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "6,3X40-A2 DIN 7976",
+   "name": "Саморезы с шестигранной головкой",
+   "price": 63.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "6,3X50-A2 DIN 7976",
+   "name": "Саморезы с шестигранной головкой",
+   "price": 77.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "КПС265",
+   "name": "BKO45 Профиль оконной створки (Запросить Заводской Артикул)",
+   "price": 4932.89,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.DF002",
+   "name": "Профиль вставки в стеклопакет 12х6,9 мм (Anod 15020)",
+   "price": 419.79,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.GH001",
+   "name": "Фиксатор стеклопакета односторонний (Anod 15020)",
+   "price": 1282.71,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FST.50.GH002",
+   "name": "Фиксатор стеклопакета двухсторонний (Anod 15020)",
+   "price": 1655.86,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "STBK1452",
+   "name": "Уголок алюминиевый 20х20 (Anod 15020)",
+   "price": 960.86,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CCEP0174",
+   "name": "CCEP0174",
+   "price": 0.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "M10 A4 DIN 934",
+   "name": "Заменить на M10 DIN934 A2",
+   "price": 0.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "M10X90-A4-80 DIN933",
+   "name": "Заменить на M10X90 DIN933 A2",
+   "price": 0.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "PETL6018",
+   "name": "Вспененная термовставка (заменить на PETL006 Tech)",
+   "price": 0.0,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FWT.50.F0007",
+   "name": "Рама Встраим Вент. Створка",
+   "price": 5932.39,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FWT.50.V0007",
+   "name": "Вент Створка",
+   "price": 18520.95,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "EPDC0121",
+   "name": "Угловой соеденитель для уплотнителя EPDM0121",
+   "price": 600.73,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "EPDM0121",
+   "name": "Центральный уплотнитель Вент. Створки",
+   "price": 640.19,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "CCPV0218_A",
+   "name": "Заглушка Вент. Створки",
+   "price": 1312.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CCPV0218_B",
+   "name": "Заглушка Вент. Створки",
+   "price": 1312.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "FWT.50.V0009",
+   "name": "Профиль Адаптера Вент Створки (Верх/Низ)",
+   "price": 6496.76,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "FWT.50.V0008",
+   "name": "Вент Створка (Комбинированный профиль для вклейки)",
+   "price": 18210.76,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "PETL006 Tech",
+   "name": "Вспененная термовставка (Заполнение 28-36 мм.)",
+   "price": 1081.32,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "PETL007 Tech",
+   "name": "Вспененная термовставка (Заполнение 38-42 мм.)",
+   "price": 0.0,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "PETL008 Tech",
+   "name": "Вспененная термовставка (Заполнение 44-48 мм.)",
+   "price": 0.0,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "PETL009 Tech",
+   "name": "Вспененная термовставка (Заполнение 50-54 мм.)",
+   "price": 0.0,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "PETL010 Tech",
+   "name": "Вспененная термовставка (Заполнение 56-60 мм.)",
+   "price": 0.0,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "6,3X19-A2 DIN 7976",
+   "name": "Саморезы с шестигранной головкой",
+   "price": 63.0,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "Структурный Герметик",
+   "name": "Структурный Герметик",
+   "price": 5622.84,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "CLC85.H0008/КР",
+   "name": "Паронитовая прокладка Кронштейна",
+   "price": 306.74,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "EPDM0120",
+   "name": "Уплотнитель притвора Вент. Створок",
+   "price": 240.29,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "WDT.67.G0003",
+   "name": "Штапик с уплотнителем 25 мм. (Стандарт)",
+   "price": 1421.71,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.67.G0002",
+   "name": "Штапик с уплотнителем 21 мм. (Стандарт)",
+   "price": 1163.21,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.67.G0001",
+   "name": "Штапик с уплотнителем 17 мм. (Стандарт)",
+   "price": 1094.28,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDT.67.G0004",
+   "name": "Штапик с уплотнителем 29 мм. (Стандарт)",
+   "price": 1365.7,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDC.47.G0004",
+   "name": "WDC.47.GR004. Штапик с уплотнителем 19 мм. (Заполнение 6 мм.)",
+   "price": 1033.97,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDC.47.F0003",
+   "name": "WDC.47.F0002. Рама оконная",
+   "price": 2735.71,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDC.47.V0004",
+   "name": "Створка оконная усиленная",
+   "price": 5169.84,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "WDC.47.A0004",
+   "name": "Штульп оконный",
+   "price": 3644.74,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "EPDM2403",
+   "name": "Уплотнитель заполнения (внеш.)",
+   "price": 228.76,
+   "unit": "m",
+   "kind": "gasket"
+  },
+  {
+   "code": "PVI.CP.AF030-K-Tech",
+   "name": "Термомост 30 мм. (заполнение 34-38 мм)",
+   "price": 842.8,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "PVI.CP.AF018-K-Tech",
+   "name": "Термомост 18 мм. (заполнение 22-26 мм)",
+   "price": 578.2,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "PVI.CP.AF024-K-Tech",
+   "name": "Термомост 24 мм. (заполнение 28-32 мм)",
+   "price": 683.2,
+   "unit": "m",
+   "kind": "profile"
+  },
+  {
+   "code": "CLX.03.W0140.L13.7",
+   "name": "Закладная угловая Адаптера A0003",
+   "price": 463.87,
+   "unit": "pc",
+   "kind": "accessory"
+  },
+  {
+   "code": "SSC.40.S0004",
+   "name": "Накладной пилон 35х48",
+   "price": 3954.93,
+   "unit": "m",
+   "kind": "profile"
+  }
+ ]
 }
