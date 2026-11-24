@@ -36,7 +36,7 @@ struct HistoryView: View {
             .clipShape(RoundedRectangle(cornerRadius: 10))
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("\(item.spec.type.title) \(item.spec.widthMm)×\(item.spec.heightMm)").font(.body)
+                Text("\(item.spec.product.title) \(item.spec.widthMm)×\(item.spec.heightMm)").font(.body)
                 Text(item.date.formatted(date: .abbreviated, time: .shortened)).font(.caption).foregroundStyle(.secondary)
             }
             Spacer()

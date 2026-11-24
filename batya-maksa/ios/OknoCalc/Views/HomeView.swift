@@ -81,7 +81,7 @@ struct HomeView: View {
                         Image(systemName: "clock.arrow.circlepath").foregroundStyle(Theme.accent)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Последний расчёт").font(.caption).foregroundStyle(.secondary)
-                            Text("\(last.spec.type.title) \(last.spec.widthMm)×\(last.spec.heightMm)").font(.callout)
+                            Text("\(last.spec.product.title) \(last.spec.widthMm)×\(last.spec.heightMm)").font(.callout)
                         }
                         Spacer()
                         Text(Money.format(last.total, currency: last.currency)).font(.callout.bold())

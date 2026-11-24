@@ -170,7 +170,11 @@ def main():
                 print("   %-9s %-38s %-22s %8.2f × %9.2f = %11.2f" % l)
             print("   geometry:", {k: round(v, 3) for k, v in g.items() if v})
     if not check:
-        CASES_PATH.write_text(json.dumps(cases, ensure_ascii=False, indent=1), encoding="utf-8")
+        text = json.dumps(cases, ensure_ascii=False, indent=1)
+        for p in [CASES_PATH, ROOT / "ios" / "OknoCalcTests" / "test-cases.json",
+                  ROOT / "android" / "app" / "src" / "test" / "resources" / "test-cases.json"]:
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(text, encoding="utf-8")
     sys.exit(0 if ok else 1)
 
 

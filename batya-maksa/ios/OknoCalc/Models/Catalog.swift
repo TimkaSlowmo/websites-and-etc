@@ -1,96 +1,131 @@
 import Foundation
 
-struct ProfileItem: Codable, Identifiable, Hashable {
-    var id: String
-    var name: String
-    var keywords: [String]? = nil
-    var pricePerM2: Double
-    var isDefault: Bool? = nil
-}
-
-struct GlassItem: Codable, Identifiable, Hashable {
-    var id: String
-    var name: String
-    var keywords: [String]? = nil
-    var pricePerM2: Double
-    var isDefault: Bool? = nil
-}
-
-struct HardwareItem: Codable, Identifiable, Hashable {
-    var opening: OpeningKind
+/// Позиция прайса компании (артикул).
+struct Article: Codable, Identifiable, Hashable {
+    var code: String
     var name: String
     var price: Double
-    var id: String { opening.rawValue }
+    var unit: String   // "m" | "pc"
+    var kind: String   // profile | gasket | accessory | other
+    var id: String { code }
+    var unitTitle: String { unit == "m" ? "м" : "шт" }
 }
 
-struct ColorItem: Codable, Identifiable, Hashable {
+struct FillCode: Codable, Hashable {
+    var min: Int
+    var max: Int
+    var code: String
+}
+
+/// Правило расчёта: какой артикул и от какой величины считается.
+struct Rule: Codable, Hashable {
+    var role: String
+    var code: String?
+    var base: String
+    var qty: Double
+    var profile: Bool
+    var doorCode: String?
+    var byFill: [FillCode]?
+}
+
+struct SystemDef: Codable, Identifiable, Hashable {
     var id: String
     var name: String
-    var keywords: [String]? = nil
+    var description: String
+    var keywords: [String]
+    var products: [String]
+    var fillMin: Int
+    var fillMax: Int
+    var fillDefault: Int
+    var deductionFixedMm: Double
+    var deductionSashMm: Double
+    var deductionDoorMm: Double
+    var rules: [Rule]
+}
+
+struct GlassItem: Codable, Hashable, Identifiable {
+    var fillMm: Int
+    var name: String
+    var pricePerM2: Double
+    var id: Int { fillMm }
+}
+
+struct HardwareItem: Codable, Hashable, Identifiable {
+    var opening: String   // tilt_turn | turn | tilt | top_hung | slide | door
+    var name: String
+    var price: Double
+    var id: String { opening }
+}
+
+struct ColorGroup: Codable, Hashable, Identifiable {
+    var id: String
+    var name: String
     var surchargePercent: Double
-    var isDefault: Bool? = nil
 }
 
-enum ExtraUnit: String, Codable, Hashable {
-    case pc
-    case widthM = "width_m"
-    case heightM = "height_m"
-    case perimeterM = "perimeter_m"
-    case areaM2 = "area_m2"
-
-    var title: String {
-        switch self {
-        case .pc: return "шт"
-        case .widthM: return "за м ширины"
-        case .heightM: return "за м высоты"
-        case .perimeterM: return "за м периметра"
-        case .areaM2: return "за м²"
-        }
-    }
-}
-
-struct ExtraItem: Codable, Identifiable, Hashable {
+struct ColorItem: Codable, Hashable, Identifiable {
     var id: String
+    var code: String
     var name: String
-    var keywords: [String]? = nil
-    var price: Double
-    var unit: ExtraUnit
+    var hex: String
+    var group: String
+    var keywords: [String]
+    var title: String { "\(code) · \(name)" }
 }
 
-struct Installation: Codable, Hashable {
-    var pricePerM2: Double
-    var minPrice: Double
-}
-
-/// Каталог и цены. Загружается из catalog.json (встроенный пример или импорт пользователя).
+/// Каталог и цены компании (catalog.json, собирается tools/build_catalog.py из прайса).
 struct Catalog: Codable, Equatable {
-    var name: String = "Каталог"
-    var currency: String = "KZT"
-    var vatPercent: Double = 0
-    var markupPercent: Double = 0
-    var minAreaM2: Double = 0.5
-    var glassAreaRatio: Double = 0.85
-    var profiles: [ProfileItem]
+    var version: Int
+    var name: String
+    var currency: String
+    var vatPercent: Double
+    var markupPercent: Double
+    var wastePercent: Double
+    var laborPerM2: Double
+    var installPerM2: Double
+    var installMin: Double
+    var twoColorPercent: Double
+    var colorGroups: [ColorGroup]
     var glass: [GlassItem]
     var hardware: [HardwareItem]
     var colors: [ColorItem]
-    var extras: [ExtraItem]
-    var installation: Installation
+    var systems: [SystemDef]
+    var articles: [Article]
 
-    init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        name = try c.decodeIfPresent(String.self, forKey: .name) ?? "Каталог"
-        currency = try c.decodeIfPresent(String.self, forKey: .currency) ?? "KZT"
-        vatPercent = try c.decodeIfPresent(Double.self, forKey: .vatPercent) ?? 0
-        markupPercent = try c.decodeIfPresent(Double.self, forKey: .markupPercent) ?? 0
-        minAreaM2 = try c.decodeIfPresent(Double.self, forKey: .minAreaM2) ?? 0.5
-        glassAreaRatio = try c.decodeIfPresent(Double.self, forKey: .glassAreaRatio) ?? 0.85
-        profiles = try c.decode([ProfileItem].self, forKey: .profiles)
-        glass = try c.decode([GlassItem].self, forKey: .glass)
-        hardware = try c.decodeIfPresent([HardwareItem].self, forKey: .hardware) ?? []
-        colors = try c.decodeIfPresent([ColorItem].self, forKey: .colors) ?? []
-        extras = try c.decodeIfPresent([ExtraItem].self, forKey: .extras) ?? []
-        installation = try c.decodeIfPresent(Installation.self, forKey: .installation)
-            ?? Installation(pricePerM2: 0, minPrice: 0)
+    private var _index: [String: Article]? = nil
+
+    enum CodingKeys: String, CodingKey {
+        case version, name, currency, vatPercent, markupPercent, wastePercent, laborPerM2, installPerM2, installMin
+        case twoColorPercent, colorGroups, glass, hardware, colors, systems, articles
+    }
+
+    static func == (a: Catalog, b: Catalog) -> Bool {
+        a.version == b.version && a.name == b.name && a.currency == b.currency && a.vatPercent == b.vatPercent
+            && a.markupPercent == b.markupPercent && a.wastePercent == b.wastePercent && a.laborPerM2 == b.laborPerM2
+            && a.installPerM2 == b.installPerM2 && a.installMin == b.installMin && a.twoColorPercent == b.twoColorPercent
+            && a.colorGroups == b.colorGroups && a.glass == b.glass && a.hardware == b.hardware
+            && a.colors == b.colors && a.systems == b.systems && a.articles == b.articles
+    }
+
+    mutating func buildIndex() { _index = Dictionary(articles.map { ($0.code, $0) }, uniquingKeysWith: { a, _ in a }) }
+
+    func article(_ code: String) -> Article? { _index?[code] ?? articles.first { $0.code == code } }
+    func system(_ id: String) -> SystemDef? { systems.first { $0.id == id } }
+    func color(_ id: String) -> ColorItem? { colors.first { $0.id == id } }
+    func group(_ id: String) -> ColorGroup? { colorGroups.first { $0.id == id } }
+
+    /// Стеклопакет под заполнение: ближайший не тоньше, иначе самый толстый.
+    func glassItem(for fill: Int) -> GlassItem? {
+        let sorted = glass.sorted { $0.fillMm < $1.fillMm }
+        return sorted.first { $0.fillMm >= fill } ?? sorted.last
+    }
+
+    static func decode(_ data: Data) throws -> Catalog {
+        var c = try JSONDecoder.snake.decode(Catalog.self, from: data)
+        guard c.version >= 2, !c.systems.isEmpty, !c.articles.isEmpty else {
+            throw NSError(domain: "Catalog", code: 1, userInfo: [NSLocalizedDescriptionKey: "Каталог старого формата"])
+        }
+        c.buildIndex()
+        return c
     }
 }

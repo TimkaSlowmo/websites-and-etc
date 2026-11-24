@@ -18,11 +18,22 @@ jobs:
       - uses: actions/checkout@v4
       - run: brew install xcodegen && xcodegen
       - name: Unit tests
-        continue-on-error: true
         run: |
           SIM=$(xcrun simctl list devices available | grep -m1 -oE 'iPhone [0-9A-Za-z ]+ \(' | sed 's/ ($//')
           echo "Simulator: $SIM"
           xcodebuild test -project OknoCalc.xcodeproj -scheme OknoCalc -destination "platform=iOS Simulator,name=$SIM" CODE_SIGNING_ALLOWED=NO | tail -40
+      - name: Simulator screenshots
+        continue-on-error: true
+        run: |
+          SIM=$(xcrun simctl list devices available | grep -m1 -oE 'iPhone [0-9A-Za-z ]+ \(' | sed 's/ ($//')
+          xcodebuild -project OknoCalc.xcodeproj -scheme OknoCalc -configuration Debug -sdk iphonesimulator \
+            -destination "platform=iOS Simulator,name=$SIM" -derivedDataPath sim CODE_SIGNING_ALLOWED=NO build | tail -5
+          bash ci-screens.sh "$SIM"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-screens
+          path: batya-maksa/ios/screens/
       - name: Build unsigned .ipa
         run: |
           xcodebuild -project OknoCalc.xcodeproj -scheme OknoCalc -configuration Release \

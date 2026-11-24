@@ -1,0 +1,297 @@
+[
+ {
+  "name": "Фото 1: окно 1200×2700, левая колонка 800 разделена 1700/1000, правая 400 глухая",
+  "spec": {
+   "width_mm": 1200,
+   "height_mm": 2700,
+   "product": "window",
+   "quantity": 1,
+   "layout": {
+    "split": "columns",
+    "sections": [
+     {
+      "size_mm": 800,
+      "cells": [
+       {
+        "size_mm": 1700,
+        "opening": "tilt_turn",
+        "hinge": "left",
+        "inward": true,
+        "door": false
+       },
+       {
+        "size_mm": 1000,
+        "opening": "fixed",
+        "hinge": "none",
+        "inward": true,
+        "door": false
+       }
+      ]
+     },
+     {
+      "size_mm": 400,
+      "cells": [
+       {
+        "size_mm": 2700,
+        "opening": "fixed",
+        "hinge": "none",
+        "inward": true,
+        "door": false
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "selection": {
+   "system_id": "bkt77",
+   "fill_mm": 32,
+   "color_id": "ral7024",
+   "color_inside_id": "",
+   "installation": false
+  },
+  "expected": {
+   "subtotal": 292117.94,
+   "unit_total": 440500,
+   "total": 440500,
+   "lines": 22,
+   "profiles": 157969.85
+  }
+ },
+ {
+  "name": "Фото 3: дверь 1200×2700, левая 400 (1350/1350 глухие), правая 800 — дверная створка",
+  "spec": {
+   "width_mm": 1200,
+   "height_mm": 2700,
+   "product": "door",
+   "quantity": 1,
+   "layout": {
+    "split": "columns",
+    "sections": [
+     {
+      "size_mm": 400,
+      "cells": [
+       {
+        "size_mm": 1350,
+        "opening": "fixed",
+        "hinge": "none",
+        "inward": true,
+        "door": false
+       },
+       {
+        "size_mm": 1350,
+        "opening": "fixed",
+        "hinge": "none",
+        "inward": true,
+        "door": false
+       }
+      ]
+     },
+     {
+      "size_mm": 800,
+      "cells": [
+       {
+        "size_mm": 2700,
+        "opening": "turn",
+        "hinge": "right",
+        "inward": false,
+        "door": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "selection": {
+   "system_id": "bkt77",
+   "fill_mm": 32,
+   "color_id": "ral7016",
+   "color_inside_id": "ral9016",
+   "installation": true
+  },
+  "expected": {
+   "subtotal": 417136.56,
+   "unit_total": 629000,
+   "total": 629000,
+   "lines": 23,
+   "profiles": 191936.11
+  }
+ },
+ {
+  "name": "Фото 4: дверь 1000×2000, фрамуга 700 откидная + дверь 1300",
+  "spec": {
+   "width_mm": 1000,
+   "height_mm": 2000,
+   "product": "door",
+   "quantity": 2,
+   "layout": {
+    "split": "rows",
+    "sections": [
+     {
+      "size_mm": 700,
+      "cells": [
+       {
+        "size_mm": 1000,
+        "opening": "tilt",
+        "hinge": "bottom",
+        "inward": true,
+        "door": false
+       }
+      ]
+     },
+     {
+      "size_mm": 1300,
+      "cells": [
+       {
+        "size_mm": 1000,
+        "opening": "turn",
+        "hinge": "left",
+        "inward": true,
+        "door": true
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "selection": {
+   "system_id": "bkt77",
+   "fill_mm": 40,
+   "color_id": "decor2178001",
+   "color_inside_id": "",
+   "installation": false
+  },
+  "expected": {
+   "subtotal": 340748.84,
+   "unit_total": 513800,
+   "total": 1027600,
+   "lines": 30,
+   "profiles": 150459.51
+  }
+ },
+ {
+  "name": "Фасад BKF 50 3000×3000: верх 1000 (глухое + верхнеподвесное), низ 2000 (3 глухих)",
+  "spec": {
+   "width_mm": 3000,
+   "height_mm": 3000,
+   "product": "facade",
+   "quantity": 1,
+   "layout": {
+    "split": "rows",
+    "sections": [
+     {
+      "size_mm": 1000,
+      "cells": [
+       {
+        "size_mm": 1500,
+        "opening": "fixed",
+        "hinge": "none",
+        "inward": true,
+        "door": false
+       },
+       {
+        "size_mm": 1500,
+        "opening": "top_hung",
+        "hinge": "top",
+        "inward": false,
+        "door": false
+       }
+      ]
+     },
+     {
+      "size_mm": 2000,
+      "cells": [
+       {
+        "size_mm": 1000,
+        "opening": "fixed",
+        "hinge": "none",
+        "inward": true,
+        "door": false
+       },
+       {
+        "size_mm": 1000,
+        "opening": "fixed",
+        "hinge": "none",
+        "inward": true,
+        "door": false
+       },
+       {
+        "size_mm": 1000,
+        "opening": "fixed",
+        "hinge": "none",
+        "inward": true,
+        "door": false
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "selection": {
+   "system_id": "bkf50",
+   "fill_mm": 32,
+   "color_id": "anodc0",
+   "color_inside_id": "",
+   "installation": false
+  },
+  "expected": {
+   "subtotal": 637549.24,
+   "unit_total": 961400,
+   "total": 961400,
+   "lines": 19,
+   "profiles": 287887.71
+  }
+ },
+ {
+  "name": "BKO 45 холодное окно 1500×1500, 2 шт",
+  "spec": {
+   "width_mm": 1500,
+   "height_mm": 1500,
+   "product": "window",
+   "quantity": 2,
+   "layout": {
+    "split": "columns",
+    "sections": [
+     {
+      "size_mm": 750,
+      "cells": [
+       {
+        "size_mm": 1500,
+        "opening": "turn",
+        "hinge": "left",
+        "inward": true,
+        "door": false
+       }
+      ]
+     },
+     {
+      "size_mm": 750,
+      "cells": [
+       {
+        "size_mm": 1500,
+        "opening": "fixed",
+        "hinge": "none",
+        "inward": true,
+        "door": false
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "selection": {
+   "system_id": "bko45",
+   "fill_mm": 6,
+   "color_id": "ral9016",
+   "color_inside_id": "",
+   "installation": true
+  },
+  "expected": {
+   "subtotal": 172036.94,
+   "unit_total": 259400,
+   "total": 518800,
+   "lines": 12,
+   "profiles": 76119.55
+  }
+ }
+]
