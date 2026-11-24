@@ -116,9 +116,9 @@ fun ResultView(vm: AppViewModel) {
         Appear(0) {
             SectionCard {
                 TabRow(selectedTabIndex = tab, containerColor = Color.Transparent) {
-                    Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Схема") })
-                    Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Чертёж") })
-                    Tab(selected = tab == 2, onClick = { tab = 2 }, text = { Text("ИИ-фото") })
+                    Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Схема", maxLines = 1, softWrap = false, fontSize = 14.sp) })
+                    Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Чертёж", maxLines = 1, softWrap = false, fontSize = 14.sp) })
+                    Tab(selected = tab == 2, onClick = { tab = 2 }, text = { Text("ИИ-фото", maxLines = 1, softWrap = false, fontSize = 14.sp) })
                 }
                 Spacer(Modifier.height(10.dp))
                 Crossfade(targetState = tab, label = "img") { t ->
@@ -417,20 +417,16 @@ private fun CellEditorSheet(vm: AppViewModel, section: Int, index: Int, onDone: 
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("${vm.spec.layout.split.sectionName} ${section + 1}, ячейка ${index + 1}", fontSize = 20.sp, fontWeight = FontWeight.Bold)
             Text("Открывание", color = Color.Gray, fontSize = 13.sp)
-            Opening.entries.chunked(2).forEach { row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    row.forEach { o ->
-                        FilterChip(selected = cell.opening == o, onClick = { vm.updateCell(section, index) { it.copy(opening = o) } },
-                            label = { Text(o.title, fontSize = 13.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) }, modifier = Modifier.weight(1f))
-                    }
-                }
+            Opening.entries.forEach { o ->
+                FilterChip(selected = cell.opening == o, onClick = { vm.updateCell(section, index) { it.copy(opening = o) } },
+                    label = { Text(o.title, fontSize = 15.sp, maxLines = 1) }, modifier = Modifier.fillMaxWidth().height(44.dp))
             }
             if (cell.opening.hinges.size > 1) {
                 Text("Петли", color = Color.Gray, fontSize = 13.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     cell.opening.hinges.forEach { h ->
                         FilterChip(selected = cell.hinge == h, onClick = { vm.updateCell(section, index) { it.copy(hinge = h) } },
-                            label = { Text(h.title, fontSize = 13.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) }, modifier = Modifier.weight(1f))
+                            label = { Text(h.title, fontSize = 14.sp, maxLines = 1, softWrap = false) }, modifier = Modifier.weight(1f))
                     }
                 }
             }
