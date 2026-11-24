@@ -118,7 +118,7 @@ fun ResultView(vm: AppViewModel) {
                 TabRow(selectedTabIndex = tab, containerColor = Color.Transparent) {
                     Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Схема", maxLines = 1, softWrap = false, fontSize = 14.sp) })
                     Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Чертёж", maxLines = 1, softWrap = false, fontSize = 14.sp) })
-                    Tab(selected = tab == 2, onClick = { tab = 2 }, text = { Text("ИИ-фото", maxLines = 1, softWrap = false, fontSize = 14.sp) })
+                    Tab(selected = tab == 2, onClick = { tab = 2 }, text = { Text("Фото", maxLines = 1, softWrap = false, fontSize = 14.sp) })
                 }
                 Spacer(Modifier.height(10.dp))
                 Crossfade(targetState = tab, label = "img") { t ->
