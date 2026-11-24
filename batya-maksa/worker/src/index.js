@@ -3,10 +3,11 @@
 // POST /render   {spec}                -> {image: base64 jpeg}
 // Без токена: защита — лимит запросов с IP и ограничение размера изображения.
 
+// Первые две работают параллельно: Gemma 4 лучше читает надписи и символы, Mistral — сетку и размеры.
 export const VISION_MODELS = [
   "@cf/google/gemma-4-26b-a4b-it",
-  "@cf/meta/llama-4-scout-17b-16e-instruct",
   "@cf/mistralai/mistral-small-3.1-24b-instruct",
+  "@cf/meta/llama-4-scout-17b-16e-instruct",
   "@cf/google/gemma-3-12b-it",
 ];
 const LEGACY_VISION_MODEL = "@cf/meta/llama-3.2-11b-vision-instruct";
@@ -492,13 +493,62 @@ export function selfScore(s) {
   return score;
 }
 
+/** Прямоугольники ячеек в мм (x, y от левого верхнего угла). */
+export function cellRects(spec) {
+  const lay = spec.layout;
+  const out = [];
+  let a = 0;
+  for (const sec of lay.sections) {
+    let b = 0;
+    for (const c of sec.cells) {
+      out.push(lay.split === "columns" ? { x: a, y: b, w: sec.size_mm, h: c.size_mm, c } : { x: b, y: a, w: c.size_mm, h: sec.size_mm, c });
+      b += c.size_mm;
+    }
+    a += sec.size_mm;
+  }
+  return out;
+}
+
+/** Переносит открывание из другой сетки по перекрытию (ячейка пустая — берём створку, которую увидела другая модель). */
+export function mergeOpenings(target, source) {
+  const kx = target.width_mm / source.width_mm;
+  const ky = target.height_mm / source.height_mm;
+  const src = cellRects(source).map((r) => ({ ...r, x: r.x * kx, y: r.y * ky, w: r.w * kx, h: r.h * ky }));
+  for (const t of cellRects(target)) {
+    if (t.c.opening !== "fixed") continue;
+    let best = null;
+    let bestArea = 0;
+    for (const r of src) {
+      if (r.c.opening === "fixed") continue;
+      const ix = Math.max(0, Math.min(t.x + t.w, r.x + r.w) - Math.max(t.x, r.x));
+      const iy = Math.max(0, Math.min(t.y + t.h, r.y + r.h) - Math.max(t.y, r.y));
+      const area = ix * iy;
+      if (area > bestArea) { bestArea = area; best = r; }
+    }
+    if (best && bestArea >= 0.4 * Math.min(t.w * t.h, best.w * best.h)) {
+      t.c.opening = best.c.opening;
+      t.c.hinge = best.c.hinge;
+      t.c.door = best.c.door;
+    }
+  }
+  return target;
+}
+
+const cellCount = (s) => s.layout.sections.reduce((n, x) => n + x.cells.length, 0);
 const close = (a, b) => Math.abs(a - b) / Math.max(a, b) < 0.03;
 const layoutKey = (l) => l.split + ":" + l.sections.map((s) => s.cells.length).join(",");
 
 /** Сверка ответов моделей: согласие повышает уверенность, расхождение даёт варианты на выбор, доп. информация объединяется. */
 export function reconcile(specs) {
-  const ranked = [...specs].sort((a, b) => selfScore(b) - selfScore(a) || b.confidence - a.confidence);
-  const best = { ...ranked[0] };
+  const order = (s) => (VISION_MODELS.indexOf(s.model) + 1 || 99);
+  let ranked = [...specs].sort((a, b) => selfScore(b) - selfScore(a) || order(a) - order(b));
+  // Обе сетки сходятся, но разные: берём более простую (меньше ячеек — меньше лишних импостов).
+  if (ranked.length > 1 && ranked[0]._layout_ok && ranked[1]._layout_ok && layoutKey(ranked[0].layout) !== layoutKey(ranked[1].layout)
+      && close(ranked[0].width_mm, ranked[1].width_mm) && close(ranked[0].height_mm, ranked[1].height_mm)
+      && cellCount(ranked[1]) < cellCount(ranked[0])) {
+    ranked = [ranked[1], ranked[0], ...ranked.slice(2)];
+  }
+  const best = JSON.parse(JSON.stringify(ranked[0]));
   delete best.numbers;
   delete best._layout_ok;
   if (ranked.length < 2) {
@@ -512,6 +562,10 @@ export function reconcile(specs) {
   if ((other.notes || "").length > (best.notes || "").length) best.notes = other.notes;
   for (const f of ["system", "glass", "color", "color_inside"]) if (!best[f] && other[f]) best[f] = other[f];
   if (best.fill_mm == null && other.fill_mm != null) best.fill_mm = other.fill_mm;
+  if (best.product === "window" && other.product !== "window") best.product = other.product;
+  mergeOpenings(best, other);
+  best.sashes = best.layout.sections.flatMap((s) =>
+    s.cells.map((c) => ({ width_mm: best.layout.split === "columns" ? s.size_mm : c.size_mm, opening: c.opening === "top_hung" ? "tilt" : c.opening })));
 
   const wOk = close(best.width_mm, other.width_mm);
   const hOk = close(best.height_mm, other.height_mm);

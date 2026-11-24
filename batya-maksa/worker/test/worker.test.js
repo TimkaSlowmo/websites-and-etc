@@ -115,3 +115,25 @@ test("quantity only when written explicitly", () => {
   assert.equal(explicitQuantity({ quantity: 3, notes: "окно 3 шт" }), 3);
   assert.equal(explicitQuantity({ quantity: 4, info: [{ label: "Количество", value: "4" }] }), 4);
 });
+
+import { mergeOpenings, cellRects } from "../src/index.js";
+
+test("photo 3: simpler grid wins, openings transferred by overlap", () => {
+  const gemma = normalizeSpec({ numbers: ["1200", "2700", "1350", "400", "800"], width_mm: 1200, height_mm: 2700, layout: { split: "rows", sections: [
+    { size_mm: 1350, cells: [{ size_mm: 400 }, { size_mm: 800, opening: "tilt" }] },
+    { size_mm: 1350, cells: [{ size_mm: 400 }, { size_mm: 800, opening: "top_hung" }] }] } });
+  gemma.model = "@cf/google/gemma-4-26b-a4b-it";
+  const mistral = normalizeSpec({ numbers: ["1200", "2700", "1350", "400", "800"], width_mm: 1200, height_mm: 2700, layout: { split: "columns", sections: [
+    { size_mm: 400, cells: [{ size_mm: 1350 }, { size_mm: 1350 }] }, { size_mm: 800, cells: [{ size_mm: 2700 }] }] } });
+  mistral.model = "@cf/mistralai/mistral-small-3.1-24b-instruct";
+  const r = reconcile([gemma, mistral]);
+  assert.equal(r.layout.split, "columns");
+  assert.deepEqual(r.layout.sections.map((x) => x.size_mm), [400, 800]);
+  assert.notEqual(r.layout.sections[1].cells[0].opening, "fixed");
+  assert.equal(r.layout.sections[0].cells[0].opening, "fixed");
+});
+
+test("cell rectangles", () => {
+  const s = normalizeSpec({ width_mm: 1200, height_mm: 2700, layout: { split: "columns", sections: [{ size_mm: 800, cells: [{ size_mm: 1700 }, { size_mm: 1000 }] }, { size_mm: 400, cells: [{}] }] } });
+  assert.deepEqual(cellRects(s).map((r) => [r.x, r.y, r.w, r.h]), [[0, 0, 800, 1700], [0, 1700, 800, 1000], [800, 0, 400, 2700]]);
+});
