@@ -55,7 +55,7 @@ jobs:
           export ANDROID_KEYSTORE_PASSWORD="${SECRET_KS_PASS:-$CI_KS_PASS}"
           export ANDROID_KEY_ALIAS="${SECRET_KEY_ALIAS:-$CI_KS_ALIAS}"
           export ANDROID_KEY_PASSWORD="${SECRET_KEY_PASS:-$CI_KS_PASS}"
-          gradle --no-daemon assembleRelease
+          gradle --no-daemon testDebugUnitTest assembleRelease
           cp app/build/outputs/apk/release/app-release.apk Proyom.apk
           ls -la Proyom.apk
       - name: Enable KVM
@@ -72,6 +72,11 @@ jobs:
           disable-animations: false
           working-directory: batya-maksa/android
           script: bash ../ci-smoke.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-test-report
+          path: batya-maksa/android/app/build/reports/tests/
       - uses: actions/upload-artifact@v4
         if: always()
         with:

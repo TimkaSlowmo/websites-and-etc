@@ -13,7 +13,7 @@ android {
         minSdk = 28
         targetSdk = 35
         versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
-        versionName = "0.5.0"
+        versionName = "0.6.0"
         buildConfigField("String", "WORKER_URL", "\"https://batya-maksa-ai.makxxim-007.workers.dev\"")
     }
 
@@ -47,6 +47,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
+    testOptions { unitTests.isReturnDefaultValues = true }
 }
 
 dependencies {
@@ -60,4 +61,6 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.animation:animation")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
 }

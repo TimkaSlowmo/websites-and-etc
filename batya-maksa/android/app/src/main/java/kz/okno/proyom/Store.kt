@@ -18,13 +18,17 @@ class Prefs(ctx: Context) {
         set(v) { p.edit().putString("workerUrl", v).apply() }
 }
 
+/** Каталог компании: встроенный catalog.json + сохранённые правки цен (files/catalog.json). */
 class CatalogStore(private val ctx: Context) {
     private val userFile = File(ctx.filesDir, "catalog.json")
 
-    fun load(): Catalog =
-        runCatching { Catalog.parse(userFile.readText()) }.getOrNull() ?: bundled()
+    fun load(): Catalog = runCatching { Catalog.parse(userFile.readText()) }.getOrNull() ?: bundled()
 
     fun bundled(): Catalog = Catalog.parse(ctx.assets.open("catalog.json").bufferedReader().use { it.readText() })
+
+    fun save(c: Catalog) { userFile.writeText(c.toJsonString()) }
+
+    val isModified: Boolean get() = userFile.exists()
 
     /** Проверяет и сохраняет каталог; бросает исключение с понятным текстом. */
     fun import(text: String): Catalog {
@@ -50,11 +54,16 @@ class HistoryStore(ctx: Context) {
     private val index = File(dir, "index.json")
 
     fun load(): List<HistoryItem> = runCatching {
-        JSONArray(index.readText()).objects().map {
-            HistoryItem(it.getString("id"), it.getLong("date"), WindowSpec.fromJson(it.getJSONObject("spec")),
-                Selection.fromJson(it.getJSONObject("selection")), it.getDouble("total"), it.getString("currency"))
+        JSONArray(index.readText()).objects().mapNotNull {
+            runCatching {
+                HistoryItem(it.getString("id"), it.getLong("date"), WindowSpec.fromJson(it.getJSONObject("spec")),
+                    selectionOf(it.optJSONObject("selection")), it.getDouble("total"), it.getString("currency"))
+            }.getOrNull()
         }
     }.getOrDefault(emptyList())
+
+    /** Новый формат (system_id…) или старый (profile…) — старый даёт пустой выбор, его подберёт автоподбор. */
+    private fun selectionOf(o: JSONObject?) = Selection.fromJson(o?.takeIf { it.has("system_id") })
 
     fun save(items: List<HistoryItem>) {
         val arr = JSONArray()

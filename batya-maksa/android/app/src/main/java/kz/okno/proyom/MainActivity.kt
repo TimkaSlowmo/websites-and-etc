@@ -23,6 +23,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -52,7 +53,10 @@ class MainActivity : ComponentActivity() {
                     surface = Color(0xFFF6F7F9),
                     surfaceContainer = Color.White,
                 ),
-            ) { App() }
+            ) {
+                // Для автотеста на эмуляторе: --ez demo true, --es tab catalog
+                App(demo = intent.getBooleanExtra("demo", false), startTab = intent.getStringExtra("tab"))
+            }
         }
     }
 }
@@ -67,7 +71,15 @@ private val tabs = listOf(
 )
 
 @Composable
-fun App(vm: AppViewModel = viewModel()) {
+fun App(vm: AppViewModel = viewModel(), demo: Boolean = false, startTab: String? = null) {
+    LaunchedEffect(Unit) {
+        if (demo) vm.demo()
+        when (startTab) {
+            "history" -> vm.tab = Tab.HISTORY
+            "catalog" -> vm.tab = Tab.CATALOG
+            "settings" -> vm.tab = Tab.SETTINGS
+        }
+    }
     Scaffold(
         bottomBar = {
             NavigationBar {

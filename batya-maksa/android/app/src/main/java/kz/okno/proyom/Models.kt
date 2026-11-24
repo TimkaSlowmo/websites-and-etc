@@ -3,246 +3,329 @@ package kz.okno.proyom
 import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.math.max
+import kotlin.math.roundToInt
 
-enum class WindowType(val key: String, val title: String) {
-    FIXED("fixed", "Глухое окно"),
-    SINGLE("single_sash", "Одностворчатое"),
-    DOUBLE("double_sash", "Двухстворчатое"),
-    TRIPLE("triple_sash", "Трёхстворчатое"),
-    BALCONY_DOOR("balcony_door", "Балконная дверь"),
-    BALCONY_BLOCK("balcony_block", "Балконный блок"),
-    SLIDING("sliding", "Раздвижное"),
-    ENTRANCE_DOOR("entrance_door", "Входная дверь"),
-    INTERIOR_DOOR("interior_door", "Межкомнатная дверь");
+enum class Product(val key: String, val title: String) {
+    WINDOW("window", "Окно"), DOOR("door", "Дверь"), BALCONY_BLOCK("balcony_block", "Балконный блок"),
+    FACADE("facade", "Витраж / фасад"), PARTITION("partition", "Перегородка");
 
-    companion object {
-        fun of(k: String?) = entries.firstOrNull { it.key == k } ?: SINGLE
-    }
+    companion object { fun of(k: String?) = entries.firstOrNull { it.key == k } }
+}
+
+enum class Hinge(val key: String, val title: String) {
+    LEFT("left", "Петли слева"), RIGHT("right", "Петли справа"), TOP("top", "Петли сверху"),
+    BOTTOM("bottom", "Петли снизу"), NONE("none", "—");
+
+    companion object { fun of(k: String?) = entries.firstOrNull { it.key == k } ?: NONE }
 }
 
 enum class Opening(val key: String, val title: String) {
-    FIXED("fixed", "Глухая"),
-    TILT("tilt", "Откидная"),
-    TURN("turn", "Поворотная"),
-    TILT_TURN("tilt_turn", "Поворотно-откидная"),
-    SLIDE("slide", "Раздвижная");
+    FIXED("fixed", "Глухая"), TURN("turn", "Поворотная"), TILT("tilt", "Откидная"),
+    TILT_TURN("tilt_turn", "Поворотно-откидная"), TOP_HUNG("top_hung", "Верхнеподвесная"), SLIDE("slide", "Раздвижная");
 
-    companion object {
-        fun of(k: String?) = entries.firstOrNull { it.key == k } ?: FIXED
+    /** Возможные стороны петель для этого открывания. */
+    val hinges: List<Hinge>
+        get() = when (this) {
+            TURN, TILT_TURN -> listOf(Hinge.LEFT, Hinge.RIGHT)
+            TILT -> listOf(Hinge.BOTTOM)
+            TOP_HUNG -> listOf(Hinge.TOP)
+            FIXED, SLIDE -> listOf(Hinge.NONE)
+        }
+
+    companion object { fun of(k: String?) = entries.firstOrNull { it.key == k } ?: FIXED }
+}
+
+enum class Split(val key: String, val title: String, val sectionName: String) {
+    COLUMNS("columns", "Колонки (слева направо)", "Колонка"), ROWS("rows", "Ряды (сверху вниз)", "Ряд");
+
+    companion object { fun of(k: String?) = if (k == "rows") ROWS else COLUMNS }
+}
+
+/** Ячейка секции. В колонке size = высота (сверху вниз), в ряду size = ширина (слева направо). */
+data class Cell(
+    val sizeMm: Int,
+    val opening: Opening = Opening.FIXED,
+    val hinge: Hinge = Hinge.NONE,
+    val inward: Boolean = true,
+    val door: Boolean = false,
+) {
+    fun normalized(): Cell {
+        val h = if (hinge in opening.hinges) hinge else opening.hinges.first()
+        return copy(hinge = h, door = door && opening != Opening.FIXED)
     }
 }
 
-data class Sash(val widthMm: Int? = null, val opening: Opening = Opening.FIXED)
+data class Section(val sizeMm: Int, val cells: List<Cell>)
+
+data class Layout(val split: Split = Split.COLUMNS, val sections: List<Section>) {
+    companion object {
+        fun single(width: Int, height: Int, opening: Opening = Opening.TILT_TURN) =
+            Layout(Split.COLUMNS, listOf(Section(width, listOf(Cell(height, opening).normalized()))))
+    }
+}
+
+data class CellRect(val section: Int, val index: Int, val x: Double, val y: Double, val w: Double, val h: Double, val cell: Cell) {
+    val id: String get() = "$section-$index"
+}
+
+data class InfoItem(val label: String, val value: String)
 
 data class WindowSpec(
     val widthMm: Int = 1300,
     val heightMm: Int = 1400,
-    val type: WindowType = WindowType.SINGLE,
-    val sashes: List<Sash> = listOf(Sash(null, Opening.TILT_TURN)),
-    val profile: String = "",
+    val product: Product = Product.WINDOW,
+    val quantity: Int = 1,
+    val layout: Layout = Layout.single(1300, 1400),
+    val system: String = "",
+    val fillMm: Int? = null,
     val glass: String = "",
-    val color: String = "white",
-    val extras: List<String> = emptyList(),
+    val color: String = "",
+    val colorInside: String = "",
+    val inward: Boolean = true,
+    val info: List<InfoItem> = emptyList(),
     val notes: String = "",
     val confidence: Double = 1.0,
     val altWidths: List<Int> = emptyList(),
     val altHeights: List<Int> = emptyList(),
 ) {
     val areaM2: Double get() = widthMm.toDouble() * heightMm / 1_000_000
-    val perimeterM: Double get() = 2.0 * (widthMm + heightMm) / 1000
+    val mainTotal: Int get() = if (layout.split == Split.COLUMNS) widthMm else heightMm
+    val crossTotal: Int get() = if (layout.split == Split.COLUMNS) heightMm else widthMm
+
+    val cellRects: List<CellRect>
+        get() {
+            val out = mutableListOf<CellRect>()
+            var a = 0.0
+            layout.sections.forEachIndexed { si, s ->
+                var b = 0.0
+                s.cells.forEachIndexed { ci, c ->
+                    out += if (layout.split == Split.COLUMNS) CellRect(si, ci, a, b, s.sizeMm.toDouble(), c.sizeMm.toDouble(), c)
+                    else CellRect(si, ci, b, a, c.sizeMm.toDouble(), s.sizeMm.toDouble(), c)
+                    b += c.sizeMm
+                }
+                a += s.sizeMm
+            }
+            return out
+        }
+
+    /** Текст расхождения сетки с общими размерами или null. */
+    val layoutMismatch: String?
+        get() {
+            val main = layout.sections.sumOf { it.sizeMm }
+            val cols = layout.split == Split.COLUMNS
+            if (main != mainTotal) return "Сумма ${if (cols) "колонок" else "рядов"} $main мм, а ${if (cols) "ширина" else "высота"} $mainTotal мм"
+            layout.sections.forEachIndexed { i, s ->
+                val sum = s.cells.sumOf { it.sizeMm }
+                if (sum != crossTotal) return "${layout.split.sectionName} ${i + 1}: сумма ячеек $sum мм, а должно быть $crossTotal мм"
+            }
+            return null
+        }
+
+    /** Подгоняет секции и ячейки под общие размеры (пропорционально, остаток — в последнюю). */
+    fun fitted(): WindowSpec {
+        val secs = layout.sections.ifEmpty { Layout.single(widthMm, heightMm).sections }
+        val sizes = fit(secs.map { it.sizeMm }, mainTotal)
+        return copy(layout = layout.copy(sections = secs.mapIndexed { i, s ->
+            val cells = s.cells.ifEmpty { listOf(Cell(crossTotal)) }
+            val cs = fit(cells.map { it.sizeMm }, crossTotal)
+            Section(sizes[i], cells.mapIndexed { j, c -> c.copy(sizeMm = cs[j]).normalized() })
+        }))
+    }
 
     fun toJson(): JSONObject = JSONObject().apply {
-        put("width_mm", widthMm); put("height_mm", heightMm); put("type", type.key)
-        put("sashes", JSONArray().apply {
-            sashes.forEach { s ->
-                put(JSONObject().apply { put("width_mm", s.widthMm ?: JSONObject.NULL); put("opening", s.opening.key) })
-            }
+        put("width_mm", widthMm); put("height_mm", heightMm); put("product", product.key); put("quantity", quantity)
+        put("layout", JSONObject().apply {
+            put("split", layout.split.key)
+            put("sections", JSONArray().apply {
+                layout.sections.forEach { s ->
+                    put(JSONObject().apply {
+                        put("size_mm", s.sizeMm)
+                        put("cells", JSONArray().apply {
+                            s.cells.forEach { c ->
+                                put(JSONObject().put("size_mm", c.sizeMm).put("opening", c.opening.key).put("hinge", c.hinge.key)
+                                    .put("inward", c.inward).put("door", c.door))
+                            }
+                        })
+                    })
+                }
+            })
         })
-        put("profile", profile); put("glass", glass); put("color", color)
-        put("extras", JSONArray(extras)); put("notes", notes); put("confidence", confidence)
+        put("system", system); put("fill_mm", fillMm ?: JSONObject.NULL); put("glass", glass)
+        put("color", color); put("color_inside", colorInside); put("inward", inward)
+        put("info", JSONArray().apply { info.forEach { put(JSONObject().put("label", it.label).put("value", it.value)) } })
+        put("notes", notes); put("confidence", confidence)
     }
 
     companion object {
+        fun fit(values: List<Int>, total: Int): List<Int> {
+            if (values.isEmpty()) return emptyList()
+            val sum = values.sum()
+            if (sum == total) return values
+            val out = if (sum <= 0) MutableList(values.size) { total / values.size }
+            else values.map { max(1, (it.toDouble() * total / sum).roundToInt()) }.toMutableList()
+            out[out.lastIndex] += total - out.sum()
+            return out
+        }
+
+        private fun JSONObject.int(vararg keys: String): Int? {
+            for (k in keys) if (has(k) && !isNull(k)) {
+                val d = optDouble(k, Double.NaN)
+                if (!d.isNaN()) return d.roundToInt()
+            }
+            return null
+        }
+
+        /** Разбор ответа сервера (snake_case) и сохранённой истории, включая старый формат со «sashes». */
         fun fromJson(o: JSONObject): WindowSpec {
-            val sashes = o.optJSONArray("sashes")?.let { a ->
-                (0 until a.length()).map { i ->
-                    val s = a.getJSONObject(i)
-                    Sash(if (s.isNull("width_mm")) null else s.optInt("width_mm"), Opening.of(s.optString("opening")))
-                }
-            }.orEmpty().ifEmpty { listOf(Sash(null, Opening.TILT_TURN)) }
+            val w = o.int("width_mm") ?: 1300
+            val h = o.int("height_mm") ?: 1400
+            val product = Product.of(o.optString("product")) ?: when (o.optString("type")) {
+                "balcony_door", "entrance_door", "interior_door" -> Product.DOOR
+                "balcony_block" -> Product.BALCONY_BLOCK
+                else -> Product.WINDOW
+            }
+            val lay = o.optJSONObject("layout")
+            val layout = if (lay != null && (lay.optJSONArray("sections")?.length() ?: 0) > 0) {
+                Layout(Split.of(lay.optString("split")), lay.optJSONArray("sections").objects().map { s ->
+                    Section(s.int("size_mm") ?: 0, s.optJSONArray("cells").objects().map { c ->
+                        Cell(c.int("size_mm") ?: 0, Opening.of(c.optString("opening")), Hinge.of(c.optString("hinge")),
+                            c.optBoolean("inward", true), c.optBoolean("door", false)).normalized()
+                    })
+                })
+            } else {
+                val old = o.optJSONArray("sashes").objects()
+                if (old.isEmpty()) Layout.single(w, h)
+                else Layout(Split.COLUMNS, old.map { s ->
+                    Section(s.int("width_mm") ?: (w / old.size), listOf(Cell(h, Opening.of(s.optString("opening"))).normalized()))
+                })
+            }
             val alt = o.optJSONObject("alternatives")
             return WindowSpec(
-                widthMm = o.optInt("width_mm", 1300),
-                heightMm = o.optInt("height_mm", 1400),
-                type = WindowType.of(o.optString("type")),
-                sashes = sashes,
-                profile = o.optString("profile"),
-                glass = o.optString("glass"),
-                color = o.optString("color", "white"),
-                extras = o.optJSONArray("extras").strings(),
-                notes = o.optString("notes"),
-                confidence = o.optDouble("confidence", 1.0),
-                altWidths = alt?.optJSONArray("width_mm").ints(),
-                altHeights = alt?.optJSONArray("height_mm").ints(),
-            )
+                widthMm = w, heightMm = h, product = product, quantity = max(1, o.int("quantity") ?: 1), layout = layout,
+                system = o.optString("system"), fillMm = o.int("fill_mm"), glass = o.optString("glass"),
+                color = o.optString("color"), colorInside = o.optString("color_inside"), inward = o.optBoolean("inward", true),
+                info = o.optJSONArray("info").objects().map { InfoItem(it.optString("label"), it.optString("value")) },
+                notes = o.optString("notes"), confidence = o.optDouble("confidence", 1.0),
+                altWidths = alt?.optJSONArray("width_mm").ints(), altHeights = alt?.optJSONArray("height_mm").ints(),
+            ).fitted()
         }
     }
 }
 
 fun JSONArray?.strings(): List<String> = if (this == null) emptyList() else (0 until length()).map { optString(it) }
 fun JSONArray?.ints(): List<Int> = if (this == null) emptyList() else (0 until length()).map { optInt(it) }.filter { it > 0 }
+fun JSONArray?.objects(): List<JSONObject> = if (this == null) emptyList() else (0 until length()).mapNotNull { optJSONObject(it) }
 
-// ---------- Каталог ----------
+// ---------- Каталог компании (catalog.json, tools/build_catalog.py) ----------
 
-data class PricedItem(val id: String, val name: String, val keywords: List<String>, val price: Double, val isDefault: Boolean)
-data class HardwareItem(val opening: Opening, val name: String, val price: Double)
-data class ColorItem(val id: String, val name: String, val keywords: List<String>, val surchargePercent: Double, val isDefault: Boolean)
-enum class ExtraUnit(val key: String, val title: String) {
-    PC("pc", "шт"), WIDTH("width_m", "за м ширины"), HEIGHT("height_m", "за м высоты"),
-    PERIMETER("perimeter_m", "за м периметра"), AREA("area_m2", "за м²");
-    companion object { fun of(k: String?) = entries.firstOrNull { it.key == k } ?: PC }
+data class Article(val code: String, val name: String, val price: Double, val unit: String, val kind: String) {
+    val unitTitle: String get() = if (unit == "m") "м" else "шт"
 }
-data class ExtraItem(val id: String, val name: String, val keywords: List<String>, val price: Double, val unit: ExtraUnit)
+
+data class FillCode(val min: Int, val max: Int, val code: String)
+
+data class Rule(
+    val role: String, val code: String?, val base: String, val qty: Double, val profile: Boolean,
+    val doorCode: String?, val byFill: List<FillCode>?,
+)
+
+data class SystemDef(
+    val id: String, val name: String, val description: String, val keywords: List<String>, val products: List<String>,
+    val fillMin: Int, val fillMax: Int, val fillDefault: Int,
+    val deductionFixedMm: Double, val deductionSashMm: Double, val deductionDoorMm: Double, val rules: List<Rule>,
+)
+
+data class GlassItem(val fillMm: Int, val name: String, val pricePerM2: Double)
+data class HardwareItem(val opening: String, val name: String, val price: Double)
+data class ColorGroup(val id: String, val name: String, val surchargePercent: Double)
+data class ColorItem(val id: String, val code: String, val name: String, val hex: String, val group: String, val keywords: List<String>) {
+    val title: String get() = "$code · $name"
+}
 
 data class Catalog(
+    val raw: JSONObject,
     val name: String,
     val currency: String,
     val vatPercent: Double,
     val markupPercent: Double,
-    val minAreaM2: Double,
-    val glassAreaRatio: Double,
-    val profiles: List<PricedItem>,
-    val glass: List<PricedItem>,
-    val hardware: List<HardwareItem>,
-    val colors: List<ColorItem>,
-    val extras: List<ExtraItem>,
+    val wastePercent: Double,
+    val laborPerM2: Double,
     val installPerM2: Double,
     val installMin: Double,
+    val twoColorPercent: Double,
+    val colorGroups: List<ColorGroup>,
+    val glass: List<GlassItem>,
+    val hardware: List<HardwareItem>,
+    val colors: List<ColorItem>,
+    val systems: List<SystemDef>,
+    val articles: List<Article>,
 ) {
+    private val index: Map<String, Article> by lazy { articles.associateBy { it.code } }
+
+    fun article(code: String) = index[code]
+    fun system(id: String) = systems.firstOrNull { it.id == id }
+    fun color(id: String) = colors.firstOrNull { it.id == id }
+    fun group(id: String) = colorGroups.firstOrNull { it.id == id }
+
+    /** Стеклопакет под заполнение: ближайший не тоньше, иначе самый толстый. */
+    fun glassItem(fill: Int): GlassItem? {
+        val sorted = glass.sortedBy { it.fillMm }
+        return sorted.firstOrNull { it.fillMm >= fill } ?: sorted.lastOrNull()
+    }
+
+    /** Каталог с изменёнными ставками — правки пишутся в исходный JSON, чтобы сохранить файл целиком. */
+    fun edited(change: (JSONObject) -> Unit): Catalog {
+        val copy = JSONObject(raw.toString())
+        change(copy)
+        return parse(copy.toString())
+    }
+
+    fun toJsonString(): String = raw.toString()
+
     companion object {
         fun parse(text: String): Catalog {
             val o = JSONObject(text)
-            fun priced(key: String) = o.optJSONArray(key).objects().map {
-                PricedItem(it.getString("id"), it.getString("name"), it.optJSONArray("keywords").strings(),
-                    it.getDouble("price_per_m2"), it.optBoolean("is_default"))
+            require(o.optInt("version", 1) >= 2) { "Каталог старого формата" }
+            val systems = o.optJSONArray("systems").objects().map { s ->
+                SystemDef(
+                    s.getString("id"), s.getString("name"), s.optString("description"), s.optJSONArray("keywords").strings(),
+                    s.optJSONArray("products").strings(), s.optInt("fill_min"), s.optInt("fill_max"), s.optInt("fill_default", 32),
+                    s.optDouble("deduction_fixed_mm"), s.optDouble("deduction_sash_mm"), s.optDouble("deduction_door_mm"),
+                    s.optJSONArray("rules").objects().map { r ->
+                        Rule(
+                            r.getString("role"), if (r.isNull("code") || !r.has("code")) null else r.getString("code"),
+                            r.getString("base"), r.optDouble("qty", 1.0), r.optBoolean("profile"),
+                            if (r.has("door_code")) r.getString("door_code") else null,
+                            r.optJSONArray("by_fill")?.objects()?.map { FillCode(it.getInt("min"), it.getInt("max"), it.getString("code")) },
+                        )
+                    },
+                )
             }
-            val profiles = priced("profiles")
-            val glass = priced("glass")
-            require(profiles.isNotEmpty() && glass.isNotEmpty()) { "В каталоге нет профилей или стеклопакетов" }
-            val inst = o.optJSONObject("installation")
+            val articles = o.optJSONArray("articles").objects().map {
+                Article(it.getString("code"), it.optString("name"), it.optDouble("price", 0.0), it.optString("unit"), it.optString("kind"))
+            }
+            require(systems.isNotEmpty() && articles.isNotEmpty()) { "В каталоге нет систем или прайса" }
             return Catalog(
+                raw = o,
                 name = o.optString("name", "Каталог"),
                 currency = o.optString("currency", "KZT"),
                 vatPercent = o.optDouble("vat_percent", 0.0),
                 markupPercent = o.optDouble("markup_percent", 0.0),
-                minAreaM2 = o.optDouble("min_area_m2", 0.5),
-                glassAreaRatio = o.optDouble("glass_area_ratio", 0.85),
-                profiles = profiles,
-                glass = glass,
-                hardware = o.optJSONArray("hardware").objects().map {
-                    HardwareItem(Opening.of(it.optString("opening")), it.optString("name"), it.optDouble("price", 0.0))
-                },
+                wastePercent = o.optDouble("waste_percent", 0.0),
+                laborPerM2 = o.optDouble("labor_per_m2", 0.0),
+                installPerM2 = o.optDouble("install_per_m2", 0.0),
+                installMin = o.optDouble("install_min", 0.0),
+                twoColorPercent = o.optDouble("two_color_percent", 0.0),
+                colorGroups = o.optJSONArray("color_groups").objects().map { ColorGroup(it.getString("id"), it.optString("name"), it.optDouble("surcharge_percent", 0.0)) },
+                glass = o.optJSONArray("glass").objects().map { GlassItem(it.getInt("fill_mm"), it.optString("name"), it.optDouble("price_per_m2", 0.0)) },
+                hardware = o.optJSONArray("hardware").objects().map { HardwareItem(it.getString("opening"), it.optString("name"), it.optDouble("price", 0.0)) },
                 colors = o.optJSONArray("colors").objects().map {
-                    ColorItem(it.getString("id"), it.getString("name"), it.optJSONArray("keywords").strings(),
-                        it.optDouble("surcharge_percent", 0.0), it.optBoolean("is_default"))
+                    ColorItem(it.getString("id"), it.optString("code"), it.optString("name"), it.optString("hex", "#45494E"), it.optString("group"), it.optJSONArray("keywords").strings())
                 },
-                extras = o.optJSONArray("extras").objects().map {
-                    ExtraItem(it.getString("id"), it.getString("name"), it.optJSONArray("keywords").strings(),
-                        it.optDouble("price", 0.0), ExtraUnit.of(it.optString("unit")))
-                },
-                installPerM2 = inst?.optDouble("price_per_m2", 0.0) ?: 0.0,
-                installMin = inst?.optDouble("min_price", 0.0) ?: 0.0,
+                systems = systems,
+                articles = articles,
             )
         }
-    }
-}
-
-fun JSONArray?.objects(): List<JSONObject> = if (this == null) emptyList() else (0 until length()).map { getJSONObject(it) }
-
-// ---------- Расчёт ----------
-
-data class Selection(
-    val profileId: String = "",
-    val glassId: String = "",
-    val colorId: String = "",
-    val extraIds: Set<String> = emptySet(),
-    val installation: Boolean = false,
-) {
-    fun toJson() = JSONObject().apply {
-        put("profile", profileId); put("glass", glassId); put("color", colorId)
-        put("extras", JSONArray(extraIds.toList())); put("installation", installation)
-    }
-    companion object {
-        fun fromJson(o: JSONObject) = Selection(
-            o.optString("profile"), o.optString("glass"), o.optString("color"),
-            o.optJSONArray("extras").strings().toSet(), o.optBoolean("installation"),
-        )
-    }
-}
-
-data class PriceLine(val title: String, val detail: String, val amount: Double)
-data class Breakdown(val lines: List<PriceLine>, val subtotal: Double, val markup: Double, val vat: Double, val total: Double, val currency: String)
-
-object Pricing {
-    private fun <T> match(text: String, items: List<T>, kw: (T) -> List<String>, def: (T) -> Boolean): T? {
-        val t = text.lowercase()
-        var best: T? = null
-        var len = 0
-        if (t.isNotBlank()) for (item in items) for (k in kw(item)) {
-            if (k.isNotBlank() && t.contains(k.lowercase()) && k.length > len) { best = item; len = k.length }
-        }
-        return best ?: items.firstOrNull(def) ?: items.firstOrNull()
-    }
-
-    fun autoSelection(spec: WindowSpec, c: Catalog): Selection {
-        val all = listOf(spec.profile, spec.glass, spec.color, spec.notes, spec.extras.joinToString(" ")).joinToString(" ")
-        val p = match(spec.profile + " " + spec.notes, c.profiles, { it.keywords }, { it.isDefault })
-        val g = match(spec.glass + " " + spec.notes, c.glass, { it.keywords }, { it.isDefault })
-        val col = match(all, c.colors, { it.keywords }, { it.isDefault })
-        val hay = all.lowercase()
-        val extras = c.extras.filter { e -> e.keywords.any { it.isNotBlank() && hay.contains(it.lowercase()) } }.map { it.id }.toSet()
-        return Selection(p?.id ?: "", g?.id ?: "", col?.id ?: "", extras)
-    }
-
-    fun calculate(spec: WindowSpec, sel: Selection, c: Catalog): Breakdown {
-        val lines = mutableListOf<PriceLine>()
-        val area = max(spec.areaM2, c.minAreaM2)
-        var frame = 0.0
-        c.profiles.firstOrNull { it.id == sel.profileId }?.let {
-            frame = area * it.price
-            lines += PriceLine(it.name, "%.2f м² × %d".format(area, it.price.toInt()), frame)
-        }
-        c.colors.firstOrNull { it.id == sel.colorId }?.takeIf { it.surchargePercent > 0 }?.let {
-            lines += PriceLine("Цвет: ${it.name}", "+${it.surchargePercent.toInt()}% к профилю", frame * it.surchargePercent / 100)
-        }
-        c.glass.firstOrNull { it.id == sel.glassId }?.let {
-            val ga = area * c.glassAreaRatio
-            lines += PriceLine(it.name, "%.2f м² × %d".format(ga, it.price.toInt()), ga * it.price)
-        }
-        val counts = spec.sashes.groupingBy { it.opening }.eachCount()
-        for (o in Opening.entries) {
-            val n = counts[o] ?: 0
-            val h = c.hardware.firstOrNull { it.opening == o } ?: continue
-            if (n > 0 && h.price > 0) lines += PriceLine(h.name, "$n шт × ${h.price.toInt()}", n * h.price)
-        }
-        for (e in c.extras) if (e.id in sel.extraIds) {
-            val q = when (e.unit) {
-                ExtraUnit.PC -> 1.0
-                ExtraUnit.WIDTH -> spec.widthMm / 1000.0
-                ExtraUnit.HEIGHT -> spec.heightMm / 1000.0
-                ExtraUnit.PERIMETER -> spec.perimeterM
-                ExtraUnit.AREA -> area
-            }
-            lines += PriceLine(e.name, "%.2f × %d (%s)".format(q, e.price.toInt(), e.unit.title), q * e.price)
-        }
-        if (sel.installation) {
-            lines += PriceLine("Монтаж", "от ${c.installMin.toInt()}", max(c.installMin, area * c.installPerM2))
-        }
-        val sub = lines.sumOf { it.amount }
-        val markup = sub * c.markupPercent / 100
-        val vat = (sub + markup) * c.vatPercent / 100
-        val total = Math.round((sub + markup + vat) / 100.0) * 100.0
-        return Breakdown(lines, sub, markup, vat, total, c.currency)
     }
 }
 
