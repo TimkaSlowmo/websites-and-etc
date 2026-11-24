@@ -448,7 +448,11 @@ export function normalizeSpec(raw) {
   const info = (Array.isArray(raw.info) ? raw.info : [])
     .filter((x) => x && (x.label || x.value))
     .slice(0, 24)
-    .map((x) => ({ label: String(x.label || "").slice(0, 60), value: String(x.value ?? "").slice(0, 160) }));
+    .map((x) => {
+      const label = String(x.label || "").replace(/[✓✔√]/g, "").trim().slice(0, 60);
+      const v = String(x.value ?? "").replace(/\s*[✓✔√]\s*$/, "").trim();
+      return { label, value: (v || (String(x.value || "").match(/[✓✔√]/) ? "✓" : "")).slice(0, 160) };
+    });
   const quantity = explicitQuantity(raw);
 
   // Поля старого формата — для установленных ранее версий приложения.
@@ -535,6 +539,17 @@ export function mergeOpenings(target, source) {
 }
 
 const cellCount = (s) => s.layout.sections.reduce((n, x) => n + x.cells.length, 0);
+
+/** Доля выписанных на чертеже размеров (кроме общих), которые объясняет сетка. */
+export function coverage(s) {
+  const nums = [...new Set((s.numbers || []).map(parseNum).filter((n) => n && n >= 100))]
+    .filter((n) => n !== s.width_mm && n !== s.height_mm);
+  if (!nums.length) return 0;
+  const sizes = new Set(s.layout.sections.flatMap((x) => [x.size_mm, ...x.cells.map((c) => c.size_mm)]));
+  return nums.filter((n) => sizes.has(n) || sizes.has(n * 10) || sizes.has(Math.round(n * 1000))).length / nums.length;
+}
+
+const normLabel = (l) => String(l || "").toLowerCase().replace(/^\s*\d+[.)]\s*/, "").replace(/[✓✔√]/g, "").trim();
 const close = (a, b) => Math.abs(a - b) / Math.max(a, b) < 0.03;
 const layoutKey = (l) => l.split + ":" + l.sections.map((s) => s.cells.length).join(",");
 
@@ -542,11 +557,14 @@ const layoutKey = (l) => l.split + ":" + l.sections.map((s) => s.cells.length).j
 export function reconcile(specs) {
   const order = (s) => (VISION_MODELS.indexOf(s.model) + 1 || 99);
   let ranked = [...specs].sort((a, b) => selfScore(b) - selfScore(a) || order(a) - order(b));
-  // Обе сетки сходятся, но разные: берём более простую (меньше ячеек — меньше лишних импостов).
+  // Обе сетки сходятся, но разные: берём ту, что объясняет больше выписанных размеров; при равенстве — более простую.
   if (ranked.length > 1 && ranked[0]._layout_ok && ranked[1]._layout_ok && layoutKey(ranked[0].layout) !== layoutKey(ranked[1].layout)
-      && close(ranked[0].width_mm, ranked[1].width_mm) && close(ranked[0].height_mm, ranked[1].height_mm)
-      && cellCount(ranked[1]) < cellCount(ranked[0])) {
-    ranked = [ranked[1], ranked[0], ...ranked.slice(2)];
+      && close(ranked[0].width_mm, ranked[1].width_mm) && close(ranked[0].height_mm, ranked[1].height_mm)) {
+    const c0 = coverage(ranked[0]);
+    const c1 = coverage(ranked[1]);
+    if (c1 > c0 + 0.01 || (Math.abs(c1 - c0) <= 0.01 && cellCount(ranked[1]) < cellCount(ranked[0]))) {
+      ranked = [ranked[1], ranked[0], ...ranked.slice(2)];
+    }
   }
   const best = JSON.parse(JSON.stringify(ranked[0]));
   delete best.numbers;
@@ -557,8 +575,9 @@ export function reconcile(specs) {
   }
   const other = ranked[1];
   // Доп. информация и текст: объединяем, чтобы ничего не потерять.
-  const labels = new Set(best.info.map((x) => x.label.toLowerCase()));
-  best.info = [...best.info, ...other.info.filter((x) => !labels.has(x.label.toLowerCase()))].slice(0, 24);
+  const labels = new Set(best.info.map((x) => normLabel(x.label)));
+  best.info = [...best.info, ...other.info.filter((x) => !labels.has(normLabel(x.label)))].slice(0, 24);
+  if (best.quantity === 1) best.info = best.info.filter((x) => !/кол-?во|количеств/.test(normLabel(x.label)));
   if ((other.notes || "").length > (best.notes || "").length) best.notes = other.notes;
   for (const f of ["system", "glass", "color", "color_inside"]) if (!best[f] && other[f]) best[f] = other[f];
   if (best.fill_mm == null && other.fill_mm != null) best.fill_mm = other.fill_mm;

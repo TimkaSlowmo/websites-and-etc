@@ -137,3 +137,28 @@ test("cell rectangles", () => {
   const s = normalizeSpec({ width_mm: 1200, height_mm: 2700, layout: { split: "columns", sections: [{ size_mm: 800, cells: [{ size_mm: 1700 }, { size_mm: 1000 }] }, { size_mm: 400, cells: [{}] }] } });
   assert.deepEqual(cellRects(s).map((r) => [r.x, r.y, r.w, r.h]), [[0, 0, 800, 1700], [0, 1700, 800, 1000], [800, 0, 400, 2700]]);
 });
+
+import { coverage } from "../src/index.js";
+
+test("photo 3 (second run): grid explaining 400/800 beats full-width rows", () => {
+  const nums = ["1200", "2700", "1350", "1350", "400", "800"];
+  const gemma = normalizeSpec({ numbers: nums, width_mm: 1200, height_mm: 2700, layout: { split: "rows", sections: [
+    { size_mm: 1350, cells: [{ opening: "tilt_turn", hinge: "left" }] }, { size_mm: 1350, cells: [{ opening: "tilt_turn", hinge: "right" }] }] } });
+  gemma.model = "@cf/google/gemma-4-26b-a4b-it";
+  const mistral = normalizeSpec({ numbers: nums, width_mm: 1200, height_mm: 2700, layout: { split: "columns", sections: [
+    { size_mm: 400, cells: [{ size_mm: 1350 }, { size_mm: 1350 }] }, { size_mm: 800, cells: [{ size_mm: 2700 }] }] } });
+  mistral.model = "@cf/mistralai/mistral-small-3.1-24b-instruct";
+  assert.ok(coverage(mistral) > coverage(gemma));
+  const r = reconcile([gemma, mistral]);
+  assert.equal(r.layout.split, "columns");
+  assert.deepEqual(r.layout.sections.map((x) => x.size_mm), [400, 800]);
+});
+
+test("info: numbering and checkmarks are cleaned, duplicates and unconfirmed quantity dropped", () => {
+  const a = normalizeSpec({ width_mm: 1800, height_mm: 1600, info: [{ label: "3. Система", value: "BKT 77, BKF 50 ✓" }, { label: "1. Высота", value: "✓" }] });
+  a.model = "@cf/google/gemma-4-26b-a4b-it";
+  const b = normalizeSpec({ width_mm: 1800, height_mm: 1600, info: [{ label: "Система", value: "BKT 72" }, { label: "Количество", value: "61" }, { label: "Цвет", value: "RAL 7024" }] });
+  b.model = "@cf/mistralai/mistral-small-3.1-24b-instruct";
+  const r = reconcile([a, b]);
+  assert.deepEqual(r.info.map((x) => [x.label, x.value]), [["3. Система", "BKT 77, BKF 50"], ["1. Высота", "✓"], ["Цвет", "RAL 7024"]]);
+});
