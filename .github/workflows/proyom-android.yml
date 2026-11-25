@@ -1,7 +1,7 @@
 name: Проём Android (.apk)
 on:
   push:
-    paths: ['batya-maksa/android/**', '.github/workflows/proyom-android.yml']
+    paths: ['batya-maksa/android/**', 'batya-maksa/ci-smoke.sh', '.github/workflows/proyom-android.yml']
   workflow_dispatch:
 permissions:
   contents: write
