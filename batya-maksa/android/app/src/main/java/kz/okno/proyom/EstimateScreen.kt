@@ -85,6 +85,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
@@ -101,26 +102,55 @@ import java.io.File
 
 @Composable
 fun EstimateScreen(vm: AppViewModel) {
-    AnimatedContent(
-        targetState = vm.phase,
-        contentKey = { it::class },
-        transitionSpec = {
-            (fadeIn(tween(350)) + slideInVertically(tween(450)) { it / 10 }) togetherWith fadeOut(tween(200))
-        },
-        label = "phase",
-    ) { phase ->
-        when (phase) {
-            Phase.Idle -> IdleView(vm)
-            Phase.Analyzing -> AnalyzingView(vm)
-            Phase.Ready -> ResultView(vm)
-            is Phase.Failed -> FailedView(vm, phase.message)
+    Column(Modifier.fillMaxSize()) {
+        TopBar(
+            title = if (vm.phase == Phase.Idle) "Проём" else "Расчёт",
+            leading = if (vm.phase == Phase.Idle) null else ({
+                Row(Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = vm::reset).padding(horizontal = 8.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Add, null, tint = Accent, modifier = Modifier.size(22.dp))
+                    Text("Новый", color = Accent, fontSize = 17.sp)
+                }
+            }),
+        )
+        AnimatedContent(
+            targetState = vm.phase,
+            contentKey = { it::class },
+            transitionSpec = {
+                (fadeIn(tween(350)) + slideInVertically(tween(450)) { it / 10 }) togetherWith fadeOut(tween(200))
+            },
+            modifier = Modifier.weight(1f),
+            label = "phase",
+        ) { phase ->
+            when (phase) {
+                Phase.Idle -> IdleView(vm)
+                Phase.Analyzing -> AnalyzingView(vm)
+                Phase.Ready -> ResultView(vm)
+                is Phase.Failed -> FailedView(vm, phase.message)
+            }
         }
+    }
+}
+
+/** Кнопки как на iPhone: залитая (borderedProminent) и с лёгкой подложкой (bordered). */
+@Composable
+fun IosButton(text: String, icon: ImageVector? = null, prominent: Boolean = true, enabled: Boolean = true, onClick: () -> Unit) {
+    val bg = if (prominent) Accent else Accent.copy(alpha = if (pal().dark) 0.25f else 0.13f)
+    val fg = if (prominent) Color.White else Accent
+    Row(
+        Modifier.fillMaxWidth().height(50.dp).clip(RoundedCornerShape(12.dp)).background(if (enabled) bg else pal().fill)
+            .clickable(enabled = enabled, onClick = onClick),
+        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (icon != null) { Icon(icon, null, tint = if (enabled) fg else pal().secondary, modifier = Modifier.size(20.dp)); Spacer(Modifier.size(8.dp)) }
+        Text(text, color = if (enabled) fg else pal().secondary, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
 @Composable
 private fun IdleView(vm: AppViewModel) {
     val ctx = LocalContext.current
+    val p = pal()
     val photoFile = remember { File(ctx.cacheDir, "drawing.jpg") }
     val photoUri = remember { FileProvider.getUriForFile(ctx, ctx.packageName + ".files", photoFile) }
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
@@ -132,57 +162,52 @@ private fun IdleView(vm: AppViewModel) {
     val float = rememberInfiniteTransition(label = "float")
     val dy by float.animateFloat(-6f, 6f, infiniteRepeatable(tween(2200, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "dy")
 
-    Column(
-        Modifier.fillMaxSize().padding(horizontal = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
+    Column(Modifier.fillMaxSize().padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.weight(1f))
         Appear(0) {
             Image(
                 painterResource(R.drawable.logo), contentDescription = null,
-                modifier = Modifier.size(124.dp).graphicsLayer { translationY = dy }
-                    .shadow(18.dp, RoundedCornerShape(30.dp)).clip(RoundedCornerShape(30.dp)),
+                modifier = Modifier.size(120.dp).graphicsLayer { translationY = dy }
+                    .shadow(16.dp, RoundedCornerShape(28.dp)).clip(RoundedCornerShape(28.dp)),
             )
         }
-        Spacer(Modifier.height(22.dp))
-        Appear(1) { Text("Проём", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Deep) }
+        Spacer(Modifier.height(20.dp))
+        Appear(1) { Text("Сфотографируйте чертёж окна", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = p.text, textAlign = TextAlign.Center) }
         Appear(2) {
             Text(
-                "Сфотографируйте чертёж окна — ИИ прочитает размеры, покажет готовый вид и посчитает цену.",
-                textAlign = TextAlign.Center, color = Color.Gray, modifier = Modifier.padding(top = 8.dp, start = 8.dp, end = 8.dp),
+                "ИИ прочитает размеры и параметры, покажет, как изделие будет выглядеть, и рассчитает ориентировочную цену.",
+                textAlign = TextAlign.Center, color = p.secondary, fontSize = 17.sp, lineHeight = 22.sp,
+                modifier = Modifier.padding(top = 10.dp, start = 8.dp, end = 8.dp),
             )
         }
         Spacer(Modifier.weight(1f))
         Appear(3) {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Button(
-                    onClick = { camera.launch(photoUri) },
-                    modifier = Modifier.fillMaxWidth().height(56.dp), shape = RoundedCornerShape(16.dp),
-                ) { Icon(Icons.Filled.CameraAlt, null); Spacer(Modifier.size(8.dp)); Text("Снять чертёж", fontSize = 17.sp) }
-                FilledTonalButton(
-                    onClick = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
-                    modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(16.dp),
-                ) { Icon(Icons.Filled.PhotoLibrary, null); Spacer(Modifier.size(8.dp)); Text("Выбрать из галереи") }
-                TextButton(onClick = vm::manual, modifier = Modifier.fillMaxWidth()) { Text("Ввести параметры вручную") }
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                IosButton("Снять чертёж", Icons.Filled.CameraAlt) { camera.launch(photoUri) }
+                IosButton("Выбрать из галереи", Icons.Filled.PhotoLibrary, prominent = false) {
+                    picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                }
+                Text("Ввести параметры вручную", color = Accent, fontSize = 15.sp,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = vm::manual).padding(8.dp))
             }
         }
         vm.history.firstOrNull()?.let { last ->
             Appear(4) {
                 Row(
-                    Modifier.fillMaxWidth().padding(vertical = 12.dp).clip(RoundedCornerShape(16.dp))
-                        .background(Color.White).clickable { vm.open(last) }.padding(14.dp),
+                    Modifier.fillMaxWidth().padding(top = 8.dp).clip(RoundedCornerShape(14.dp))
+                        .background(p.card).clickable { vm.open(last) }.padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(Icons.Filled.History, null, tint = Accent)
                     Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
-                        Text("Последний расчёт", fontSize = 12.sp, color = Color.Gray)
-                        Text("${last.spec.product.title} ${last.spec.widthMm}×${last.spec.heightMm}")
+                        Text("Последний расчёт", fontSize = 12.sp, color = p.secondary)
+                        Text("${last.spec.product.title} ${last.spec.widthMm}×${last.spec.heightMm}", color = p.text, fontSize = 16.sp)
                     }
-                    Text(Money.format(last.total, last.currency), fontWeight = FontWeight.Bold)
+                    Text(Money.format(last.total, last.currency), fontWeight = FontWeight.Bold, color = p.text, fontSize = 16.sp)
                 }
             }
         }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(16.dp))
     }
 }
 
@@ -217,13 +242,13 @@ private fun AnalyzingView(vm: AppViewModel) {
         }
         Spacer(Modifier.height(26.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.5.dp)
+            CircularProgressIndicator(Modifier.size(20.dp), color = Accent, strokeWidth = 2.5.dp)
             Spacer(Modifier.size(10.dp))
             AnimatedContent(
                 targetState = steps[step],
                 transitionSpec = { (slideInVertically { it } + fadeIn()) togetherWith (slideOutVertically { -it } + fadeOut()) },
                 label = "step",
-            ) { Text(it, fontWeight = FontWeight.SemiBold, fontSize = 17.sp) }
+            ) { Text(it, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, color = pal().text) }
         }
         Spacer(Modifier.height(14.dp))
         Dots(steps.size, step)
@@ -233,13 +258,12 @@ private fun AnalyzingView(vm: AppViewModel) {
 @Composable
 private fun FailedView(vm: AppViewModel, message: String) {
     Column(Modifier.fillMaxSize().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-        Icon(Icons.Filled.Warning, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(56.dp))
-        Spacer(Modifier.height(12.dp))
-        Text(message, textAlign = TextAlign.Center)
+        Icon(Icons.Filled.Warning, null, tint = Warn, modifier = Modifier.size(52.dp))
         Spacer(Modifier.height(16.dp))
-        Button(onClick = vm::retry) { Text("Повторить") }
-        TextButton(onClick = vm::manual) { Text("Ввести вручную") }
-        TextButton(onClick = vm::reset) { Text("Назад") }
+        Text(message, textAlign = TextAlign.Center, color = pal().text, fontSize = 17.sp)
+        Spacer(Modifier.height(20.dp))
+        IosButton("Повторить", enabled = vm.drawing != null, onClick = vm::retry)
+        Text("Ввести вручную", color = Accent, fontSize = 17.sp,
+            modifier = Modifier.padding(top = 8.dp).clip(RoundedCornerShape(8.dp)).clickable(onClick = vm::manual).padding(10.dp))
     }
 }
-

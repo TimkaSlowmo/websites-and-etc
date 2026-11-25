@@ -4,8 +4,13 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -30,14 +35,16 @@ data class Box(val l: Float, val t: Float, val r: Float, val b: Float) {
 }
 
 /** Общая геометрия схемы: где рама, где каждая ячейка, какие линии открывания. */
-class SchemeLayout(val spec: WindowSpec, width: Float, height: Float, val pad: Float = 40f) {
+class SchemeLayout(val spec: WindowSpec, width: Float, height: Float, val d: Float = 1f) {
+    /** Поле под размерные линии с каждой стороны. */
+    val pad: Float = 36f * d
     val k: Float = min((width - pad * 2) / spec.widthMm, (height - pad * 2) / spec.heightMm)
     val frame: Box = run {
         val w = spec.widthMm * k
         val h = spec.heightMm * k
         Box((width - w) / 2, (height - h) / 2, (width + w) / 2, (height + h) / 2)
     }
-    val profile: Float = max(4f, min(14f, frame.w / 28f))
+    val profile: Float = max(3f * d, min(6f * d, frame.w / 28f))
 
     fun cellBox(r: CellRect) = Box(frame.l + (r.x * k).toFloat(), frame.t + (r.y * k).toFloat(),
         frame.l + ((r.x + r.w) * k).toFloat(), frame.t + ((r.y + r.h) * k).toFloat())
@@ -69,19 +76,20 @@ class SchemeLayout(val spec: WindowSpec, width: Float, height: Float, val pad: F
     /** Размерные линии: (начало, конец, текст, акцент). */
     fun dims(): List<Triple<Pair<Offset, Offset>, String, Boolean>> {
         val out = mutableListOf<Triple<Pair<Offset, Offset>, String, Boolean>>()
-        out += Triple(Offset(frame.l, frame.t - 16) to Offset(frame.r, frame.t - 16), "${spec.widthMm}", false)
-        out += Triple(Offset(frame.r + 16, frame.t) to Offset(frame.r + 16, frame.b), "${spec.heightMm}", false)
+        val o = 16f * d
+        out += Triple(Offset(frame.l, frame.t - o) to Offset(frame.r, frame.t - o), "${spec.widthMm}", false)
+        out += Triple(Offset(frame.r + o, frame.t) to Offset(frame.r + o, frame.b), "${spec.heightMm}", false)
         if (spec.layout.sections.size > 1) {
             var a = 0.0
             for (s in spec.layout.sections) {
                 if (spec.layout.split == Split.COLUMNS) {
                     val x0 = frame.l + (a * k).toFloat()
                     val x1 = frame.l + ((a + s.sizeMm) * k).toFloat()
-                    out += Triple(Offset(x0, frame.b + 16) to Offset(x1, frame.b + 16), "${s.sizeMm}", true)
+                    out += Triple(Offset(x0, frame.b + o) to Offset(x1, frame.b + o), "${s.sizeMm}", true)
                 } else {
                     val y0 = frame.t + (a * k).toFloat()
                     val y1 = frame.t + ((a + s.sizeMm) * k).toFloat()
-                    out += Triple(Offset(frame.l - 16, y0) to Offset(frame.l - 16, y1), "${s.sizeMm}", true)
+                    out += Triple(Offset(frame.l - o, y0) to Offset(frame.l - o, y1), "${s.sizeMm}", true)
                 }
                 a += s.sizeMm
             }
@@ -96,8 +104,9 @@ private val GlassColor = Color(0xFFCDE6F7)
 
 /** Отрисовка схемы на обычном Android Canvas (общая для экрана и PDF). */
 fun drawScheme(canvas: android.graphics.Canvas, spec: WindowSpec, frameHex: String, width: Float, height: Float,
-               selectedId: String? = null, density: Float = 1f) {
-    val L = SchemeLayout(spec, width, height, pad = 40f * density)
+               selectedId: String? = null, density: Float = 1f,
+               labelBg: Int = android.graphics.Color.WHITE, dimColor: Int = 0xFF6B7280.toInt()) {
+    val L = SchemeLayout(spec, width, height, density)
     val p = Paint(Paint.ANTI_ALIAS_FLAG)
     p.color = parseHex(frameHex)
     canvas.drawRect(L.frame.l, L.frame.t, L.frame.r, L.frame.b, p)
@@ -147,7 +156,7 @@ fun drawScheme(canvas: android.graphics.Canvas, spec: WindowSpec, frameHex: Stri
     val dimText = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 11f * density; textAlign = Paint.Align.CENTER }
     for ((seg, label, accent) in L.dims()) {
         val (a, b) = seg
-        val col = if (accent) Accent.toArgb() else 0xFF6B7280.toInt()
+        val col = if (accent) Accent.toArgb() else dimColor
         dimPaint.color = col
         dimText.color = col
         canvas.drawLine(a.x, a.y, b.x, b.y, dimPaint)
@@ -159,7 +168,7 @@ fun drawScheme(canvas: android.graphics.Canvas, spec: WindowSpec, frameHex: Stri
         val mx = (a.x + b.x) / 2
         val my = (a.y + b.y) / 2
         val tw = dimText.measureText(label)
-        val bg = Paint().apply { color = android.graphics.Color.WHITE }
+        val bg = Paint().apply { color = labelBg }
         canvas.save()
         canvas.translate(mx, my)
         if (vertical) canvas.rotate(-90f)
@@ -169,18 +178,29 @@ fun drawScheme(canvas: android.graphics.Canvas, spec: WindowSpec, frameHex: Stri
     }
 }
 
-/** Схема на экране: нажатие по ячейке выбирает её. */
+/**
+ * Схема на экране: вписывается и по ширине, и по высоте (не больше maxHeight), как на iPhone.
+ * Нажатие по ячейке выбирает её.
+ */
 @Composable
-fun SchemeView(spec: WindowSpec, frameHex: String, selectedId: String?, modifier: Modifier = Modifier, onTap: (CellRect) -> Unit) {
-    val ratio = ((spec.widthMm + 300f) / (spec.heightMm + 300f)).coerceIn(0.35f, 2.5f)
-    Canvas(
-        modifier.fillMaxWidth().aspectRatio(ratio).pointerInput(spec) {
-            detectTapGestures { pos ->
-                SchemeLayout(spec, size.width.toFloat(), size.height.toFloat(), pad = 40f * density).hit(pos.x, pos.y)?.let(onTap)
-            }
-        },
-    ) {
-        drawIntoCanvas { drawScheme(it.nativeCanvas, spec, frameHex, size.width, size.height, selectedId, density) }
+fun SchemeView(spec: WindowSpec, frameHex: String, selectedId: String?, maxHeight: Dp = 380.dp, onTap: (CellRect) -> Unit) {
+    val p = pal()
+    BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        // Пропорции изделия + поля под размеры; высота ограничена — узкое высокое окно сужается, а не вылезает
+        val pad = 72.dp
+        val ratio = (spec.widthMm.toFloat() / spec.heightMm.coerceAtLeast(1)).coerceIn(0.1f, 10f)
+        val h = minOf((maxWidth - pad) / ratio + pad, maxHeight)
+        val labelBg = p.card.toArgb()
+        val dim = p.secondary.toArgb()
+        Canvas(
+            Modifier.fillMaxWidth().height(h).clipToBounds().pointerInput(spec) {
+                detectTapGestures { pos ->
+                    SchemeLayout(spec, size.width.toFloat(), size.height.toFloat(), density).hit(pos.x, pos.y)?.let(onTap)
+                }
+            },
+        ) {
+            drawIntoCanvas { drawScheme(it.nativeCanvas, spec, frameHex, size.width, size.height, selectedId, density, labelBg, dim) }
+        }
     }
 }
 

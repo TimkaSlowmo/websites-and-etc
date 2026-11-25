@@ -51,10 +51,6 @@ struct HomeView: View {
             Text("ИИ прочитает размеры и параметры, покажет, как изделие будет выглядеть, и рассчитает ориентировочную цену.")
                 .multilineTextAlignment(.center).foregroundStyle(.secondary).padding(.horizontal, 32)
 
-            if !settings.isConfigured {
-                Label("Укажите адрес сервера во вкладке «Настройки»", systemImage: "exclamationmark.triangle")
-                    .font(.footnote).foregroundStyle(.orange)
-            }
             Spacer()
 
             VStack(spacing: 12) {
@@ -81,7 +77,7 @@ struct HomeView: View {
                         Image(systemName: "clock.arrow.circlepath").foregroundStyle(Theme.accent)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Последний расчёт").font(.caption).foregroundStyle(.secondary)
-                            Text("\(last.spec.product.title) \(last.spec.widthMm)×\(last.spec.heightMm)").font(.callout)
+                            Text(verbatim: "\(last.spec.product.title) \(last.spec.widthMm)×\(last.spec.heightMm)").font(.callout)
                         }
                         Spacer()
                         Text(Money.format(last.total, currency: last.currency)).font(.callout.bold())

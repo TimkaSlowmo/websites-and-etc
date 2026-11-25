@@ -17,6 +17,7 @@ struct OknoCalcApp: App {
 }
 
 private struct RootView: View {
+    @EnvironmentObject private var settings: AppSettings
     @StateObject private var vm: EstimateViewModel
 
     init(settings: AppSettings, catalogStore: CatalogStore, history: HistoryStore) {
@@ -39,6 +40,7 @@ private struct RootView: View {
                 .tag(AppTab.settings)
         }
         .tint(Theme.accent)
+        .preferredColorScheme(settings.colorScheme)
         .environmentObject(vm)
     }
 }

@@ -1,15 +1,22 @@
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var store: CatalogStore
-    @State private var importing = false
     @State private var message: String?
 
     var body: some View {
         let c = store.catalog
         Form {
+            Section("Оформление") {
+                Picker("Тема", selection: $settings.theme) {
+                    Text("Как в системе").tag("system")
+                    Text("Светлая").tag("light")
+                    Text("Тёмная").tag("dark")
+                }
+                .pickerStyle(.segmented)
+            }
+
             Section {
                 TextField("Название компании (для КП)", text: $settings.companyName)
             } header: { Text("Коммерческое предложение") }
@@ -46,17 +53,10 @@ struct SettingsView: View {
             Section {
                 LabeledContent("Прайс", value: c.name)
                 LabeledContent("Позиций / систем", value: "\(c.articles.count) / \(c.systems.count)")
-                Button { importing = true } label: { Label("Загрузить каталог (JSON)", systemImage: "square.and.arrow.down") }
                 if store.isModified {
                     Button("Вернуть цены из прайса", role: .destructive) { store.resetToBundled(); message = "Цены сброшены к прайсу" }
                 }
             } header: { Text("Каталог") }
-
-            Section {
-                TextField("https://…workers.dev", text: $settings.workerURL)
-                    .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
-            } header: { Text("ИИ-сервер") }
-            footer: { Text("Адрес уже зашит в приложение, менять не нужно.") }
 
             if let message { Section { Text(message).font(.footnote) } }
 
@@ -65,21 +65,14 @@ struct SettingsView: View {
             } footer: { Text("Проём — ИИ-расчёт окон и дверей по чертежу.") }
         }
         .navigationTitle("Настройки")
-        .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
-            switch result {
-            case .success(let url):
-                do { try store.importCatalog(from: url); message = "Каталог загружен" }
-                catch { message = error.localizedDescription }
-            case .failure(let e): message = e.localizedDescription
-            }
-        }
+        .keyboardDone()
     }
 
     private func percent(_ title: String, _ value: Double, set: @escaping (Double) -> Void) -> some View {
         LabeledContent(title) {
             HStack(spacing: 4) {
-                TextField("0", value: Binding(get: { value }, set: set), format: .number.precision(.fractionLength(0...1)))
-                    .keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 70)
+                TextField("0", value: Binding(get: { value }, set: set), format: .number.grouping(.never).precision(.fractionLength(0)))
+                    .keyboardType(.numberPad).multilineTextAlignment(.trailing).frame(width: 70)
                 Text("%").foregroundStyle(.secondary)
             }
         }

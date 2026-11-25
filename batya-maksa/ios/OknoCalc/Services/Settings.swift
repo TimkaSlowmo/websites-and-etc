@@ -1,10 +1,14 @@
 import Foundation
 import Security
 
-/// Адрес Worker и токен. Токен хранится в Keychain.
+import SwiftUI
+
+/// Настройки приложения. Адрес ИИ-сервера зашит в сборку и пользователю не показывается.
 final class AppSettings: ObservableObject {
-    @Published var workerURL: String {
-        didSet { UserDefaults.standard.set(workerURL, forKey: "workerURL") }
+    let workerURL: String
+    /// Тема: "system" | "light" | "dark".
+    @Published var theme: String {
+        didSet { UserDefaults.standard.set(theme, forKey: "theme") }
     }
     @Published var companyName: String {
         didSet { UserDefaults.standard.set(companyName, forKey: "companyName") }
@@ -14,7 +18,8 @@ final class AppSettings: ObservableObject {
     }
 
     init() {
-        workerURL = UserDefaults.standard.string(forKey: "workerURL") ?? Self.bundled("DefaultWorkerURL")
+        workerURL = Self.bundled("DefaultWorkerURL")
+        theme = UserDefaults.standard.string(forKey: "theme") ?? "system"
         companyName = UserDefaults.standard.string(forKey: "companyName") ?? ""
         token = Keychain.get("appToken") ?? ""
     }
@@ -24,6 +29,8 @@ final class AppSettings: ObservableObject {
         let v = (Bundle.main.object(forInfoDictionaryKey: key) as? String) ?? ""
         return v.hasPrefix("$(") ? "" : v
     }
+
+    var colorScheme: ColorScheme? { theme == "light" ? .light : theme == "dark" ? .dark : nil }
 
     var isConfigured: Bool { URL(string: workerURL)?.host != nil }
 }

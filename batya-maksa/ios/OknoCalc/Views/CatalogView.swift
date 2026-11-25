@@ -20,12 +20,12 @@ struct CatalogView: View {
             }
             switch tab {
             case 0:
-                ForEach(c.systems) { s in
+                ForEach(c.systems.filter(matchesSystem)) { s in
                     NavigationLink { SystemDetailView(system: s) } label: {
                         VStack(alignment: .leading, spacing: 3) {
                             Text(s.name).font(.headline)
                             Text(s.description).font(.caption).foregroundStyle(.secondary)
-                            Text("Заполнение \(s.fillMin)–\(s.fillMax) мм · \(s.rules.count) позиций в расчёте").font(.caption2).foregroundStyle(.tertiary)
+                            Text(verbatim: "Заполнение \(s.fillMin)–\(s.fillMax) мм · \(s.rules.count) позиций в расчёте").font(.caption2).foregroundStyle(.tertiary)
                         }
                     }
                 }
@@ -43,7 +43,7 @@ struct CatalogView: View {
                                 .font(.callout).monospacedDigit().foregroundStyle(a.price > 0 ? .primary : .secondary)
                         }
                     }
-                } header: { Text("Позиций: \(items.count) из \(c.articles.count)") }
+                } header: { Text(verbatim: "Позиций: \(items.count) из \(c.articles.count)") }
                 footer: { if items.count > 300 { Text("Показаны первые 300 — уточните поиск.") } }
             default:
                 ForEach(c.colorGroups) { g in
@@ -60,8 +60,13 @@ struct CatalogView: View {
                 }
             }
         }
-        .searchable(text: $query, prompt: tab == 2 ? "RAL, название" : "Артикул или название")
+        .searchable(text: $query, prompt: tab == 0 ? "Система" : tab == 2 ? "RAL, название" : "Артикул или название")
         .navigationTitle("Каталог")
+    }
+
+    private func matchesSystem(_ s: SystemDef) -> Bool {
+        let q = query.trimmingCharacters(in: .whitespaces).lowercased()
+        return q.isEmpty || s.name.lowercased().contains(q) || s.description.lowercased().contains(q)
     }
 
     private func matches(_ a: Article) -> Bool {
@@ -88,8 +93,8 @@ struct SystemDetailView: View {
                         } else if let code = r.code {
                             let a = c.article(code)
                             Text("\(code) · \(a?.name ?? "нет в прайсе")").font(.caption).foregroundStyle(.secondary)
-                            if let a { Text("\(Money.format(a.price, currency: c.currency))/\(a.unitTitle) · \(baseTitle(r.base, r.qty))").font(.caption2).foregroundStyle(.tertiary) }
-                            if let d = r.doorCode { Text("для дверей: \(d)").font(.caption2).foregroundStyle(.tertiary) }
+                            if let a { Text(verbatim: "\(Money.format(a.price, currency: c.currency))/\(a.unitTitle) · \(baseTitle(r.base, r.qty))").font(.caption2).foregroundStyle(.tertiary) }
+                            if let d = r.doorCode { Text(verbatim: "для дверей: \(d)").font(.caption2).foregroundStyle(.tertiary) }
                         }
                     }
                 }

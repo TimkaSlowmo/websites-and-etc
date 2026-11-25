@@ -10,12 +10,16 @@ xcrun simctl bootstatus "$UDID" -b
 xcrun simctl install "$UDID" "$APP"
 BID=kz.okno.calc
 shot() { sleep "$2"; xcrun simctl io "$UDID" screenshot "screens/$1.png"; }
-xcrun simctl launch "$UDID" $BID -demo; shot 1-result-scheme 6
-xcrun simctl terminate "$UDID" $BID
-xcrun simctl launch "$UDID" $BID; shot 2-home 4
-for t in history catalog settings; do
+# Светлая и тёмная тема (тема приложения «Как в системе»)
+for mode in light dark; do
+  xcrun simctl ui "$UDID" appearance $mode
+  xcrun simctl launch "$UDID" $BID -demo; shot "$mode-1-result" 6
   xcrun simctl terminate "$UDID" $BID
-  xcrun simctl launch "$UDID" $BID -tab $t; shot "3-$t" 4
+  xcrun simctl launch "$UDID" $BID; shot "$mode-2-home" 4
+  for t in history catalog settings; do
+    xcrun simctl terminate "$UDID" $BID
+    xcrun simctl launch "$UDID" $BID -tab $t; shot "$mode-3-$t" 4
+  done
+  xcrun simctl terminate "$UDID" $BID
 done
-xcrun simctl terminate "$UDID" $BID
 ls -la screens

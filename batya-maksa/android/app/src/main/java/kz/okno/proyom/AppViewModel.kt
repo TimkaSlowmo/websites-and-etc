@@ -42,12 +42,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var company by mutableStateOf(prefs.company)
         private set
-    var workerUrl by mutableStateOf(prefs.workerUrl)
+    /** Тема: "system" | "light" | "dark" — как на iPhone. */
+    var theme by mutableStateOf(prefs.theme)
         private set
 
     val breakdown: Breakdown get() = Pricing.calculate(spec, selection, catalog)
 
-    private fun api() = Api(workerUrl)
+    private fun api() = Api(BuildConfig.WORKER_URL)
 
     fun start(image: Bitmap) {
         drawing = image; render = null; renderError = null
@@ -207,7 +208,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     // ---------- Настройки и каталог ----------
 
     fun changeCompany(v: String) { company = v; prefs.company = v }
-    fun changeWorkerUrl(v: String) { workerUrl = v; prefs.workerUrl = v }
+    fun changeTheme(v: String) { theme = v; prefs.theme = v }
 
     /** Правка ставок: изменения пишутся в JSON каталога и сохраняются. */
     fun editCatalog(change: (JSONObject) -> Unit) {
@@ -215,10 +216,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         catalogStore.save(catalog)
         catalogModified = true
     }
-
-    fun importCatalog(text: String): String = try {
-        catalog = catalogStore.import(text); catalogModified = true; "Каталог загружен"
-    } catch (e: Exception) { e.message ?: "Ошибка" }
 
     fun resetCatalog() { catalog = catalogStore.reset(); catalogModified = false }
 

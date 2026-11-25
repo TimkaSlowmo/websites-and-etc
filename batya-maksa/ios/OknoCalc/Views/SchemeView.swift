@@ -146,11 +146,11 @@ struct SchemeView: View {
             c2.translateBy(x: mid.x, y: mid.y)
             c2.rotate(by: .degrees(-90))
             let sz = t.measure(in: CGSize(width: 200, height: 40))
-            c2.fill(Path(CGRect(x: -sz.width / 2 - 3, y: -sz.height / 2, width: sz.width + 6, height: sz.height)), with: .color(Color(.systemBackground)))
+            c2.fill(Path(CGRect(x: -sz.width / 2 - 3, y: -sz.height / 2, width: sz.width + 6, height: sz.height)), with: .color(Color(.secondarySystemGroupedBackground)))
             c2.draw(t, at: .zero, anchor: .center)
         } else {
             let sz = t.measure(in: CGSize(width: 200, height: 40))
-            ctx.fill(Path(CGRect(x: mid.x - sz.width / 2 - 3, y: mid.y - sz.height / 2, width: sz.width + 6, height: sz.height)), with: .color(Color(.systemBackground)))
+            ctx.fill(Path(CGRect(x: mid.x - sz.width / 2 - 3, y: mid.y - sz.height / 2, width: sz.width + 6, height: sz.height)), with: .color(Color(.secondarySystemGroupedBackground)))
             ctx.draw(t, at: mid, anchor: .center)
         }
     }

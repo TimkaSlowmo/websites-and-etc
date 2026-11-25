@@ -13,9 +13,9 @@ class Prefs(ctx: Context) {
     var company: String
         get() = p.getString("company", "") ?: ""
         set(v) { p.edit().putString("company", v).apply() }
-    var workerUrl: String
-        get() = p.getString("workerUrl", null) ?: BuildConfig.WORKER_URL
-        set(v) { p.edit().putString("workerUrl", v).apply() }
+    var theme: String
+        get() = p.getString("theme", "system") ?: "system"
+        set(v) { p.edit().putString("theme", v).apply() }
 }
 
 /** Каталог компании: встроенный catalog.json + сохранённые правки цен (files/catalog.json). */
@@ -29,13 +29,6 @@ class CatalogStore(private val ctx: Context) {
     fun save(c: Catalog) { userFile.writeText(c.toJsonString()) }
 
     val isModified: Boolean get() = userFile.exists()
-
-    /** Проверяет и сохраняет каталог; бросает исключение с понятным текстом. */
-    fun import(text: String): Catalog {
-        val c = runCatching { Catalog.parse(text) }.getOrElse { throw IllegalArgumentException("Не удалось прочитать каталог: ${it.message}") }
-        userFile.writeText(text)
-        return c
-    }
 
     fun reset(): Catalog { userFile.delete(); return bundled() }
 }

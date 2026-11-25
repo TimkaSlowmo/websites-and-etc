@@ -4,7 +4,7 @@ struct ResultView: View {
     @EnvironmentObject private var vm: EstimateViewModel
     @EnvironmentObject private var catalogStore: CatalogStore
     @State private var tab = 0
-    @State private var pdfURL: URL?
+    @State private var pdfURL: ShareFile?
     @State private var saved = false
     @State private var editing: CellRect?
     @State private var expanded: Set<LineGroup> = []
@@ -120,7 +120,7 @@ struct ResultView: View {
 
             Section("Заполнение, цвет, монтаж") {
                 Picker("Заполнение", selection: $vm.selection.fillMm) {
-                    ForEach(fillOptions(system: system, catalog: catalog), id: \.self) { f in Text("\(f) мм").tag(f) }
+                    ForEach(fillOptions(system: system, catalog: catalog), id: \.self) { f in Text(verbatim: "\(f) мм").tag(f) }
                 }
                 if let gi = catalog.glassItem(for: vm.selection.fillMm) {
                     LabeledContent("Стеклопакет", value: gi.name).font(.callout)
@@ -149,14 +149,14 @@ struct ResultView: View {
                 ForEach(Array(vm.spec.layout.sections.enumerated()), id: \.element.id) { si, s in
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
-                            Text("\(vm.spec.layout.split.sectionName) \(si + 1)").font(.headline)
+                            Text(verbatim: "\(vm.spec.layout.split.sectionName) \(si + 1)").font(.headline)
                             Spacer()
                             if vm.spec.layout.sections.count > 1 {
                                 TextField("мм", value: Binding(get: { s.sizeMm }, set: { vm.setSectionSize(si, $0) }), format: .number.grouping(.never))
                                     .keyboardType(.numberPad).multilineTextAlignment(.trailing).frame(width: 70)
                                 Text("мм").foregroundStyle(.secondary)
                             } else {
-                                Text("\(s.sizeMm) мм").foregroundStyle(.secondary)
+                                Text(verbatim: "\(s.sizeMm) мм").foregroundStyle(.secondary)
                             }
                         }
                         ForEach(Array(s.cells.enumerated()), id: \.element.id) { ci, c in
@@ -167,7 +167,7 @@ struct ResultView: View {
                                     Image(systemName: c.door ? "door.left.hand.open" : (c.opening == .fixed ? "square" : "macwindow"))
                                         .foregroundStyle(Theme.accent).frame(width: 22)
                                     VStack(alignment: .leading, spacing: 2) {
-                                        Text("Ячейка \(ci + 1) · \(c.sizeMm) мм").foregroundStyle(.primary)
+                                        Text(verbatim: "Ячейка \(ci + 1) · \(c.sizeMm) мм").foregroundStyle(.primary)
                                         Text(cellSummary(c)).font(.caption).foregroundStyle(.secondary)
                                     }
                                     Spacer()
@@ -234,7 +234,7 @@ struct ResultView: View {
                 }
                 if b.quantity > 1 {
                     HStack {
-                        Text("Итого за \(b.quantity) шт").font(.headline)
+                        Text(verbatim: "Итого за \(b.quantity) шт").font(.headline)
                         Spacer()
                         Text(Money.format(b.total, currency: b.currency)).font(.title2.bold()).monospacedDigit()
                             .foregroundStyle(Theme.accent)
@@ -242,17 +242,17 @@ struct ResultView: View {
                             .animation(.snappy(duration: 0.35), value: b.total)
                     }
                 }
-            } header: { Text("Стоимость (по прайсу \(catalog.name))") }
+            } header: { Text(verbatim: "Стоимость (по прайсу \(catalog.name))") }
             footer: { Text("Профили, уплотнители и комплектующие — по артикулам прайса. Стеклопакеты, фурнитура и работа — по ставкам из «Настроек». Точную цену подтверждает замер.") }
 
             Section {
                 Button {
-                    pdfURL = PDFExporter.makeOffer(spec: vm.spec, selection: vm.selection, breakdown: b, catalog: catalog,
-                                                   company: vm.companyName, drawing: vm.drawing, render: vm.renderImage)
-                } label: { Label("Создать КП (PDF)", systemImage: "doc.richtext") }
-                if let pdfURL {
-                    ShareLink(item: pdfURL) { Label("Отправить КП", systemImage: "square.and.arrow.up") }
-                }
+                    hideKeyboard()
+                    if let url = PDFExporter.makeOffer(spec: vm.spec, selection: vm.selection, breakdown: b, catalog: catalog,
+                                                       company: vm.companyName, drawing: vm.drawing, render: vm.renderImage) {
+                        pdfURL = ShareFile(url: url)
+                    }
+                } label: { Label("Создать и отправить КП (PDF)", systemImage: "doc.richtext") }
                 ShareLink(item: vm.summaryText) { Label("Поделиться текстом расчёта", systemImage: "text.bubble") }
                 Button { vm.saveToHistory(); saved = true } label: {
                     Label(saved ? "Сохранено" : "Сохранить в историю", systemImage: saved ? "checkmark.circle.fill" : "tray.and.arrow.down")
@@ -260,6 +260,10 @@ struct ResultView: View {
                 .disabled(saved)
             }
         }
+        .keyboardDone()
+        .sheet(item: $pdfURL) { f in ShareSheet(items: [f.url]).presentationDetents([.medium, .large]) }
+        .onChange(of: vm.spec) { _, _ in saved = false }
+        .onChange(of: vm.selection) { _, _ in saved = false }
         .sheet(item: $editing) { r in
             CellEditor(section: r.section, index: r.index).presentationDetents([.medium, .large])
         }
@@ -401,6 +405,7 @@ struct CellEditor: View {
                         }
                     }
                 }
+                .keyboardDone()
                 .navigationTitle("\(vm.spec.layout.split.sectionName) \(section + 1), ячейка \(index + 1)")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Готово") { dismiss() } } }
@@ -472,4 +477,19 @@ struct ColorPickerView: View {
         let q = query.trimmingCharacters(in: .whitespaces).lowercased()
         return q.isEmpty || c.code.lowercased().contains(q) || c.name.lowercased().contains(q)
     }
+}
+
+/// Файл для листа «Поделиться».
+struct ShareFile: Identifiable {
+    let url: URL
+    var id: String { url.absoluteString }
+}
+
+/// Системный лист «Поделиться» (UIActivityViewController).
+struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+    func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
 }

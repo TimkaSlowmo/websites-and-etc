@@ -7,7 +7,7 @@ enum APIError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .notConfigured: return "Укажите адрес сервера и токен в настройках."
+        case .notConfigured: return "ИИ-сервер не настроен в этой сборке. Обновите приложение."
         case .server(let m): return "Ошибка ИИ-сервера: \(m)"
         case .badResponse: return "Сервер вернул неожиданный ответ."
         }
