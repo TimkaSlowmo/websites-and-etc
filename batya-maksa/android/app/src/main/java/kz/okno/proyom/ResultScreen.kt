@@ -201,7 +201,7 @@ fun ResultView(vm: AppViewModel) {
             PickerRow("Заполнение", "${sel.fillMm} мм", fills, { "$it мм" }) { f -> vm.updateSelection { it.copy(fillMm = f) } }
             c.glassItem(sel.fillMm)?.let { Sep(); ValueRow("Стеклопакет", it.name) }
             Sep()
-            TextRow("например 4-10-4-10-4", spec.glass, label = "Формула") { v -> vm.updateSpec { it.copy(glass = v) } }
+            TextRow("4-10-4-10-4", spec.glass, label = "Формула") { v -> vm.updateSpec { it.copy(glass = v) } }
             Sep()
             ColorRow("Цвет снаружи", outside, "—") { picking = "out" }
             Sep()

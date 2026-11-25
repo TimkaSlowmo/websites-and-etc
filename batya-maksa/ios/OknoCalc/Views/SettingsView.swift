@@ -10,7 +10,7 @@ struct SettingsView: View {
         Form {
             Section("Оформление") {
                 Picker("Тема", selection: $settings.theme) {
-                    Text("Как в системе").tag("system")
+                    Text("Авто").tag("system")
                     Text("Светлая").tag("light")
                     Text("Тёмная").tag("dark")
                 }

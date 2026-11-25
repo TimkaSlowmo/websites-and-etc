@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -104,7 +105,8 @@ val LocalPalette = staticCompositionLocalOf { LightPalette }
 fun TopBar(title: String, leading: (@Composable () -> Unit)? = null, trailing: (@Composable () -> Unit)? = null) {
     Box(Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 8.dp)) {
         Box(Modifier.align(Alignment.CenterStart)) { leading?.invoke() }
-        Text(title, Modifier.align(Alignment.Center), fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = pal().text)
+        Text(title, Modifier.align(Alignment.Center).padding(horizontal = if (leading != null || trailing != null) 84.dp else 0.dp),
+            fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = pal().text, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Box(Modifier.align(Alignment.CenterEnd)) { trailing?.invoke() }
     }
 }
@@ -145,11 +147,16 @@ fun RowBase(onClick: (() -> Unit)? = null, minHeight: Dp = 44.dp, content: @Comp
 }
 
 @Composable
-fun ValueRow(label: String, value: String, bold: Boolean = false, valueColor: Color? = null) = RowBase {
-    Text(label, color = pal().text, fontSize = 17.sp, fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal, modifier = Modifier.weight(1f, fill = false))
-    Spacer(Modifier.width(12.dp))
-    Text(value, color = valueColor ?: pal().secondary, fontSize = 17.sp, textAlign = TextAlign.End,
-        fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal, modifier = Modifier.weight(1f))
+fun ValueRow(label: String, value: String, bold: Boolean = false, valueColor: Color? = null) {
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val maxValue = (maxWidth - 44.dp) * 0.58f
+        RowBase {
+            Text(label, color = pal().text, fontSize = 17.sp, fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal, modifier = Modifier.weight(1f))
+            Spacer(Modifier.width(12.dp))
+            Text(value, color = valueColor ?: pal().secondary, fontSize = 17.sp, textAlign = TextAlign.End,
+                fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal, modifier = Modifier.widthIn(max = maxValue))
+        }
+    }
 }
 
 @Composable

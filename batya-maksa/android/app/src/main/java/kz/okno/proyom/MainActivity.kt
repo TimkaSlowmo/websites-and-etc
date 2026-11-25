@@ -43,6 +43,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.material3.Typography
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.em
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,7 +56,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
-val Accent = Color(0xFF127A8C)
+private val AccentLight = Color(0xFF127A8C)
+private val AccentDark = Color(0xFF33A8BF)
+private val accentState = mutableStateOf(AccentLight)
+/** Фирменный бирюзовый; в тёмной теме светлее, чтобы читался на чёрном (как на iPhone). */
+val Accent: Color get() = accentState.value
 val Deep = Color(0xFF0E204A)
 val Danger = Color(0xFFFF3B30)
 val Warn = Color(0xFFFF9500)
@@ -81,16 +89,26 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun ProyomTheme(dark: Boolean, content: @Composable () -> Unit) {
     val p = if (dark) DarkPalette else LightPalette
+    val accent = if (dark) AccentDark else AccentLight
+    accentState.value = accent
     val scheme = if (dark) darkColorScheme(
-        primary = Accent, onPrimary = Color.White, secondary = Accent, background = p.bg, surface = p.card,
+        primary = accent, onPrimary = Color.White, secondary = accent, background = p.bg, surface = p.card,
         surfaceContainer = p.card, surfaceContainerHigh = p.card, surfaceContainerLow = p.bg, surfaceContainerHighest = p.fill,
         onSurface = p.text, onSurfaceVariant = p.secondary, outline = p.separator, surfaceVariant = p.fill,
     ) else lightColorScheme(
-        primary = Accent, onPrimary = Color.White, secondary = Accent, background = p.bg, surface = p.card,
+        primary = accent, onPrimary = Color.White, secondary = accent, background = p.bg, surface = p.card,
         surfaceContainer = p.card, surfaceContainerHigh = p.card, surfaceContainerLow = p.bg, surfaceContainerHighest = p.fill,
         onSurface = p.text, onSurfaceVariant = p.secondary, outline = p.separator, surfaceVariant = p.fill,
     )
-    CompositionLocalProvider(LocalPalette provides p) { MaterialTheme(colorScheme = scheme, content = content) }
+    // Шрифт без разрядки и с межстрочным интервалом от размера — ближе к iOS
+    val base = TextStyle(letterSpacing = 0.sp, lineHeight = 1.25.em)
+    val t = Typography()
+    val typography = Typography(
+        bodyLarge = t.bodyLarge.merge(base).copy(fontSize = 17.sp), bodyMedium = t.bodyMedium.merge(base), bodySmall = t.bodySmall.merge(base),
+        labelLarge = t.labelLarge.merge(base), labelMedium = t.labelMedium.merge(base), labelSmall = t.labelSmall.merge(base),
+        titleLarge = t.titleLarge.merge(base), titleMedium = t.titleMedium.merge(base), titleSmall = t.titleSmall.merge(base),
+    )
+    CompositionLocalProvider(LocalPalette provides p) { MaterialTheme(colorScheme = scheme, typography = typography, content = content) }
 }
 
 private data class TabInfo(val tab: Tab, val title: String, val icon: ImageVector)

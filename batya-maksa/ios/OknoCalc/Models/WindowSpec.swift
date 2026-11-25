@@ -75,7 +75,7 @@ enum Hinge: String, Codable, CaseIterable, Identifiable {
 enum Split: String, Codable, CaseIterable, Identifiable {
     case columns, rows
     var id: String { rawValue }
-    var title: String { self == .columns ? "Колонки (слева направо)" : "Ряды (сверху вниз)" }
+    var title: String { self == .columns ? "Колонки" : "Ряды" }
     var sectionName: String { self == .columns ? "Колонка" : "Ряд" }
 
     init(from decoder: Decoder) throws {

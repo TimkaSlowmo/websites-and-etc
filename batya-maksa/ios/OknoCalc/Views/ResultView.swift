@@ -126,7 +126,7 @@ struct ResultView: View {
                     LabeledContent("Стеклопакет", value: gi.name).font(.callout)
                 }
                 LabeledContent("Формула") {
-                    TextField("например 4-10-4-10-4", text: $vm.spec.glass).multilineTextAlignment(.trailing)
+                    TextField("4-10-4-10-4", text: $vm.spec.glass).multilineTextAlignment(.trailing)
                 }
                 NavigationLink {
                     ColorPickerView(title: "Цвет снаружи", selectedId: $vm.selection.colorId, allowSame: false)

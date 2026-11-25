@@ -236,7 +236,7 @@ fun SettingsScreen(vm: AppViewModel) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         LargeTitle("Настройки")
         Group("Оформление") {
-            Segmented(listOf("Как в системе", "Светлая", "Тёмная"), themes.indexOf(vm.theme).coerceAtLeast(0), Modifier.padding(12.dp)) { i ->
+            Segmented(listOf("Авто", "Светлая", "Тёмная"), themes.indexOf(vm.theme).coerceAtLeast(0), Modifier.padding(12.dp)) { i ->
                 vm.changeTheme(themes[i])
             }
         }

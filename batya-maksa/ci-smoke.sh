@@ -39,9 +39,13 @@ run() {
       if keyboard; then KB=1; else KB=0; echo "WARN: экранная клавиатура не показалась (аппаратная клавиатура эмулятора?)"; fi
       adb shell input keyevent KEYCODE_MOVE_END
       for i in 1 2 3 4 5; do adb shell input keyevent KEYCODE_DEL; done
-      adb shell input text 1500; adb shell input keyevent KEYCODE_ENTER; sleep 2
-      if [ $KB = 1 ]; then keyboard && echo "INFO: после ENTER клавиатура ещё открыта" || echo "INFO: ENTER («Готово») закрыл клавиатуру"; fi
-      tap_text "Площадь"; sleep 2
+      adb shell input text 1500; sleep 1; shot "$m-8b-typed" 0
+      # «Готово» (✓) на цифровой клавиатуре — правый нижний угол. Аппаратный ENTER не годится:
+      # он выводит окно из сенсорного режима, и отпускание клавиши «нажимает» первую кнопку экрана.
+      if [ $KB = 1 ]; then
+        adb shell input tap $((W*745/1000)) $((H*955/1000)); sleep 2
+        keyboard && { echo "WARN: ✓ не попал — прячу тапом мимо поля"; tap_text "Площадь"; sleep 2; } || echo "INFO: «Готово» закрыл клавиатуру"
+      else tap_text "Площадь"; sleep 2; fi
       [ $KB = 1 ] && keyboard && { echo "Клавиатура не скрылась по тапу мимо поля"; FAIL=1; }
       dump | grep -q 'text="1500"' || { echo "Ширина 1500 не применилась"; FAIL=1; }
       shot "$m-9-after-done" 1
