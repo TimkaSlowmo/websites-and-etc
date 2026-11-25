@@ -7,6 +7,8 @@ struct SchemeView: View {
     var frameHex: String = "#45494E"
     var selected: CellRect.ID? = nil
     var onTap: ((CellRect) -> Void)? = nil
+    /// Схема занимает всю ширину, а высота — по пропорциям изделия, но не больше maxHeight (как на Android).
+    var maxHeight: CGFloat = 380
 
     private let dimSpace: CGFloat = 34
 
@@ -21,7 +23,7 @@ struct SchemeView: View {
                     for r in spec.cellRects where rect(r, box, k).contains(p) { onTap(r); return }
                 }
         }
-        .aspectRatio(aspect, contentMode: .fit)
+        .modifier(SchemeSizing(ratio: aspect, pad: dimSpace * 2, maxHeight: maxHeight))
         .accessibilityLabel("Схема изделия \(spec.widthMm) на \(spec.heightMm) миллиметров")
     }
 
@@ -162,5 +164,25 @@ extension Color {
         if s.hasPrefix("#") { s.removeFirst() }
         let v = UInt64(s, radix: 16) ?? 0x45494E
         self.init(red: Double((v >> 16) & 0xFF) / 255, green: Double((v >> 8) & 0xFF) / 255, blue: Double(v & 0xFF) / 255)
+    }
+}
+
+/// Размер схемы: ширина — сколько дали, высота = ширина по пропорции + поля под размеры, не больше maxHeight.
+private struct SchemeSizing: ViewModifier {
+    let ratio: CGFloat, pad: CGFloat, maxHeight: CGFloat
+    func body(content: Content) -> some View {
+        SchemeSizer(ratio: ratio, pad: pad, maxHeight: maxHeight) { content }
+    }
+}
+
+private struct SchemeSizer: Layout {
+    let ratio: CGFloat, pad: CGFloat, maxHeight: CGFloat
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let w = proposal.width ?? 320
+        let h = min((w - pad) / max(ratio, 0.05) + pad, maxHeight, proposal.height ?? .infinity)
+        return CGSize(width: w, height: max(120, h))
+    }
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        for s in subviews { s.place(at: bounds.origin, proposal: ProposedViewSize(bounds.size)) }
     }
 }

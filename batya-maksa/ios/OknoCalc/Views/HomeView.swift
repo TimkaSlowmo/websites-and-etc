@@ -23,7 +23,7 @@ struct HomeView: View {
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 if vm.phase != .idle {
-                    Button { vm.reset() } label: { Label("Новый", systemImage: "plus") }
+                    Button { vm.reset() } label: { Label("Новый", systemImage: "plus").labelStyle(.titleAndIcon) }
                 }
             }
         }

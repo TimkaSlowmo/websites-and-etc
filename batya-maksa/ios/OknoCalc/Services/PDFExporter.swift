@@ -10,8 +10,8 @@ enum PDFExporter {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("КП-\(Int(Date().timeIntervalSince1970)).pdf")
         let color = catalog.color(selection.colorId)
         let scheme: UIImage? = {
-            let r = ImageRenderer(content: SchemeView(spec: spec, frameHex: color?.hex ?? "#45494E")
-                .frame(width: 360, height: 360).background(Color.white))
+            let r = ImageRenderer(content: SchemeView(spec: spec, frameHex: color?.hex ?? "#45494E", maxHeight: 360)
+                .frame(width: 360, height: 360).background(Color.white).environment(\.colorScheme, .light))
             r.scale = 3
             return r.uiImage
         }()
