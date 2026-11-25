@@ -46,6 +46,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -100,14 +101,31 @@ val LocalPalette = staticCompositionLocalOf { LightPalette }
 
 // ---------- Заголовки ----------
 
-/** Заголовок экрана по центру, как в навигации iOS. */
+/**
+ * Заголовок экрана по центру, как в навигации iOS. Заголовку достаётся вся ширина между кнопками
+ * (с запасом по более широкой из них), длинный — обрезается многоточием, но не наезжает на «Готово».
+ */
 @Composable
 fun TopBar(title: String, leading: (@Composable () -> Unit)? = null, trailing: (@Composable () -> Unit)? = null) {
-    Box(Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 8.dp)) {
-        Box(Modifier.align(Alignment.CenterStart)) { leading?.invoke() }
-        Text(title, Modifier.align(Alignment.Center).padding(horizontal = if (leading != null || trailing != null) 84.dp else 0.dp),
-            fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = pal().text, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Box(Modifier.align(Alignment.CenterEnd)) { trailing?.invoke() }
+    val p = pal()
+    Layout(
+        content = {
+            Box { leading?.invoke() }
+            Text(title, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = p.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Box { trailing?.invoke() }
+        },
+        modifier = Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 8.dp),
+    ) { m, c ->
+        val loose = c.copy(minWidth = 0, minHeight = 0)
+        val l = m[0].measure(loose)
+        val r = m[2].measure(loose)
+        val side = maxOf(l.width, r.width) + if (l.width + r.width > 0) 6.dp.roundToPx() else 0
+        val t = m[1].measure(loose.copy(maxWidth = (c.maxWidth - side * 2).coerceAtLeast(0)))
+        layout(c.maxWidth, c.maxHeight) {
+            l.place(0, (c.maxHeight - l.height) / 2)
+            r.place(c.maxWidth - r.width, (c.maxHeight - r.height) / 2)
+            t.place((c.maxWidth - t.width) / 2, (c.maxHeight - t.height) / 2)
+        }
     }
 }
 

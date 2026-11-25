@@ -12,11 +12,17 @@ start() { adb shell am force-stop kz.okno.proyom; adb shell am start -n kz.okno.
 shot() { sleep "$2"; adb exec-out screencap -p > "screens/$1.png"; }
 swipe() { adb shell input swipe $((W/2)) $((H*3/4)) $((W/2)) $((H/4)) 350; }
 dump() { adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1; adb shell cat /sdcard/ui.xml | tr '>' '\n'; }
-# Нажать на элемент с текстом (точное совпадение начала), прокручивая вниз, если не виден
+# Нажать на элемент с текстом (совпадение начала), только если он целиком в видимой части
+# (между заголовком и панелью вкладок); иначе прокрутить и искать снова
 tap_text() {
-  for i in 1 2 3 4 5 6; do
-    B=$(dump | grep "text=\"$1" | grep -oE 'bounds="\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]"' | head -1 | grep -oE '[0-9]+')
-    if [ -n "$B" ]; then set -- $B; adb shell input tap $(( ($1 + $3) / 2 )) $(( ($2 + $4) / 2 )); return 0; fi
+  local t=$1
+  for i in 1 2 3 4 5 6 7; do
+    for B in $(dump | grep "text=\"$t" | grep -oE 'bounds="\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]"' | grep -oE '[0-9]+(,[0-9]+)?' | paste -sd' ' | tr ' ' '\n' | paste - - | tr '\t' ','); do
+      set -- $(echo "$B" | tr ',' ' ')
+      if [ "$2" -gt $((H*10/100)) ] && [ "$4" -lt $((H*86/100)) ]; then
+        adb shell input tap $(( ($1 + $3) / 2 )) $(( ($2 + $4) / 2 )); return 0
+      fi
+    done
     swipe; sleep 1
   done
   return 1
