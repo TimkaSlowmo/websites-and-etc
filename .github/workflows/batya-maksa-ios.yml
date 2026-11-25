@@ -19,6 +19,7 @@ jobs:
       - run: brew install xcodegen && xcodegen
       - name: Unit tests
         run: |
+          set -o pipefail
           SIM=$(xcrun simctl list devices available | grep -m1 -oE 'iPhone [0-9A-Za-z ]+ \(' | sed 's/ ($//')
           echo "Simulator: $SIM"
           xcodebuild test -project OknoCalc.xcodeproj -scheme OknoCalc -destination "platform=iOS Simulator,name=$SIM" CODE_SIGNING_ALLOWED=NO | tail -40

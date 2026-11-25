@@ -15,14 +15,14 @@ dump() { adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1; adb shell ca
 # Нажать на элемент с текстом (совпадение начала), только если он целиком в видимой части
 # (между заголовком и панелью вкладок); иначе прокрутить и искать снова
 tap_text() {
-  local t=$1
+  local t=$1 x1 y1 x2 y2
   for i in 1 2 3 4 5 6 7; do
-    for B in $(dump | grep "text=\"$t" | grep -oE 'bounds="\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]"' | grep -oE '[0-9]+(,[0-9]+)?' | paste -sd' ' | tr ' ' '\n' | paste - - | tr '\t' ','); do
-      set -- $(echo "$B" | tr ',' ' ')
-      if [ "$2" -gt $((H*10/100)) ] && [ "$4" -lt $((H*86/100)) ]; then
-        adb shell input tap $(( ($1 + $3) / 2 )) $(( ($2 + $4) / 2 )); return 0
+    dump | grep "text=\"$t" | grep -oE 'bounds="\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]"' | tr -c '0-9\n' ' ' > /tmp/bounds.txt
+    while read -r x1 y1 x2 y2; do
+      if [ -n "${y2:-}" ] && [ "$y1" -gt $((H*10/100)) ] && [ "$y2" -lt $((H*86/100)) ]; then
+        adb shell input tap $(( (x1 + x2) / 2 )) $(( (y1 + y2) / 2 )); return 0
       fi
-    done
+    done < /tmp/bounds.txt
     swipe; sleep 1
   done
   return 1

@@ -175,7 +175,7 @@ private struct SchemeSizing: ViewModifier {
     }
 }
 
-private struct SchemeSizer: Layout {
+private struct SchemeSizer: SwiftUI.Layout {
     let ratio: CGFloat, pad: CGFloat, maxHeight: CGFloat
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let w = proposal.width ?? 320
