@@ -86,7 +86,8 @@ fun HistoryScreen(vm: AppViewModel) {
                                         value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { vm.thumbnail(item) }
                                     }
                                     Box(Modifier.size(56.dp).clip(RoundedCornerShape(10.dp)).background(p.fill), contentAlignment = Alignment.Center) {
-                                        if (thumb != null) Image(thumb.asImageBitmap(), null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                                        val t = thumb
+                                        if (t != null) Image(t.asImageBitmap(), null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                                         else Icon(Icons.Outlined.Window, null, tint = p.secondary)
                                     }
                                     Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
