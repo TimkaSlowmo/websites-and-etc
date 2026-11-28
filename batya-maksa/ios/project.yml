@@ -7,7 +7,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.9"
-    MARKETING_VERSION: "0.8.0"
+    MARKETING_VERSION: "0.8.1"
     CURRENT_PROJECT_VERSION: "1"
 targets:
   OknoCalc:
@@ -19,6 +19,8 @@ targets:
       path: OknoCalc/Info.plist
       properties:
         CFBundleDisplayName: Проём
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         DefaultWorkerURL: $(DEFAULT_WORKER_URL)
