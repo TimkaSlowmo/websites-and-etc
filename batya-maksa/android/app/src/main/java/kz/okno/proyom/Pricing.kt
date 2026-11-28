@@ -427,7 +427,7 @@ object Pricing {
             items += Breakdown(lines, x.warnings, x.limits, subtotal, markup, unitTotal, x.q, unitTotal * x.q, x.g["area_m2"], c.currency)
         }
         val subtotal = items.sumOf { it.total }
-        val discount = r0(subtotal * opt.discountPercent / 100)
+        val discount = r0(subtotal * opt.discountPercent.coerceIn(0.0, 100.0) / 100)
         val total = subtotal - discount
         val vat = r0(total * c.vatPercent / (100 + c.vatPercent))
         val area = items.sumOf { it.areaM2 * it.quantity }

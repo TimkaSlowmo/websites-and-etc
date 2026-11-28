@@ -43,8 +43,12 @@ import kotlinx.coroutines.delay
 fun decodeImage(ctx: Context, uri: Uri): Bitmap? = runCatching {
     ImageDecoder.decodeBitmap(ImageDecoder.createSource(ctx.contentResolver, uri)) { decoder, info, _ ->
         decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+        // Не больше 2400 px по большей стороне — как на iPhone: хватает ИИ и не забивает память
         val side = maxOf(info.size.width, info.size.height)
-        decoder.setTargetSampleSize(maxOf(1, side / 2000))
+        if (side > 2400) {
+            val k = 2400f / side
+            decoder.setTargetSize(maxOf(1, (info.size.width * k).toInt()), maxOf(1, (info.size.height * k).toInt()))
+        }
     }
 }.getOrNull()
 

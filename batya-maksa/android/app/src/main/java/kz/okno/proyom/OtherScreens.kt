@@ -82,7 +82,9 @@ fun HistoryScreen(vm: AppViewModel) {
                                 },
                             ) {
                                 RowBase(onClick = { vm.open(item) }, minHeight = 72.dp) {
-                                    val thumb = remember(item.id) { vm.thumbnail(item) }
+                                    val thumb by androidx.compose.runtime.produceState<android.graphics.Bitmap?>(null, item.id, item.date) {
+                                        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { vm.thumbnail(item) }
+                                    }
                                     Box(Modifier.size(56.dp).clip(RoundedCornerShape(10.dp)).background(p.fill), contentAlignment = Alignment.Center) {
                                         if (thumb != null) Image(thumb.asImageBitmap(), null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                                         else Icon(Icons.Outlined.Window, null, tint = p.secondary)
@@ -269,7 +271,7 @@ fun SettingsScreen(vm: AppViewModel) {
         Group("Раскрой и упаковка", footer = "Как в картах раскроя ORGADATA: детали всех окон КП раскладываются по хлыстам, платим за целые хлысты.") {
             RateRow("Хлыст профиля", c.barDefaultMm, "мм") { set("bar_default_mm", maxOf(1000.0, it)) }
             c.barLengths.forEachIndexed { i, b ->
-                Sep(); RateRow("Хлыст ${b.prefix}…", b.mm, "мм") { setIn("bar_lengths", i, "mm", maxOf(1000.0, it)) }
+                Sep(); RateRow(b.title ?: "Хлыст ${b.prefix}…", b.mm, "мм") { setIn("bar_lengths", i, "mm", maxOf(1000.0, it)) }
             }
             Sep(); RateRow("Ширина пропила", c.kerf, "мм") { set("saw_kerf_mm", it) }
             Sep(); RateRow("Обрезка концов хлыста", c.trim, "мм") { set("bar_trim_mm", it) }

@@ -109,7 +109,76 @@ class HistoryStore(ctx: Context) {
     fun image(id: String, kind: String): Bitmap? =
         File(dir, "${id}_$kind.jpg").takeIf { it.exists() }?.let { BitmapFactory.decodeFile(it.path) }
 
+    /** Маленькая картинка для списка (≈ px по большей стороне) — не грузит в память полноразмерные фото. */
+    fun thumb(id: String, kind: String, px: Int = 180): Bitmap? {
+        val f = File(dir, "${id}_$kind.jpg").takeIf { it.exists() } ?: return null
+        val b = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(f.path, b)
+        var sample = 1
+        while (maxOf(b.outWidth, b.outHeight) / (sample * 2) >= px) sample *= 2
+        return BitmapFactory.decodeFile(f.path, BitmapFactory.Options().apply { inSampleSize = sample })
+    }
+
     fun deleteImages(id: String) {
         File(dir, "${id}_d.jpg").delete(); File(dir, "${id}_r.jpg").delete()
+    }
+}
+
+/**
+ * Черновик текущего КП (files/draft): сохраняется сам при каждом изменении и открывается при следующем запуске —
+ * КП не теряется, если Android выгрузил приложение (например, пока открыта камера). Как DraftStore в iOS.
+ */
+class DraftStore(ctx: Context) {
+    data class Draft(val positions: List<Position>, val options: OfferOptions, val current: Int, val historyId: String?, val saved: Boolean)
+
+    private val dir = File(ctx.filesDir, "draft").apply { mkdirs() }
+    private val index = File(dir, "draft.json")
+    /** Какая картинка уже лежит в файле (по ссылке) — чтобы не перекодировать одно и то же. */
+    private val written = HashMap<String, Bitmap>()
+
+    @Synchronized
+    fun load(): Draft? = runCatching {
+        val o = JSONObject(index.readText())
+        val positions = o.getJSONArray("positions").objects().map { Position.fromJson(it) }
+        if (positions.isEmpty()) null
+        else Draft(positions, OfferOptions.fromJson(o.getJSONObject("options")), o.optInt("current"),
+            o.optString("history_id").ifEmpty { null }, o.optBoolean("saved"))
+    }.getOrNull()
+
+    @Synchronized
+    fun image(id: String, kind: String): Bitmap? {
+        val name = "${id}_$kind.jpg"
+        val bmp = File(dir, name).takeIf { it.exists() }?.let { BitmapFactory.decodeFile(it.path) } ?: return null
+        written[name] = bmp
+        return bmp
+    }
+
+    /** null — КП пустое, черновик удаляется. */
+    @Synchronized
+    fun save(d: Draft?) {
+        if (d == null) { clear(); return }
+        val o = JSONObject().put("positions", JSONArray(d.positions.map { it.toJson() })).put("options", d.options.toJson())
+            .put("current", d.current).put("history_id", d.historyId ?: "").put("saved", d.saved)
+        val tmp = File(dir, "draft.json.tmp")
+        tmp.writeText(o.toString())
+        if (!tmp.renameTo(index)) { index.delete(); tmp.renameTo(index) }
+    }
+
+    /** Дописывает новые картинки окон и удаляет картинки окон, которых больше нет в КП. */
+    @Synchronized
+    fun syncImages(drawings: Map<String, Bitmap>, renders: Map<String, Bitmap>) {
+        val keep = drawings.mapKeys { "${it.key}_d.jpg" } + renders.mapKeys { "${it.key}_r.jpg" }
+        for ((name, bmp) in keep) {
+            if (written[name] === bmp) continue
+            runCatching { File(dir, name).outputStream().use { bmp.compress(Bitmap.CompressFormat.JPEG, 80, it) } }
+            written[name] = bmp
+        }
+        dir.listFiles { f -> f.name.endsWith(".jpg") && f.name !in keep }?.forEach { it.delete(); written.remove(it.name) }
+    }
+
+    @Synchronized
+    fun clear() {
+        dir.listFiles()?.forEach { it.delete() }
+        written.clear()
     }
 }

@@ -181,7 +181,7 @@ object Pdf {
             val b = o.items[i]
             newPage()
             text("${i + 1}. ${p.mark} — ${p.spec.product.title} ${p.spec.widthMm}×${p.spec.heightMm} мм, ${b.quantity} шт", tp(14f, true), 8f)
-            val imgs = listOfNotNull(scheme(p, 720), renders[p.id] ?: drawings[p.id])
+            val imgs = listOfNotNull(scheme(p, 720), (renders[p.id] ?: drawings[p.id])?.let { forPdf(it) })
             val slot = (WIDTH - 12f * (imgs.size - 1)) / imgs.size
             val maxH = 250f
             imgs.forEachIndexed { k, img ->
@@ -221,10 +221,26 @@ object Pdf {
             }
         }
         doc.finishPage(page)
-        val stamp = SimpleDateFormat("yyyyMMdd", Locale.US).format(Date())
-        val file = File(ctx.cacheDir, "КП-$stamp-${System.currentTimeMillis() % 100000}.pdf")
+        val file = fileFor(ctx, opt.objectName)
         file.outputStream().use { doc.writeTo(it) }
         doc.close()
         return file
     }
+
+    /** «КП Объект 28.11.2026.pdf» — так файл и увидит клиент в WhatsApp/почте. Своя папка на каждый экспорт. */
+    fun fileFor(ctx: Context, objectName: String, date: Date = Date()): File {
+        val obj = objectName.replace(Regex("[\\\\/:*?\"<>|\\s]+"), " ").trim().take(60)
+        val name = (if (obj.isEmpty()) "КП" else "КП $obj") + " ${SimpleDateFormat("dd.MM.yyyy", Locale("ru")).format(date)}.pdf"
+        val dir = File(ctx.cacheDir, "kp").apply { deleteRecursively(); mkdirs() }
+        return File(dir, name)
+    }
+
+    /** Фото в PDF не больше 1400 px — файл КП остаётся лёгким. */
+    private fun forPdf(b: Bitmap, max: Int = 1400): Bitmap {
+        val side = maxOf(b.width, b.height)
+        if (side <= max) return b
+        val k = max.toFloat() / side
+        return Bitmap.createScaledBitmap(b, maxOf(1, (b.width * k).toInt()), maxOf(1, (b.height * k).toInt()), true)
+    }
+
 }

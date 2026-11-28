@@ -22,6 +22,8 @@ struct FillCode: Codable, Hashable {
 struct BarLength: Codable, Hashable {
     var prefix: String
     var mm: Double
+    /// Подпись в настройках («Хлыст створки»)
+    var title: String?
 }
 
 struct RulePlus: Codable, Hashable {

@@ -16,7 +16,7 @@ class ApiException(message: String) : Exception(message)
 class Api(private val baseUrl: String) {
 
     suspend fun analyze(drawing: Bitmap): WindowSpec {
-        val b64 = encode(drawing)
+        val b64 = withContext(Dispatchers.Default) { encode(drawing) }
         val res = post("analyze", JSONObject().put("image", b64))
         return WindowSpec.fromJson(res.getJSONObject("spec"))
     }

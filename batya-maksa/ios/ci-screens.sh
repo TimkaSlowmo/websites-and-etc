@@ -28,4 +28,14 @@ for mode in light dark; do
   done
   xcrun simctl terminate "$UDID" $BID
 done
+
+# Черновик КП: окно, добавленное вручную, должно открыться после перезапуска (без аргументов)
+xcrun simctl ui "$UDID" appearance light
+xcrun simctl launch "$UDID" $BID -manual; sleep 5
+xcrun simctl terminate "$UDID" $BID
+DATA=$(xcrun simctl get_app_container "$UDID" $BID data 2>/dev/null)
+if [ -n "$DATA" ] && grep -q "ОК-1" "$DATA/Documents/draft/draft.json" 2>/dev/null; then echo "Черновик КП сохранён"
+else echo "Черновик КП не сохранился"; exit 1; fi
+xcrun simctl launch "$UDID" $BID; shot "light-4-draft-restored" 5
+xcrun simctl terminate "$UDID" $BID
 ls -la screens

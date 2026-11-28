@@ -1,4 +1,5 @@
 import UIKit
+import ImageIO
 
 /// Сохранённое КП: несколько окон, настройки расчёта и итог.
 struct HistoryItem: Codable, Identifiable, Equatable {
@@ -75,24 +76,55 @@ final class HistoryStore: ObservableObject {
             write(drawings[p.id], name: "\(p.id)_d.jpg")
             write(renders[p.id], name: "\(p.id)_r.jpg")
         }
+        // Окна, убранные из КП после прошлого сохранения, — их картинки больше не нужны
+        if let old = items.first(where: { $0.id == item.id }) {
+            let keep = Set(item.positions.map(\.id))
+            for p in old.positions where !keep.contains(p.id) { removeImages(p.id) }
+        }
+        thumbs.removeObject(forKey: item.id.uuidString as NSString)
         items.removeAll { $0.id == item.id }
         items.insert(item, at: 0)
         persist()
     }
 
     func delete(_ item: HistoryItem) {
-        for p in item.positions {
-            try? FileManager.default.removeItem(at: file("\(p.id)_d.jpg"))
-            try? FileManager.default.removeItem(at: file("\(p.id)_r.jpg"))
-        }
+        item.positions.forEach { removeImages($0.id) }
+        thumbs.removeObject(forKey: item.id.uuidString as NSString)
         items.removeAll { $0.id == item.id }
         persist()
     }
 
+    private func removeImages(_ id: UUID) {
+        try? FileManager.default.removeItem(at: file("\(id)_d.jpg"))
+        try? FileManager.default.removeItem(at: file("\(id)_r.jpg"))
+    }
+
     func drawing(_ positionId: UUID) -> UIImage? { UIImage(contentsOfFile: file("\(positionId)_d.jpg").path) }
     func render(_ positionId: UUID) -> UIImage? { UIImage(contentsOfFile: file("\(positionId)_r.jpg").path) }
+    /// Маленькая картинка для списка: читается в уменьшенном виде и кешируется (не грузит полноразмерные фото).
     func thumbnail(for item: HistoryItem) -> UIImage? {
-        item.positions.lazy.compactMap { self.render($0.id) ?? self.drawing($0.id) }.first
+        let key = item.id.uuidString as NSString
+        if let t = thumbs.object(forKey: key) { return t }
+        for p in item.positions {
+            for name in ["\(p.id)_r.jpg", "\(p.id)_d.jpg"] {
+                if let t = Self.thumb(file(name), maxPixels: 180) {
+                    thumbs.setObject(t, forKey: key)
+                    return t
+                }
+            }
+        }
+        return nil
+    }
+
+    private let thumbs = NSCache<NSString, UIImage>()
+
+    private static func thumb(_ url: URL, maxPixels: Int) -> UIImage? {
+        guard let src = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+        let opts: [CFString: Any] = [kCGImageSourceCreateThumbnailFromImageAlways: true,
+                                     kCGImageSourceCreateThumbnailWithTransform: true,
+                                     kCGImageSourceThumbnailMaxPixelSize: maxPixels]
+        guard let cg = CGImageSourceCreateThumbnailAtIndex(src, 0, opts as CFDictionary) else { return nil }
+        return UIImage(cgImage: cg)
     }
 
     private func file(_ name: String) -> URL { dir.appendingPathComponent(name) }

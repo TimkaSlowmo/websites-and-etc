@@ -34,9 +34,29 @@ struct CameraPicker: UIViewControllerRepresentable {
 }
 
 extension UIImage {
-    /// Приводит ориентацию EXIF к .up, чтобы чертёж не уходил на сервер повёрнутым.
-    func normalizedOrientation() -> UIImage {
-        guard imageOrientation != .up else { return self }
-        return UIGraphicsImageRenderer(size: size).image { _ in draw(in: CGRect(origin: .zero, size: size)) }
+    /// Поворот по EXIF и уменьшение до maxSide пикселей. Масштаб 1: иначе рендер идёт в 3× от размера
+    /// (фото 12 Мп превращалось в ~110 Мп и сотни мегабайт памяти). Прозрачность — на белом фоне.
+    func prepared(maxSide: CGFloat = 2400) -> UIImage {
+        let px = CGSize(width: size.width * scale, height: size.height * scale)
+        let k = min(1, maxSide / max(px.width, px.height, 1))
+        if imageOrientation == .up && k >= 1 && scale == 1 { return self }
+        let target = CGSize(width: max(1, (px.width * k).rounded()), height: max(1, (px.height * k).rounded()))
+        let f = UIGraphicsImageRendererFormat()
+        f.scale = 1
+        f.opaque = true
+        return UIGraphicsImageRenderer(size: target, format: f).image { ctx in
+            UIColor.white.setFill()
+            ctx.fill(CGRect(origin: .zero, size: target))
+            draw(in: CGRect(origin: .zero, size: target))
+        }
+    }
+
+    /// Чертёж: ровно и не больше 2400 px — хватает для ИИ и чтения, не забивает память.
+    func normalizedOrientation() -> UIImage { prepared() }
+
+    /// Картинка для PDF: до maxSide px и в JPEG, чтобы файл КП был лёгким для WhatsApp и почты.
+    func forPDF(maxSide: CGFloat = 1400) -> UIImage {
+        let img = prepared(maxSide: maxSide)
+        return img.jpegData(compressionQuality: 0.8).flatMap(UIImage.init(data:)) ?? img
     }
 }

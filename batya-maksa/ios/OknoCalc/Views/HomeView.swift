@@ -14,7 +14,9 @@ struct HomeView: View {
         VStack(spacing: 0) {
             switch vm.phase {
             case .idle: idle.transition(.opacity.combined(with: .scale(scale: 0.97)))
-            case .analyzing: AnalyzingView(image: vm.pendingImage).transition(.opacity)
+            case .analyzing:
+                AnalyzingView(image: vm.pendingImage, cancelTitle: vm.positions.isEmpty ? "Отмена" : "Вернуться к КП") { vm.cancelAdding() }
+                    .transition(.opacity)
             case .failed(let msg): failed(msg).transition(.opacity)
             case .ready: ResultView().transition(.move(edge: .bottom).combined(with: .opacity))
             }

@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 
 /// Коммерческое предложение из нескольких окон. Редактируется «текущее» окно; «Добавить» — новое окно в КП,
 /// «Новый» — начать КП заново.
@@ -34,6 +35,12 @@ final class EstimateViewModel: ObservableObject {
     private var historyId: UUID?
     private var savedState: [Position]?
     private var savedOptions: OfferOptions?
+    /// Идёт распознавание чертежа (отменяется «Отмена» и «Новый»)
+    private var analysisTask: Task<Void, Never>?
+    /// Черновик КП на диске (в демо-режиме не пишется)
+    private let draft: DraftStore
+    private var persistDraft = true
+    private var bag = Set<AnyCancellable>()
 
     private let settings: AppSettings
     private let catalogStore: CatalogStore
@@ -43,7 +50,12 @@ final class EstimateViewModel: ObservableObject {
         self.settings = settings
         self.catalogStore = catalogStore
         self.history = history
+        self.draft = DraftStore()
         applyLaunchArguments()
+        if persistDraft { restoreDraft() }
+        observeDraft()
+        // Для проверки черновика в CI: одно окно вручную (черновик пишется как обычно)
+        if ProcessInfo.processInfo.arguments.contains("-manual") { addManual() }
     }
 
     var companyName: String { settings.companyName }
@@ -80,9 +92,11 @@ final class EstimateViewModel: ObservableObject {
 
     /// Новое окно по фото чертежа.
     func start(with image: UIImage) {
+        let image = image.prepared()
+        analysisTask?.cancel()
         pendingImage = image
         withAnimation(.spring(response: 0.45, dampingFraction: 0.9)) { phase = .analyzing }
-        Task { await analyze(image) }
+        analysisTask = Task { await analyze(image) }
     }
 
     func retry() {
@@ -90,8 +104,10 @@ final class EstimateViewModel: ObservableObject {
         start(with: pendingImage)
     }
 
-    /// Вернуться к КП после ошибки распознавания (если в КП уже есть окна).
+    /// Отменить распознавание или вернуться к КП после ошибки.
     func cancelAdding() {
+        analysisTask?.cancel()
+        analysisTask = nil
         pendingImage = nil
         withAnimation { phase = positions.isEmpty ? .idle : .ready }
     }
@@ -125,6 +141,8 @@ final class EstimateViewModel: ObservableObject {
         withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
             positions.remove(at: i)
             drawings[id] = nil; renders[id] = nil; renderErrors[id] = nil
+            // Убрали окно левее текущего — текущее сдвигается, чтобы осталось выбранным то же окно
+            if i < current { current -= 1 }
             current = min(current, max(0, positions.count - 1))
             if positions.isEmpty { phase = .idle }
         }
@@ -150,6 +168,8 @@ final class EstimateViewModel: ObservableObject {
 
     /// «Новый»: начать КП заново.
     func reset() {
+        analysisTask?.cancel()
+        analysisTask = nil
         withAnimation(.spring(response: 0.45, dampingFraction: 0.9)) {
             phase = .idle
             positions = []
@@ -174,6 +194,7 @@ final class EstimateViewModel: ObservableObject {
         historyId = item.id
         savedState = positions
         savedOptions = options
+        writeDraft()
     }
 
     func load(_ item: HistoryItem) {
@@ -194,6 +215,7 @@ final class EstimateViewModel: ObservableObject {
         savedOptions = options
         phase = positions.isEmpty ? .idle : .ready
         tab = .estimate
+        writeDraft()
     }
 
     // MARK: ИИ
@@ -202,6 +224,8 @@ final class EstimateViewModel: ObservableObject {
         do {
             let client = try APIClient(settings: settings)
             let result = try await client.analyze(drawing: image)
+            guard !Task.isCancelled else { return }
+            analysisTask = nil
             var p = Position(mark: nextMark(), spec: result, selection: PricingEngine.autoSelection(spec: result, catalog: catalog))
             p.spec.quantity = max(1, result.quantity)
             drawings[p.id] = image
@@ -214,6 +238,9 @@ final class EstimateViewModel: ObservableObject {
             }
             await renderPhoto()
         } catch {
+            // Отменено кнопкой «Отмена» / «Новый» — тихо
+            if Task.isCancelled || error is CancellationError || (error as? URLError)?.code == .cancelled { return }
+            analysisTask = nil
             UINotificationFeedbackGenerator().notificationOccurred(.error)
             withAnimation(.spring) { phase = .failed(error.localizedDescription) }
         }
@@ -221,7 +248,7 @@ final class EstimateViewModel: ObservableObject {
 
     /// ИИ-фото текущего окна: по картинке схемы (точная сетка и створки) в выбранном стиле.
     func renderPhoto() async {
-        guard let i = cur else { return }
+        guard let i = cur, !rendering.contains(positions[i].id) else { return }
         let p = positions[i]
         rendering.insert(p.id)
         renderErrors[p.id] = nil
@@ -233,9 +260,11 @@ final class EstimateViewModel: ObservableObject {
             if let col { s.color = "\(col.code) \(col.name)" }
             let scheme = SchemeRender.cleanPNG(spec: p.spec, frameHex: col?.hex ?? "#45494E")
             let img = try await client.render(spec: s, scheme: scheme, style: renderStyle.rawValue)
+            // Окно могли убрать из КП, пока рисовалось фото
+            guard positions.contains(where: { $0.id == p.id }) else { return }
             withAnimation(.easeOut(duration: 0.5)) { renders[p.id] = img }
         } catch {
-            renderErrors[p.id] = error.localizedDescription
+            if positions.contains(where: { $0.id == p.id }) { renderErrors[p.id] = error.localizedDescription }
         }
     }
 
@@ -361,11 +390,56 @@ final class EstimateViewModel: ObservableObject {
         return t
     }
 
+    // MARK: Черновик КП
+
+    private func restoreDraft() {
+        guard let d = draft.load() else { return }
+        positions = d.positions.map { p in
+            var p = p
+            if catalog.system(p.selection.systemId) == nil { p.selection = PricingEngine.autoSelection(spec: p.spec, catalog: catalog) }
+            return p
+        }
+        options = d.options
+        current = min(max(0, d.current), positions.count - 1)
+        for p in positions {
+            if let img = draft.image(p.id, "d") { drawings[p.id] = img }
+            if let img = draft.image(p.id, "r") { renders[p.id] = img }
+        }
+        historyId = d.historyId
+        if d.saved { savedState = positions; savedOptions = options }
+        phase = .ready
+    }
+
+    private func observeDraft() {
+        Publishers.CombineLatest3($positions, $options, $current)
+            .dropFirst()
+            .debounce(for: .milliseconds(400), scheduler: RunLoop.main)
+            .sink { [weak self] _ in MainActor.assumeIsolated { self?.writeDraft() } }
+            .store(in: &bag)
+        Publishers.CombineLatest($drawings, $renders)
+            .dropFirst()
+            .debounce(for: .milliseconds(800), scheduler: RunLoop.main)
+            .sink { [weak self] d, r in
+                MainActor.assumeIsolated {
+                    guard let self, self.persistDraft else { return }
+                    self.draft.syncImages(drawings: d, renders: r)
+                }
+            }
+            .store(in: &bag)
+    }
+
+    private func writeDraft() {
+        guard persistDraft else { return }
+        draft.save(positions.isEmpty ? nil : DraftStore.Draft(positions: positions, options: options, current: current,
+                                                               historyId: historyId, saved: isSaved))
+    }
+
     // MARK: Демо для проверки (запуск с аргументом -demo)
 
     private func applyLaunchArguments() {
         let args = ProcessInfo.processInfo.arguments
         if args.contains("-demo") {
+            persistDraft = false
             var s = WindowSpec()
             s.widthMm = 1200; s.heightMm = 2700; s.product = .window
             s.layout = Layout(split: .columns, sections: [

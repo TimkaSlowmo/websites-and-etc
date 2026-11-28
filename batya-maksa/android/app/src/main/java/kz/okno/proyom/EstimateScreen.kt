@@ -298,6 +298,9 @@ private fun AnalyzingView(vm: AppViewModel) {
         }
         Spacer(Modifier.height(14.dp))
         Dots(steps.size, step)
+        Spacer(Modifier.height(28.dp))
+        Text(if (vm.positions.isEmpty()) "Отмена" else "Вернуться к КП", color = Accent, fontSize = 17.sp, fontWeight = FontWeight.Medium,
+            modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = vm::cancelAdding).padding(10.dp))
     }
 }
 

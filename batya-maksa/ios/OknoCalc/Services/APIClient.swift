@@ -64,12 +64,8 @@ struct APIClient {
     }
 
     static func jpegBase64(_ image: UIImage, maxSide: CGFloat, quality: CGFloat) throws -> String {
-        let size = image.size
-        let scale = min(1, maxSide / max(size.width, size.height))
-        let target = CGSize(width: size.width * scale, height: size.height * scale)
-        let renderer = UIGraphicsImageRenderer(size: target)
-        let resized = renderer.image { _ in image.draw(in: CGRect(origin: .zero, size: target)) }
-        guard let data = resized.jpegData(compressionQuality: quality) else { throw APIError.badResponse }
+        // В пикселях (масштаб 1), иначе на iPhone уходило в 3 раза больше — медленно и тяжело
+        guard let data = image.prepared(maxSide: maxSide).jpegData(compressionQuality: quality) else { throw APIError.badResponse }
         return data.base64EncodedString()
     }
 }

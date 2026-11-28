@@ -5,9 +5,16 @@ import android.graphics.Bitmap
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -35,10 +42,14 @@ data class SchemeDimension(val kind: Kind, val section: Int = 0, val index: Int 
  * Коммерческое предложение из нескольких окон. Редактируется «текущее» окно;
  * «Добавить» — новое окно в КП, «Новый» — начать КП заново. Логика как в iOS (EstimateViewModel).
  */
+@OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class AppViewModel(app: Application) : AndroidViewModel(app) {
     val prefs = Prefs(app)
     private val catalogStore = CatalogStore(app)
     private val historyStore = HistoryStore(app)
+    private val draftStore = DraftStore(app)
+    /** Файлы пишутся по очереди в фоне — без рывков интерфейса и без гонок записи. */
+    private val io = Dispatchers.IO.limitedParallelism(1)
 
     var tab by mutableStateOf(Tab.ESTIMATE)
     var phase by mutableStateOf<Phase>(Phase.Idle)
@@ -73,8 +84,24 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     private var historyId: String? = null
     private var savedState by mutableStateOf<Pair<List<Position>, OfferOptions>?>(null)
+    /** Идёт распознавание чертежа (отменяется «Отмена» и «Новый»). */
+    private var analysisJob: Job? = null
+    /** Черновик КП на диске (в демо-режиме не пишется). */
+    private var persist = true
 
     private fun api() = Api(BuildConfig.WORKER_URL)
+
+    init {
+        restoreDraft()
+        viewModelScope.launch {
+            snapshotFlow { Triple(positions, options, current) }.drop(1).debounce(400).collect { writeDraft() }
+        }
+        viewModelScope.launch {
+            snapshotFlow { drawings to renders }.drop(1).debounce(800).collect { (d, r) ->
+                if (persist) withContext(io) { draftStore.syncImages(d, r) }
+            }
+        }
+    }
 
     // ---------- Текущее окно ----------
 
@@ -106,11 +133,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Новое окно по фото чертежа. */
     fun start(image: Bitmap) {
+        analysisJob?.cancel()
         pendingImage = image
         phase = Phase.Analyzing
-        viewModelScope.launch {
+        analysisJob = viewModelScope.launch {
             try {
                 val result = api().analyze(image)
+                analysisJob = null
                 val p = Position(mark = nextMark(), spec = result.copy(quantity = max(1, result.quantity)),
                     selection = Pricing.autoSelection(result, catalog))
                 drawings = drawings + (p.id to image)
@@ -119,7 +148,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 current = positions.lastIndex
                 phase = Phase.Ready
                 renderPhoto()
+            } catch (e: CancellationException) {
+                throw e // отменено кнопкой «Отмена» / «Новый»
             } catch (e: Exception) {
+                analysisJob = null
                 phase = Phase.Failed(e.message ?: "Ошибка")
             }
         }
@@ -127,8 +159,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun retry() { pendingImage?.let { start(it) } }
 
-    /** Вернуться к КП после ошибки распознавания. */
-    fun cancelAdding() { pendingImage = null; phase = if (positions.isEmpty()) Phase.Idle else Phase.Ready }
+    /** Отменить распознавание или вернуться к КП после ошибки. */
+    fun cancelAdding() {
+        analysisJob?.cancel(); analysisJob = null
+        pendingImage = null; phase = if (positions.isEmpty()) Phase.Idle else Phase.Ready
+    }
 
     /** Новое окно вручную (с выбором как у последнего окна КП). */
     fun addManual() {
@@ -154,6 +189,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val id = positions[i].id
         positions = positions.filterIndexed { j, _ -> j != i }
         drawings = drawings - id; renders = renders - id; renderErrors = renderErrors - id
+        // Убрали окно левее текущего — текущее сдвигается, чтобы осталось выбранным то же окно
+        if (i < current) current -= 1
         current = min(current, max(0, positions.lastIndex))
         if (positions.isEmpty()) phase = Phase.Idle
     }
@@ -174,6 +211,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     /** «Новый»: начать КП заново. */
     fun reset() {
+        analysisJob?.cancel(); analysisJob = null
         phase = Phase.Idle
         positions = emptyList(); current = 0; options = OfferOptions()
         drawings = emptyMap(); renders = emptyMap(); renderErrors = emptyMap(); rendering = emptySet()
@@ -194,9 +232,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 val scheme = withContext(Dispatchers.Default) { cleanSchemePng(p.spec, col?.hex ?: "#45494E") }
                 val s = if (col != null) p.spec.copy(color = "${col.code} ${col.name}") else p.spec
                 val bmp = api().render(s, scheme, renderStyle.key)
-                renders = renders + (p.id to bmp)
+                // Окно могли убрать из КП, пока рисовалось фото
+                if (positions.any { it.id == p.id }) renders = renders + (p.id to bmp)
+            } catch (e: CancellationException) {
+                rendering = rendering - p.id
+                throw e
             } catch (e: Exception) {
-                renderErrors = renderErrors + (p.id to (e.message ?: "Ошибка"))
+                if (positions.any { it.id == p.id }) renderErrors = renderErrors + (p.id to (e.message ?: "Ошибка"))
             }
             rendering = rendering - p.id
         }
@@ -312,14 +354,22 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val o = offer
         val item = HistoryItem(id = historyId ?: java.util.UUID.randomUUID().toString(), positions = positions, options = options,
             total = o.total, currency = o.currency)
-        for (p in positions) {
-            historyStore.writeImage(p.id, "d", drawings[p.id])
-            historyStore.writeImage(p.id, "r", renders[p.id])
-        }
+        // Окна, убранные из КП после прошлого сохранения, — их картинки больше не нужны
+        val removed = history.firstOrNull { it.id == item.id }?.positions.orEmpty().map { it.id } - positions.map { it.id }.toSet()
+        val d = drawings; val r = renders
         history = listOf(item) + history.filter { it.id != item.id }
-        historyStore.save(history)
+        val list = history
         historyId = item.id
         savedState = positions to options
+        writeDraft()
+        viewModelScope.launch(io) {
+            for (p in item.positions) {
+                historyStore.writeImage(p.id, "d", d[p.id])
+                historyStore.writeImage(p.id, "r", r[p.id])
+            }
+            removed.forEach { historyStore.deleteImages(it) }
+            historyStore.save(list)
+        }
     }
 
     fun open(item: HistoryItem) {
@@ -327,24 +377,59 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             if (catalog.system(p.selection.systemId) != null) p else p.copy(selection = Pricing.autoSelection(p.spec, catalog))
         }
         options = item.options
-        drawings = positions.mapNotNull { p -> historyStore.image(p.id, "d")?.let { p.id to it } }.toMap()
-        renders = positions.mapNotNull { p -> historyStore.image(p.id, "r")?.let { p.id to it } }.toMap()
+        drawings = emptyMap(); renders = emptyMap()
         renderErrors = emptyMap()
         current = 0
         historyId = item.id
         savedState = positions to options
         phase = if (positions.isEmpty()) Phase.Idle else Phase.Ready
         tab = Tab.ESTIMATE
+        writeDraft()
+        // Картинки читаются в фоне: интерфейс открывается сразу
+        val ids = positions.map { it.id }
+        viewModelScope.launch {
+            val (d, r) = withContext(io) {
+                ids.mapNotNull { id -> historyStore.image(id, "d")?.let { id to it } }.toMap() to
+                    ids.mapNotNull { id -> historyStore.image(id, "r")?.let { id to it } }.toMap()
+            }
+            if (historyId == item.id) { drawings = drawings + d; renders = renders + r }
+        }
     }
 
     fun delete(item: HistoryItem) {
-        item.positions.forEach { historyStore.deleteImages(it.id) }
         history = history.filter { it.id != item.id }
-        historyStore.save(history)
+        val list = history
+        viewModelScope.launch(io) {
+            item.positions.forEach { historyStore.deleteImages(it.id) }
+            historyStore.save(list)
+        }
     }
 
+    /** Миниатюра для списка истории (вызывать в фоне). */
     fun thumbnail(item: HistoryItem): Bitmap? =
-        item.positions.firstNotNullOfOrNull { historyStore.image(it.id, "r") ?: historyStore.image(it.id, "d") }
+        item.positions.firstNotNullOfOrNull { historyStore.thumb(it.id, "r") ?: historyStore.thumb(it.id, "d") }
+
+    // ---------- Черновик КП ----------
+
+    private fun restoreDraft() {
+        val d = draftStore.load() ?: return
+        positions = d.positions.map { p ->
+            if (catalog.system(p.selection.systemId) != null) p else p.copy(selection = Pricing.autoSelection(p.spec, catalog))
+        }
+        options = d.options
+        current = d.current.coerceIn(0, positions.lastIndex)
+        drawings = positions.mapNotNull { p -> draftStore.image(p.id, "d")?.let { p.id to it } }.toMap()
+        renders = positions.mapNotNull { p -> draftStore.image(p.id, "r")?.let { p.id to it } }.toMap()
+        historyId = d.historyId
+        if (d.saved) savedState = positions to options
+        phase = Phase.Ready
+    }
+
+    private fun writeDraft() {
+        if (!persist) return
+        val d = if (positions.isEmpty()) null else DraftStore.Draft(positions, options, current, historyId, isSaved)
+        viewModelScope.launch(io) { draftStore.save(d) }
+    }
 
     // ---------- Настройки и каталог ----------
 
@@ -382,6 +467,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Демо для проверки: тот же пример, что в iOS (-demo) — КП из двух окон. */
     fun demo() {
+        persist = false
         val s = WindowSpec(
             widthMm = 1200, heightMm = 2700, product = Product.WINDOW,
             layout = Layout(Split.COLUMNS, listOf(

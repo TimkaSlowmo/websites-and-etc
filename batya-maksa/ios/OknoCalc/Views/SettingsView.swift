@@ -25,7 +25,7 @@ struct SettingsView: View {
             Section {
                 unit("Хлыст профиля", c.barDefaultMm ?? 6500, "мм") { v in store.update { $0.barDefaultMm = max(1000, v) } }
                 ForEach(Array((c.barLengths ?? []).enumerated()), id: \.element.prefix) { i, b in
-                    unit("Хлыст \(b.prefix)…", b.mm, "мм") { v in store.update { $0.barLengths?[i].mm = max(1000, v) } }
+                    unit(b.title ?? "Хлыст \(b.prefix)…", b.mm, "мм") { v in store.update { $0.barLengths?[i].mm = max(1000, v) } }
                 }
                 unit("Ширина пропила", c.kerf, "мм") { v in store.update { $0.sawKerfMm = v } }
                 unit("Обрезка концов хлыста", c.trim, "мм") { v in store.update { $0.barTrimMm = v } }

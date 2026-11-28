@@ -13,7 +13,8 @@
  "bar_lengths": [
   {
    "prefix": "WDT.77.V",
-   "mm": 6000
+   "mm": 6000,
+   "title": "Хлыст створки"
   }
  ],
  "saw_kerf_mm": 10,

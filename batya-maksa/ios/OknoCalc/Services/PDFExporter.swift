@@ -8,15 +8,25 @@ import UIKit
 enum PDFExporter {
     struct Images { var drawing: UIImage?; var render: UIImage? }
 
+    /// «КП Объект 28.11.2026.pdf» — так файл и увидит клиент в WhatsApp/почте. Своя папка на каждый экспорт.
+    static func fileURL(object: String, date: Date = Date()) -> URL {
+        let df = DateFormatter()
+        df.dateFormat = "dd.MM.yyyy"
+        df.locale = Locale(identifier: "ru_RU")
+        let bad = CharacterSet(charactersIn: "/\\:*?\"<>|\n\r\t")
+        let obj = object.components(separatedBy: bad).joined(separator: " ")
+            .split(separator: " ").joined(separator: " ").prefix(60)
+        let name = (obj.isEmpty ? "КП" : "КП \(obj)") + " \(df.string(from: date)).pdf"
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("kp-\(UUID().uuidString.prefix(8))", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent(name)
+    }
+
     @MainActor
     static func makeOffer(positions: [Position], options: OfferOptions, breakdown o: OfferBreakdown, catalog: Catalog,
                           company: String, images: [UUID: Images]) -> URL? {
         let page = CGRect(x: 0, y: 0, width: 595, height: 842)
-        let df = DateFormatter()
-        df.dateFormat = "yyyyMMdd"
-        df.locale = Locale(identifier: "en_US_POSIX")
-        let stamp = df.string(from: Date())
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("КП-\(stamp)-\(Int(Date().timeIntervalSince1970) % 100000).pdf")
+        let url = fileURL(object: options.objectName)
         let cur = o.currency
         func money(_ v: Double) -> String { Money.format(v, currency: cur) }
         let ru = Locale(identifier: "ru_RU")
@@ -191,7 +201,7 @@ enum PDFExporter {
                     ctx.beginPage(); y = 40
                     text("\(i + 1). \(p.mark) — \(p.spec.product.title) \(p.spec.widthMm)×\(p.spec.heightMm) мм, \(b.quantity) шт",
                          .boldSystemFont(ofSize: 14), gap: 8)
-                    let imgs = [scheme(p, side: 300), images[p.id]?.render ?? images[p.id]?.drawing].compactMap { $0 }
+                    let imgs = [scheme(p, side: 300), (images[p.id]?.render ?? images[p.id]?.drawing)?.forPDF()].compactMap { $0 }
                     if !imgs.isEmpty {
                         let slot = (width - 12 * CGFloat(imgs.count - 1)) / CGFloat(imgs.count)
                         let maxH: CGFloat = 250

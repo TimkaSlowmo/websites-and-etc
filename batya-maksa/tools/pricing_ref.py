@@ -351,7 +351,7 @@ def calc_offer(offer, cat=CATALOG):
                           "subtotal": round(subtotal, 2), "area_m2": round(x["g"]["area_m2"], 4),
                           "warnings": [w["kind"] for w in x["warnings"]], "lines": lines})
     subtotal = sum(it["total"] for it in out_items)
-    discount = round0(subtotal * opt["discount_percent"] / 100)
+    discount = round0(subtotal * min(max(opt["discount_percent"], 0), 100) / 100)
     total = subtotal - discount
     vat = round0(total * cat["vat_percent"] / (100 + cat["vat_percent"]))
     area = sum(it["area_m2"] * it["quantity"] for it in out_items)

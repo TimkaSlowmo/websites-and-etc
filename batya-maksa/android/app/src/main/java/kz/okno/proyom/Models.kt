@@ -254,7 +254,7 @@ data class SystemDef(
     val geo: Geo?, val limits: Limits?, val recommend: List<Recommendation>, val rules: List<Rule>,
 )
 
-data class BarLength(val prefix: String, val mm: Double)
+data class BarLength(val prefix: String, val mm: Double, val title: String? = null)
 
 data class GlassItem(val fillMm: Int, val name: String, val pricePerM2: Double, val kgM2: Double? = null)
 data class HardwareItem(val opening: String, val name: String, val price: Double)
@@ -359,7 +359,7 @@ data class Catalog(
                 installMin = o.optDouble("install_min", 0.0),
                 twoColorPercent = o.optDouble("two_color_percent", 0.0),
                 barDefaultMm = o.optDouble("bar_default_mm", 6500.0),
-                barLengths = o.optJSONArray("bar_lengths").objects().map { BarLength(it.getString("prefix"), it.optDouble("mm", 6500.0)) },
+                barLengths = o.optJSONArray("bar_lengths").objects().map { BarLength(it.getString("prefix"), it.optDouble("mm", 6500.0), it.optString("title").ifEmpty { null }) },
                 kerf = o.optDouble("saw_kerf_mm", 10.0),
                 trim = o.optDouble("bar_trim_mm", 20.0),
                 gasketStep = o.optDouble("gasket_step_m", 20.0),

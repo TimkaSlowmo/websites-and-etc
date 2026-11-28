@@ -484,7 +484,7 @@ enum PricingEngine {
                                         areaM2: x.g["area_m2"], currency: c.currency))
         }
         let subtotal = items.reduce(0) { $0 + $1.total }
-        let discount = r0(subtotal * opt.discountPercent / 100)
+        let discount = r0(subtotal * min(max(opt.discountPercent, 0), 100) / 100)
         let total = subtotal - discount
         let vat = r0(total * c.vatPercent / (100 + c.vatPercent))
         let area = items.reduce(0) { $0 + $1.areaM2 * Double($1.quantity) }

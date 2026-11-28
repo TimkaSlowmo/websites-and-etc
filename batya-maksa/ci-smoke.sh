@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Смоук-тест APK на эмуляторе: запуск, демо-расчёт, редактор ячейки, цифровая клавиатура и её скрытие,
-# КП (PDF), вкладки — в светлой и тёмной теме. Падение или неубираемая клавиатура = ошибка.
+# КП (PDF), вкладки — в светлой и тёмной теме, черновик КП после перезапуска. Падение или неубираемая клавиатура = ошибка.
 set -u
 mkdir -p screens
 adb install -r Proyom.apk
@@ -117,6 +117,14 @@ run() {
 adb shell cmd uimode night no; run light
 adb shell cmd uimode night yes; sleep 2; run dark
 adb shell cmd uimode night no
+
+# Черновик КП: окно, введённое вручную, остаётся после закрытия приложения
+start; sleep 4
+if tap_text "Ввести параметры вручную"; then
+  sleep 3; start; sleep 5
+  if has "ОК-1"; then echo "INFO: черновик КП восстановился после перезапуска"; else echo "Черновик КП не восстановился"; FAIL=1; fi
+  shot "light-12-draft-restored" 0
+else echo "Кнопка ручного ввода не найдена"; FAIL=1; fi
 
 adb logcat -d > screens/logcat.txt
 if grep -q "FATAL EXCEPTION" screens/logcat.txt; then

@@ -3,6 +3,9 @@ import SwiftUI
 /// Экран анализа: линия сканирования по чертежу и сменяющиеся шаги.
 struct AnalyzingView: View {
     let image: UIImage?
+    /// Текст кнопки отмены («Отмена» или «Вернуться к КП»)
+    var cancelTitle = "Отмена"
+    var onCancel: (() -> Void)? = nil
     @State private var scan = false
     @State private var step = 0
     @State private var appeared = false
@@ -57,6 +60,11 @@ struct AnalyzingView: View {
             }
             .animation(.spring(response: 0.4, dampingFraction: 0.7), value: step)
             Spacer()
+            if let onCancel {
+                Button(cancelTitle, action: onCancel)
+                    .font(.body.weight(.medium))
+                    .padding(.bottom, 20)
+            }
         }
         .onAppear {
             withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) { appeared = true }

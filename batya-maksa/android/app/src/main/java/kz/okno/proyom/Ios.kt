@@ -172,7 +172,8 @@ fun ValueRow(label: String, value: String, bold: Boolean = false, valueColor: Co
         RowBase {
             Text(label, color = pal().text, fontSize = 17.sp, fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal, modifier = Modifier.weight(1f))
             Spacer(Modifier.width(12.dp))
-            Text(value, color = valueColor ?: pal().secondary, fontSize = 17.sp, textAlign = TextAlign.End,
+            // Перенос после дефиса, а не посреди слова («поворотно-|откидная»)
+            Text(value.replace("-", "-\u200B"), color = valueColor ?: pal().secondary, fontSize = 17.sp, textAlign = TextAlign.End,
                 fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal, modifier = Modifier.widthIn(max = maxValue))
         }
     }
@@ -251,6 +252,7 @@ fun NumberField(value: Long, min: Long, width: Dp, onCommit: (Long) -> Unit) {
     val focus = LocalFocusManager.current
     var text by remember { mutableStateOf(value.toString()) }
     var focused by remember { mutableStateOf(false) }
+    val digit = with(androidx.compose.ui.platform.LocalDensity.current) { 17.sp.toDp() } * 0.62f
     LaunchedEffect(value, focused) { if (!focused) text = value.toString() }
     BasicTextField(
         value = text,
@@ -260,7 +262,8 @@ fun NumberField(value: Long, min: Long, width: Dp, onCommit: (Long) -> Unit) {
         cursorBrush = SolidColor(Accent),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Done),
         keyboardActions = KeyboardActions(onDone = { focus.clearFocus() }),
-        modifier = Modifier.width(width).trackFocus { f ->
+        // Ширина по числу цифр (не больше width): подписи слева не переносятся на узких экранах
+        modifier = Modifier.width(minOf(width, digit * maxOf(text.length, 2) + 14.dp)).trackFocus { f ->
             focused = f
             if (!f) {
                 val v = text.toLongOrNull()
