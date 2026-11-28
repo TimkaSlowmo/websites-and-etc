@@ -382,8 +382,11 @@ fun ResultView(vm: AppViewModel) {
                 val f = Pdf.offer(ctx, vm.positions, vm.options, o, c, vm.company, vm.drawings, vm.renders)
                 val uri = FileProvider.getUriForFile(ctx, ctx.packageName + ".files", f)
                 val i = Intent(Intent.ACTION_SEND).setType("application/pdf").putExtra(Intent.EXTRA_STREAM, uri)
-                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                ctx.startActivity(Intent.createChooser(i, "Отправить КП"))
+                    .putExtra(Intent.EXTRA_TITLE, f.name).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                // clipData — чтобы окно «Поделиться» могло показать имя и превью файла
+                i.clipData = android.content.ClipData.newUri(ctx.contentResolver, f.name, uri)
+                ctx.startActivity(Intent.createChooser(i, "Отправить КП").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    .also { it.clipData = i.clipData })
             }
             Sep(52.dp)
             ButtonRow("Поделиться текстом КП", icon = { Icon(Icons.Outlined.ChatBubbleOutline, null, tint = Accent) }) {

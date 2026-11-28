@@ -128,9 +128,10 @@ fun App(vm: AppViewModel, demo: Boolean = false, startTab: String? = null, demoP
         if (demo) vm.demo()
         // Демо-КП в файл для проверки макета PDF в CI (adb pull)
         if (demo && demoPdf) runCatching {
-            Pdf.offer(ctx, vm.positions, vm.options, vm.offer, vm.catalog, "BENKAM", emptyMap(), emptyMap())
-                .copyTo(java.io.File(ctx.getExternalFilesDir(null), "demo-kp.pdf"), overwrite = true)
-        }
+            val out = java.io.File(ctx.getExternalFilesDir(null), "demo-kp.pdf")
+            Pdf.offer(ctx, vm.positions, vm.options, vm.offer, vm.catalog, "BENKAM", emptyMap(), emptyMap()).copyTo(out, overwrite = true)
+            android.util.Log.i("ProyomCI", "demo pdf: ${out.absolutePath}")
+        }.onFailure { android.util.Log.e("ProyomCI", "demo pdf failed", it) }
         when (startTab) {
             "history" -> vm.tab = Tab.HISTORY
             "catalog" -> vm.tab = Tab.CATALOG
