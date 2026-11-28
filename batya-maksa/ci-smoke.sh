@@ -42,6 +42,15 @@ tap_exact() {
   return 1
 }
 has() { dump | grep -q "text=\"$1"; }
+# Нажать на текст в любом месте экрана без прокрутки (главный экран: кнопки у самого низа)
+tap_any() {
+  local x1 y1 x2 y2
+  dump | grep "text=\"$1" | grep -oE 'bounds="\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]"' | tr -c '0-9\n' ' ' > /tmp/bounds.txt
+  while read -r x1 y1 x2 y2; do
+    if [ -n "${y2:-}" ]; then adb shell input tap $(( (x1 + x2) / 2 )) $(( (y1 + y2) / 2 )); return 0; fi
+  done < /tmp/bounds.txt
+  return 1
+}
 # Кнопка в верхней панели (точный текст, верхние 15% экрана)
 tap_top() {
   local x1 y1 x2 y2
@@ -120,7 +129,7 @@ adb shell cmd uimode night no
 
 # Черновик КП: окно, введённое вручную, остаётся после закрытия приложения
 start; sleep 4
-if tap_text "Ввести параметры вручную"; then
+if tap_any "Ввести параметры вручную"; then
   sleep 3; start; sleep 5
   if has "ОК-1"; then echo "INFO: черновик КП восстановился после перезапуска"; else echo "Черновик КП не восстановился"; FAIL=1; fi
   shot "light-12-draft-restored" 0
