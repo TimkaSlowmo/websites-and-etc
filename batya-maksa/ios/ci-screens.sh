@@ -10,6 +10,12 @@ xcrun simctl bootstatus "$UDID" -b
 xcrun simctl install "$UDID" "$APP"
 BID=kz.okno.calc
 shot() { sleep "$2"; xcrun simctl io "$UDID" screenshot "screens/$1.png"; }
+# КП демо в PDF (для проверки макета)
+xcrun simctl launch "$UDID" $BID -demo -pdf; sleep 8
+DATA=$(xcrun simctl get_app_container "$UDID" $BID data 2>/dev/null)
+[ -n "$DATA" ] && cp "$DATA/Documents/demo-kp.pdf" screens/demo-kp.pdf 2>/dev/null || echo "PDF не найден"
+xcrun simctl terminate "$UDID" $BID
+
 # Светлая и тёмная тема (тема приложения «Как в системе»)
 for mode in light dark; do
   xcrun simctl ui "$UDID" appearance $mode

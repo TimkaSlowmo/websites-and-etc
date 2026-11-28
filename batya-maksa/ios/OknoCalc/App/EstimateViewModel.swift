@@ -388,6 +388,16 @@ final class EstimateViewModel: ObservableObject {
             options.objectName = "Демо-объект"
             current = 0
             phase = .ready
+            // Для проверки в CI: КП демо в PDF → Documents/demo-kp.pdf
+            if args.contains("-pdf") {
+                let imgs = Dictionary(uniqueKeysWithValues: positions.map { ($0.id, PDFExporter.Images(drawing: nil, render: nil)) })
+                if let url = PDFExporter.makeOffer(positions: positions, options: options, breakdown: offer, catalog: catalog,
+                                                   company: "BENKAM", images: imgs) {
+                    let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("demo-kp.pdf")
+                    try? FileManager.default.removeItem(at: docs)
+                    try? FileManager.default.copyItem(at: url, to: docs)
+                }
+            }
         }
         if let i = args.firstIndex(of: "-tab"), i + 1 < args.count {
             let map: [String: AppTab] = ["history": .history, "catalog": .catalog, "settings": .settings]
