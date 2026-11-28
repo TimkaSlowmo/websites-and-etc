@@ -43,8 +43,10 @@ class Api(private val baseUrl: String) {
             val code = conn.responseCode
             val text = (if (code in 200..299) conn.inputStream else conn.errorStream)?.bufferedReader()?.use { it.readText() }.orEmpty()
             if (code !in 200..299) {
-                val msg = runCatching { JSONObject(text).let { it.optString("message").ifBlank { it.optString("error") } } }.getOrNull()
-                throw ApiException("Ошибка ИИ-сервера: ${msg?.ifBlank { null } ?: "HTTP $code"}")
+                // Сервер присылает готовый текст по-русски (например, про дневной лимит ИИ)
+                val j = runCatching { JSONObject(text) }.getOrNull()
+                val msg = j?.optString("message").orEmpty()
+                throw ApiException(msg.ifBlank { "Ошибка ИИ-сервера: ${j?.optString("error")?.ifBlank { null } ?: "HTTP $code"}" })
             }
             JSONObject(text)
         } catch (e: ApiException) {

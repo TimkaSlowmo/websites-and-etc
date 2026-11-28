@@ -13,12 +13,26 @@ export const VISION_MODELS = [
 ];
 const LEGACY_VISION_MODEL = "@cf/meta/llama-3.2-11b-vision-instruct";
 const IMAGE_MODEL = "@cf/black-forest-labs/flux-1-schnell";
-// Модели с картинкой-образцом: быстрая klein 9B, запасная klein 4B, медленная, но точная dev
+// Модели с картинкой-образцом. klein 4B ≈ 110 нейронов за фото, klein 9B ≈ 1 400 (в 13 раз дороже),
+// flux-2-dev ≈ 3 000+ — на бесплатном лимите 10 000 нейронов/день не используется.
 export const REFERENCE_MODELS = [
-  "@cf/black-forest-labs/flux-2-klein-9b",
   "@cf/black-forest-labs/flux-2-klein-4b",
-  "@cf/black-forest-labs/flux-2-dev",
+  "@cf/black-forest-labs/flux-2-klein-9b",
 ];
+
+// Бесплатный дневной лимит Workers AI (ошибка 4006). Сбрасывается в 00:00 UTC = 05:00 по Алматы.
+export const QUOTA_MESSAGE =
+  "Дневной лимит ИИ исчерпан (бесплатный тариф Cloudflare: 10 000 нейронов в сутки). " +
+  "Лимит обновится в 05:00 по Алматы. Пока можно ввести размеры вручную.";
+export const isQuotaError = (e) => /\b4006\b|daily free allocation|neurons/i.test(String((e && e.message) || e || ""));
+
+class AIError extends Error {
+  constructor(code, message, status) {
+    super(message);
+    this.code = code;
+    this.status = status;
+  }
+}
 
 export const PRODUCTS = ["window", "door", "balcony_block", "facade", "partition"];
 export const OPENINGS = ["fixed", "turn", "tilt", "tilt_turn", "top_hung", "slide"];
@@ -50,7 +64,9 @@ export default {
       if (path === "/render") return json(await render(env, body.spec, body.scheme, body.style));
       return json({ error: "not_found" }, 404);
     } catch (e) {
-      return json({ error: "ai_failed", message: String(e && e.message ? e.message : e) }, 502);
+      if (e instanceof AIError) return json({ error: e.code, message: e.message }, e.status);
+      if (isQuotaError(e)) return json({ error: "ai_quota", message: QUOTA_MESSAGE }, 429);
+      return json({ error: "ai_failed", message: "ИИ-сервер не ответил: " + String(e && e.message ? e.message : e) }, 502);
     }
   },
 };
@@ -204,8 +220,11 @@ async function runModel(env, model, dataUri) {
   }
 }
 
-const withTimeout = (p, ms) =>
-  Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))]);
+const withTimeout = (p, ms) => {
+  let t;
+  const timer = new Promise((_, rej) => { t = setTimeout(() => rej(new Error("timeout")), ms); });
+  return Promise.race([p, timer]).finally(() => clearTimeout(t));
+};
 
 async function analyze(env, imageB64) {
   if (!imageB64) throw new Error("image is required");
@@ -214,10 +233,12 @@ async function analyze(env, imageB64) {
   const dataUri = "data:image/jpeg;base64," + String(imageB64).replace(/^data:[^,]+,/, "");
   const started = Date.now();
 
-  // Две модели параллельно: сверяем цифры и сетку. Вторую ждём не дольше 6 с после первой.
+  // Две модели параллельно: сверяем цифры и сетку. Вторую ждём не дольше 10 с после первой.
+  const errors = [];
+  const keep = (e) => { errors.push(e); throw e; };
   const [m1, m2] = VISION_MODELS;
-  const p1 = withTimeout(runModel(env, m1, dataUri), 40000).then((r) => ({ r, m: m1 }));
-  const p2 = withTimeout(runModel(env, m2, dataUri), 40000).then((r) => ({ r, m: m2 }));
+  const p1 = withTimeout(runModel(env, m1, dataUri), 40000).then((r) => ({ r, m: m1 }), keep);
+  const p2 = withTimeout(runModel(env, m2, dataUri), 40000).then((r) => ({ r, m: m2 }), keep);
   const results = [];
   const first = await Promise.any([p1, p2]).catch(() => null);
   if (first) {
@@ -226,30 +247,30 @@ async function analyze(env, imageB64) {
     const second = await withTimeout(other, 10000).catch(() => null);
     if (second) results.push(second);
   }
+  // Лимит исчерпан — другие модели тоже не ответят, не тратим время
+  if (results.length === 0 && errors.some(isQuotaError)) throw new AIError("ai_quota", QUOTA_MESSAGE, 429);
   if (results.length === 0) {
     for (const m of VISION_MODELS.slice(2)) {
       try {
         results.push({ r: await withTimeout(runModel(env, m, dataUri), 40000), m });
         break;
-      } catch {}
+      } catch (e) {
+        errors.push(e);
+      }
     }
   }
   if (results.length === 0) {
     try {
       results.push({ r: await tryLegacy(env, bytes), m: LEGACY_VISION_MODEL });
-    } catch {}
+    } catch (e) {
+      errors.push(e);
+    }
   }
+  // Никогда не подсовываем «размеры по умолчанию» вместо чертежа — только честная ошибка
   if (results.length === 0) {
-    const empty = normalizeSpec({});
-    delete empty.numbers;
-    delete empty._layout_ok;
-    return {
-      ...empty,
-      confidence: 0,
-      notes: "ИИ не смог прочитать чертёж. Проверьте размеры и параметры вручную.",
-      model: "none",
-      ms: Date.now() - started,
-    };
+    if (errors.some(isQuotaError)) throw new AIError("ai_quota", QUOTA_MESSAGE, 429);
+    console.log("analyze failed:", errors.map((e) => String(e && e.message)).join(" | "));
+    throw new AIError("ai_failed", "ИИ не смог прочитать чертёж. Попробуйте ещё раз (лучше ровно и при хорошем свете) или введите размеры вручную.", 502);
   }
   const specs = results.map(({ r, m }) => ({ ...normalizeSpec(r), model: m }));
   return { ...reconcile(specs), ms: Date.now() - started };
@@ -697,7 +718,6 @@ async function render(env, spec, scheme, style) {
         form.append("input_image_0", new Blob([bytes], { type: "image/png" }), "scheme.png");
         form.append("width", String(width));
         form.append("height", String(height));
-        if (model.endsWith("flux-2-dev")) form.append("steps", "20");
         const req = new Request("https://form.local/", { method: "POST", body: form });
         const out = await env.AI.run(model, { multipart: { body: req.body, contentType: req.headers.get("content-type") } });
         const image = out && (out.image || (out.result && out.result.image));
@@ -705,6 +725,7 @@ async function render(env, spec, scheme, style) {
         lastErr = new Error(`${model}: empty`);
       } catch (e) {
         lastErr = e;
+        if (isQuotaError(e)) throw new AIError("ai_quota", QUOTA_MESSAGE, 429);
       }
     }
     console.log("reference render failed, fallback to text:", String(lastErr && lastErr.message));

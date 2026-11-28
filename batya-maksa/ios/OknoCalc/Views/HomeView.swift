@@ -125,7 +125,7 @@ struct HomeView: View {
             Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 48)).foregroundStyle(.orange)
             Text(msg).multilineTextAlignment(.center).padding(.horizontal, 32)
             Button("Повторить") { vm.retry() }.buttonStyle(.borderedProminent)
-            Button("Ввести вручную") { vm.addManual() }
+            Button("Ввести размеры вручную") { vm.addManualFromPhoto() }
             if !vm.positions.isEmpty { Button("Вернуться к КП") { vm.cancelAdding() } }
             Spacer()
         }

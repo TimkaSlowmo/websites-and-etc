@@ -124,6 +124,16 @@ final class EstimateViewModel: ObservableObject {
         append(p)
     }
 
+    /// После неудачного распознавания: окно вручную, а фото чертежа остаётся у окна (вкладка «Чертёж»).
+    func addManualFromPhoto() {
+        let img = pendingImage
+        analysisTask?.cancel()
+        analysisTask = nil
+        pendingImage = nil
+        addManual()
+        if let img, let id = positions.last?.id { drawings[id] = img }
+    }
+
     /// Копия текущего окна (например, такое же окно другого размера).
     func duplicateCurrent() {
         guard let i = cur else { return }
@@ -236,7 +246,7 @@ final class EstimateViewModel: ObservableObject {
                 current = positions.count - 1
                 phase = .ready
             }
-            await renderPhoto()
+            // ИИ-фото — только по кнопке: одно фото тратит больше лимита ИИ, чем чтение чертежа
         } catch {
             // Отменено кнопкой «Отмена» / «Новый» — тихо
             if Task.isCancelled || error is CancellationError || (error as? URLError)?.code == .cancelled { return }

@@ -8,7 +8,7 @@ enum APIError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notConfigured: return "ИИ-сервер не настроен в этой сборке. Обновите приложение."
-        case .server(let m): return "Ошибка ИИ-сервера: \(m)"
+        case .server(let m): return m
         case .badResponse: return "Сервер вернул неожиданный ответ."
         }
     }
@@ -58,7 +58,9 @@ struct APIClient {
         guard let http = resp as? HTTPURLResponse else { throw APIError.badResponse }
         guard http.statusCode == 200 else {
             let e = try? JSONDecoder().decode(ServerError.self, from: data)
-            throw APIError.server(e?.message ?? e?.error ?? "HTTP \(http.statusCode)")
+            // Сервер присылает готовый текст по-русски (например, про дневной лимит ИИ)
+            if let m = e?.message, !m.isEmpty { throw APIError.server(m) }
+            throw APIError.server("Ошибка ИИ-сервера: \(e?.error ?? "HTTP \(http.statusCode)")")
         }
         do { return try JSONDecoder.snake.decode(R.self, from: data) } catch { throw APIError.badResponse }
     }

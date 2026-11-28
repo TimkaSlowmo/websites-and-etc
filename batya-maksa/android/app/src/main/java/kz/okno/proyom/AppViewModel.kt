@@ -147,7 +147,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 positions = positions + p
                 current = positions.lastIndex
                 phase = Phase.Ready
-                renderPhoto()
+                // ИИ-фото — только по кнопке: одно фото тратит больше лимита ИИ, чем чтение чертежа
             } catch (e: CancellationException) {
                 throw e // отменено кнопкой «Отмена» / «Новый»
             } catch (e: Exception) {
@@ -173,6 +173,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun manual() = addManual()
+
+    /** После неудачного распознавания: окно вручную, а фото чертежа остаётся у окна (вкладка «Чертёж»). */
+    fun addManualFromPhoto() {
+        val img = pendingImage
+        analysisJob?.cancel(); analysisJob = null
+        pendingImage = null
+        addManual()
+        if (img != null) positions.lastOrNull()?.let { drawings = drawings + (it.id to img) }
+    }
 
     /** Копия текущего окна. */
     fun duplicateCurrent() {

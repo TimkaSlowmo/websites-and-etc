@@ -312,8 +312,8 @@ private fun FailedView(vm: AppViewModel, message: String) {
         Text(message, textAlign = TextAlign.Center, color = pal().text, fontSize = 17.sp)
         Spacer(Modifier.height(20.dp))
         IosButton("Повторить", enabled = vm.pendingImage != null, onClick = vm::retry)
-        Text("Ввести вручную", color = Accent, fontSize = 17.sp,
-            modifier = Modifier.padding(top = 8.dp).clip(RoundedCornerShape(8.dp)).clickable(onClick = vm::addManual).padding(10.dp))
+        Text("Ввести размеры вручную", color = Accent, fontSize = 17.sp,
+            modifier = Modifier.padding(top = 8.dp).clip(RoundedCornerShape(8.dp)).clickable(onClick = vm::addManualFromPhoto).padding(10.dp))
         if (vm.positions.isNotEmpty()) Text("Вернуться к КП", color = Accent, fontSize = 17.sp,
             modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = vm::cancelAdding).padding(10.dp))
     }

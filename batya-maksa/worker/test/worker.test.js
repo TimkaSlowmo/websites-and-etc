@@ -171,5 +171,37 @@ test("reference render: prompt keeps the grid, size follows proportions", async 
   assert.match(p, /living room/);
   assert.deepEqual(renderSize({ width_mm: 1500, height_mm: 2300 }), { width: 640, height: 1024 });
   assert.deepEqual(renderSize({ width_mm: 3200, height_mm: 1700 }), { width: 1024, height: 576 });
-  assert.equal(REFERENCE_MODELS[0], "@cf/black-forest-labs/flux-2-klein-9b");
+  assert.equal(REFERENCE_MODELS[0], "@cf/black-forest-labs/flux-2-klein-4b");
+});
+
+test("analyze: лимит ИИ исчерпан — честная ошибка 429, а не размеры по умолчанию", async () => {
+  const { default: worker } = await import("../src/index.js");
+  const env = { AI: { run: async () => { throw new Error("4006: you have used up your daily free allocation of 10,000 neurons"); } } };
+  const req = new Request("https://w.local/analyze", { method: "POST", body: JSON.stringify({ image: "AAAA" }) });
+  const res = await worker.fetch(req, env);
+  assert.equal(res.status, 429);
+  const body = await res.json();
+  assert.equal(body.error, "ai_quota");
+  assert.match(body.message, /05:00/);
+  assert.equal(body.spec, undefined);
+});
+
+test("analyze: все модели упали — ошибка 502 без выдуманного окна", async () => {
+  const { default: worker } = await import("../src/index.js");
+  const env = { AI: { run: async () => { throw new Error("model overloaded"); } } };
+  const req = new Request("https://w.local/analyze", { method: "POST", body: JSON.stringify({ image: "AAAA" }) });
+  const res = await worker.fetch(req, env);
+  assert.equal(res.status, 502);
+  const body = await res.json();
+  assert.equal(body.error, "ai_failed");
+  assert.equal(body.spec, undefined);
+});
+
+test("render: лимит исчерпан — 429 с понятным текстом", async () => {
+  const { default: worker } = await import("../src/index.js");
+  const env = { AI: { run: async () => { throw new Error("4006: daily free allocation"); } } };
+  const req = new Request("https://w.local/render", { method: "POST", body: JSON.stringify({ spec: { width_mm: 1000, height_mm: 2000 }, scheme: "iVBORw0KGgo=" }) });
+  const res = await worker.fetch(req, env);
+  assert.equal(res.status, 429);
+  assert.equal((await res.json()).error, "ai_quota");
 });
