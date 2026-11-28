@@ -146,14 +146,15 @@ object Pdf {
         text("Спецификация материалов", tp(15f, true), 2f)
         text((if (opt.cutting) "Профили — целыми хлыстами по раскрою всего КП (пропил ${catalog.kerf.toInt()} мм, обрезка ${catalog.trim.toInt()} мм). "
               else "Профили — по длине с отходом ${catalog.wastePercent.toInt()}%. ") +
-             (if (opt.gasketRound) "Уплотнители — кратно ${catalog.gasketStep.toInt()} м." else "Уплотнители — по расчёту."), tp(9f, color = Color.GRAY))
+             (if (opt.gasketRound) "Уплотнители — кратно ${catalog.gasketStep.toInt()} м." else "Уплотнители — по расчёту.") +
+             (if (o.weightKg > 0) " Вес профилей ≈ ${"%.0f".format(o.weightKg)} кг." else ""), tp(9f, color = Color.GRAY))
         y += 4f
         for ((group, title) in listOf(LineGroup.PROFILE to "Профили", LineGroup.ACCESSORY to "Комплектующие", LineGroup.GASKET to "Уплотнители")) {
             val list = o.materials.filter { it.group == group }
             if (list.isEmpty()) continue
             ensure(60f)
             text(title, tp(11f, true), 3f)
-            val mc = listOf(Col(LEFT + 2, 92f, L0), Col(LEFT + 96, 185f, L0), Col(LEFT + 283, 72f, R), Col(LEFT + 357, 70f, R), Col(LEFT + 430, 85f, R))
+            val mc = listOf(Col(LEFT + 2, 98f, L0), Col(LEFT + 104, 177f, L0), Col(LEFT + 283, 72f, R), Col(LEFT + 357, 70f, R), Col(LEFT + 430, 85f, R))
             val head = when (group) {
                 LineGroup.PROFILE -> listOf("Артикул", "Наименование, цвет", "Нужно / хлысты", "Цена за м", "Сумма")
                 LineGroup.GASKET -> listOf("Артикул", "Наименование", "Нужно / к отпуску", "Цена за м", "Сумма")
@@ -173,7 +174,6 @@ object Pdf {
             total("$title, итого:", money(list.sumOf { it.amount }), bold = true, size = 9.5f)
             y += 6f
         }
-        if (o.weightKg > 0) text("Вес профилей ≈ ${"%.0f".format(o.weightKg)} кг", tp(9f, color = Color.GRAY))
         if (opt.scope == OfferScope.TURNKEY) text("Стеклопакеты, фурнитура, изготовление и монтаж — в стоимости окон (страница 1).", tp(9f, color = Color.GRAY))
 
         // ---------- Окна по отдельности ----------

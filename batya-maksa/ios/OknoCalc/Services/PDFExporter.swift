@@ -148,7 +148,8 @@ enum PDFExporter {
                 text("Спецификация материалов", .boldSystemFont(ofSize: 15), gap: 2)
                 text((options.cutting ? "Профили — целыми хлыстами по раскрою всего КП (пропил \(Int(catalog.kerf)) мм, обрезка \(Int(catalog.trim)) мм). "
                                       : "Профили — по длине с отходом \(Int(catalog.wastePercent))%. ")
-                     + (options.gasketRound ? "Уплотнители — кратно \(Int(catalog.gasketStep)) м." : "Уплотнители — по расчёту."),
+                     + (options.gasketRound ? "Уплотнители — кратно \(Int(catalog.gasketStep)) м." : "Уплотнители — по расчёту.")
+                     + (o.weightKg > 0 ? String(format: " Вес профилей ≈ %.0f кг.", o.weightKg) : ""),
                      .systemFont(ofSize: 9), color: .gray)
                 y += 4
                 for (group, title) in [(LineGroup.profile, "Профили"), (.accessory, "Комплектующие"), (.gasket, "Уплотнители")] {
@@ -180,7 +181,6 @@ enum PDFExporter {
                     total("\(title), итого:", money(list.reduce(0) { $0 + $1.amount }), bold: true, size: 9.5)
                     y += 6
                 }
-                if o.weightKg > 0 { text(String(format: "Вес профилей ≈ %.0f кг", o.weightKg), .systemFont(ofSize: 9), color: .gray) }
                 if options.scope == .turnkey {
                     text("Стеклопакеты, фурнитура, изготовление и монтаж — в стоимости окон (страница 1).", .systemFont(ofSize: 9), color: .gray)
                 }
