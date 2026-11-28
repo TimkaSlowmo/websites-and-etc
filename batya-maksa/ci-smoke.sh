@@ -16,7 +16,7 @@ dump() { adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1; adb shell ca
 # (между заголовком и панелью вкладок); иначе прокрутить и искать снова
 tap_text() {
   local t=$1 x1 y1 x2 y2
-  for i in 1 2 3 4 5 6 7; do
+  for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14; do
     dump | grep "text=\"$t" | grep -oE 'bounds="\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]"' | tr -c '0-9\n' ' ' > /tmp/bounds.txt
     while read -r x1 y1 x2 y2; do
       if [ -n "${y2:-}" ] && [ "$y1" -gt $((H*10/100)) ] && [ "$y2" -lt $((H*86/100)) ]; then
@@ -30,7 +30,7 @@ tap_text() {
 # Точное совпадение текста (например, поле «1200», а не «1200×2700» на ленте окон)
 tap_exact() {
   local t=$1 x1 y1 x2 y2
-  for i in 1 2 3 4 5 6 7; do
+  for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14; do
     dump | grep "text=\"$t\"" | grep -oE 'bounds="\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]"' | tr -c '0-9\n' ' ' > /tmp/bounds.txt
     while read -r x1 y1 x2 y2; do
       if [ -n "${y2:-}" ] && [ "$y1" -gt $((H*10/100)) ] && [ "$y2" -lt $((H*86/100)) ]; then
@@ -42,6 +42,15 @@ tap_exact() {
   return 1
 }
 has() { dump | grep -q "text=\"$1"; }
+# Кнопка в верхней панели (точный текст, верхние 15% экрана)
+tap_top() {
+  local x1 y1 x2 y2
+  dump | grep "text=\"$1\"" | grep -oE 'bounds="\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]"' | tr -c '0-9\n' ' ' > /tmp/bounds.txt
+  while read -r x1 y1 x2 y2; do
+    if [ -n "${y2:-}" ] && [ "$y2" -lt $((H*15/100)) ]; then adb shell input tap $(( (x1 + x2) / 2 )) $(( (y1 + y2) / 2 )); return 0; fi
+  done < /tmp/bounds.txt
+  return 1
+}
 keyboard() { adb shell dumpsys input_method | grep -q "mInputShown=true"; }
 
 run() {
@@ -63,7 +72,8 @@ run() {
     else echo "Окно размера по нажатию на схему не открылось"; FAIL=1; fi
     # «Добавить» → «Ввести вручную»: в КП третье окно
     start --ez demo true; sleep 4
-    tap_text "Добавить"; sleep 1; shot "$m-3d-add-menu" 1
+    tap_top "Добавить" || { echo "Кнопка «Добавить» не найдена"; FAIL=1; }
+    sleep 1; shot "$m-3d-add-menu" 1
     tap_text "Ввести вручную"; sleep 2
     has "ОК-3" || { echo "Окно не добавилось в КП"; FAIL=1; }
     shot "$m-3e-added" 1
@@ -79,13 +89,13 @@ run() {
       # он выводит окно из сенсорного режима, и отпускание клавиши «нажимает» первую кнопку экрана.
       if [ $KB = 1 ]; then
         adb shell input tap $((W*745/1000)) $((H*955/1000)); sleep 2
-        keyboard && { echo "WARN: ✓ не попал — прячу тапом мимо поля"; tap_text "Площадь"; sleep 2; } || echo "INFO: «Готово» закрыл клавиатуру"
-      else tap_text "Площадь"; sleep 2; fi
+        keyboard && { echo "WARN: ✓ не попал — прячу тапом мимо поля"; tap_exact "РАЗМЕРЫ"; sleep 2; } || echo "INFO: «Готово» закрыл клавиатуру"
+      else tap_exact "РАЗМЕРЫ"; sleep 2; fi
       [ $KB = 1 ] && keyboard && { echo "Клавиатура не скрылась по тапу мимо поля"; FAIL=1; }
       dump | grep -q 'text="1500"' || { echo "Ширина 1500 не применилась"; FAIL=1; }
       shot "$m-9-after-done" 1
       # Повторно: фокус в поле и тап мимо — клавиатура должна уйти
-      tap_exact "1500" && sleep 2 && tap_text "Площадь" && sleep 2
+      tap_exact "1500" && sleep 2 && shot "$m-9b-focused" 0 && tap_exact "РАЗМЕРЫ" && sleep 2
       [ $KB = 1 ] && keyboard && { echo "Клавиатура не скрылась по тапу мимо поля (2)"; FAIL=1; }
     else echo "Поле ширины не найдено"; FAIL=1; fi
     # КП (PDF): должно открыться окно «Поделиться», без падения
