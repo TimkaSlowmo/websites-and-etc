@@ -27,19 +27,41 @@ class PricingTest {
     @Test fun matchesReferenceCalculation() {
         val text = javaClass.classLoader!!.getResource("test-cases.json").readText()
         val cases = JSONArray(text)
-        assertEquals(5, cases.length())
+        assertEquals(8, cases.length())
         for (i in 0 until cases.length()) {
             val t = cases.getJSONObject(i)
-            val spec = WindowSpec.fromJson(t.getJSONObject("spec"))
-            val sel = Selection.fromJson(t.getJSONObject("selection"))
+            val offer = t.getJSONObject("offer")
+            val opt = OfferOptions.fromJson(offer.getJSONObject("options"))
+            val positions = offer.getJSONArray("items").objects().map {
+                Position(spec = WindowSpec.fromJson(it.getJSONObject("spec")), selection = Selection.fromJson(it.getJSONObject("selection")))
+            }
             val e = t.getJSONObject("expected")
-            val b = Pricing.calculate(spec, sel, catalog)
+            val b = Pricing.offer(positions, opt, catalog)
             val name = t.getString("name")
-            assertEquals(name, e.getDouble("subtotal"), b.subtotal, 0.5)
-            assertEquals(name, e.getDouble("unit_total"), b.unitTotal, 0.0)
+            fun doubles(k: String) = e.getJSONArray(k).let { a -> (0 until a.length()).map { a.getDouble(it) } }
+            assertEquals(name, doubles("unit_totals"), b.items.map { it.unitTotal })
+            assertEquals(name, doubles("totals"), b.items.map { it.total })
+            assertEquals(name, e.getDouble("subtotal"), b.subtotal, 0.0)
+            assertEquals(name, e.getDouble("discount"), b.discount, 0.0)
             assertEquals(name, e.getDouble("total"), b.total, 0.0)
-            assertEquals(name, e.getInt("lines"), b.lines.size)
+            assertEquals(name, e.getDouble("vat_included"), b.vatIncluded, 0.0)
+            val bars = e.getJSONObject("bars").let { o -> o.keys().asSequence().associateWith { o.getInt(it) } }
+            assertEquals(name, bars, b.bars)
+            val warns = e.getJSONArray("warnings").let { a -> (0 until a.length()).map { a.getJSONArray(it).strings() } }
+            assertEquals(name, warns, b.items.map { it.limits.map { w -> w.kind } })
         }
+    }
+
+    /** Карты раскроя ORGADATA (окно 1500×2300): длины деталей до миллиметра. */
+    @Test fun geometryMatchesOrgadata() {
+        val s = WindowSpec(widthMm = 1500, heightMm = 2300, layout = Layout(Split.COLUMNS, listOf(
+            Section(750, listOf(Cell(1650, Opening.TILT_TURN, Hinge.LEFT), Cell(650))),
+            Section(750, listOf(Cell(1650), Cell(650))))))
+        val g = Pricing.geometry(s, catalog.system("bkt77")!!)
+        assertEquals(listOf(1500, 1500, 2300, 2300), g.pieces["frame"]!!.sorted())
+        assertEquals(listOf(687, 687, 2216), g.pieces["impost"]!!.sorted())
+        assertEquals(listOf(699, 699, 1599, 1599), g.pieces["sash"]!!.sorted())
+        assertEquals(13416, g.pieces["bead"]!!.sum())
     }
 
     @Test fun workerResponseAndAutoSelection() {

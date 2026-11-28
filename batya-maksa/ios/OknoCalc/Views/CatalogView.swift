@@ -83,6 +83,22 @@ struct SystemDetailView: View {
         let c = store.catalog
         List {
             Section { Text(system.description) }
+            if let g = system.geo {
+                Section {
+                    Text(verbatim: "Рама \(Int(g.frameFace)) · импост \(Int(g.impostFace)) · нахлёст створки \(Int(g.sashOverlap)) · створка до стекла \(Int(g.sashFace)) · штапик −\(Int(g.beadDeduct)) · стекло −\(Int(g.glassGap)) мм")
+                        .font(.caption)
+                } header: { Text("Вычеты профилей, мм") }
+            }
+            if let recs = system.recommend, !recs.isEmpty {
+                Section("Рекомендации для нестандарта") {
+                    ForEach(recs, id: \.when) { r in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(r.text).font(.callout)
+                            Text(verbatim: "\(r.role) → \(r.code) · \(c.article(r.code)?.name ?? "нет в прайсе")").font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
             Section("Что входит в расчёт") {
                 ForEach(Array(system.rules.enumerated()), id: \.offset) { _, r in
                     VStack(alignment: .leading, spacing: 2) {
@@ -93,7 +109,7 @@ struct SystemDetailView: View {
                         } else if let code = r.code {
                             let a = c.article(code)
                             Text("\(code) · \(a?.name ?? "нет в прайсе")").font(.caption).foregroundStyle(.secondary)
-                            if let a { Text(verbatim: "\(Money.format(a.price, currency: c.currency))/\(a.unitTitle) · \(baseTitle(r.base, r.qty))").font(.caption2).foregroundStyle(.tertiary) }
+                            if let a { Text(verbatim: "\(Money.format(a.price, currency: c.currency))/\(a.unitTitle) · \(baseTitle(r.base, r.qty))\(plusTitle(r))").font(.caption2).foregroundStyle(.tertiary) }
                             if let d = r.doorCode { Text(verbatim: "для дверей: \(d)").font(.caption2).foregroundStyle(.tertiary) }
                         }
                     }
@@ -109,9 +125,16 @@ struct SystemDetailView: View {
             "sash_perimeter_m": "периметр створок", "sashes": "на створку", "door_perimeter_m": "периметр дверных створок",
             "doors": "на дверь", "glass_perimeter_m": "периметр стёкол", "glass_area_m2": "площадь стёкол", "panes": "на стекло",
             "door_width_m": "ширина двери", "vert_len_m": "длина стоек", "horiz_len_m": "длина ригелей", "grid_len_m": "длина стоек и ригелей",
-            "area_m2": "площадь", "frame_corners": "на угол рамы",
+            "area_m2": "площадь", "frame_corners": "на угол рамы", "bead_length_m": "длина штапиков", "sash_panes": "на стекло в створке",
         ]
         let n = names[base] ?? base
-        return qty == 1 ? n : "\(String(format: qty < 1 ? "%.1f" : "%.0f", qty)) × \(n)"
+        return qty == 1 ? n : "\(String(format: qty < 1 ? "%.2f" : "%.0f", qty)) × \(n)"
+    }
+
+    private func plusTitle(_ r: Rule) -> String {
+        guard let plus = r.plus, !plus.isEmpty else { return "" }
+        return plus.map { p in
+            p.qty < 1 ? " + \(Int((p.qty * 1000).rounded())) мм \(baseTitle(p.base, 1))" : " + \(baseTitle(p.base, p.qty))"
+        }.joined()
     }
 }

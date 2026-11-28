@@ -34,10 +34,18 @@ data class Box(val l: Float, val t: Float, val r: Float, val b: Float) {
     fun contains(x: Float, y: Float) = x in l..r && y in t..b
 }
 
-/** Общая геометрия схемы: где рама, где каждая ячейка, какие линии открывания. */
-class SchemeLayout(val spec: WindowSpec, width: Float, height: Float, val d: Float = 1f) {
+/** Размерная линия схемы: что меняет нажатие, где линия, подпись. */
+class Dim(val dim: SchemeDimension, val a: Offset, val b: Offset, val text: String) {
+    val vertical: Boolean get() = kotlin.math.abs(a.x - b.x) < 1
+}
+
+/** Подпись ячейки «ширина×высота»; dim != null — размер ячейки можно менять нажатием. */
+class CellLabel(val rect: CellRect, val box: Box, val text: String, val textSize: Float, val dim: SchemeDimension?)
+
+/** Общая геометрия схемы: где рама, где каждая ячейка, какие линии открывания. clean — без размеров (для ИИ-фото). */
+class SchemeLayout(val spec: WindowSpec, width: Float, height: Float, val d: Float = 1f, clean: Boolean = false) {
     /** Поле под размерные линии с каждой стороны. */
-    val pad: Float = 36f * d
+    val pad: Float = (if (clean) 6f else 36f) * d
     val k: Float = min((width - pad * 2) / spec.widthMm, (height - pad * 2) / spec.heightMm)
     val frame: Box = run {
         val w = spec.widthMm * k
@@ -73,44 +81,84 @@ class SchemeLayout(val spec: WindowSpec, width: Float, height: Float, val d: Flo
         }
     }
 
-    /** Размерные линии: (начало, конец, текст, акцент). */
-    fun dims(): List<Triple<Pair<Offset, Offset>, String, Boolean>> {
-        val out = mutableListOf<Triple<Pair<Offset, Offset>, String, Boolean>>()
+    /** Размерные линии: общие (сверху и справа) и по секциям (снизу или слева). */
+    fun dims(): List<Dim> {
         val o = 16f * d
-        out += Triple(Offset(frame.l, frame.t - o) to Offset(frame.r, frame.t - o), "${spec.widthMm}", false)
-        out += Triple(Offset(frame.r + o, frame.t) to Offset(frame.r + o, frame.b), "${spec.heightMm}", false)
+        val out = mutableListOf(
+            Dim(SchemeDimension(SchemeDimension.Kind.WIDTH, value = spec.widthMm, title = "Ширина изделия"),
+                Offset(frame.l, frame.t - o), Offset(frame.r, frame.t - o), "${spec.widthMm}"),
+            Dim(SchemeDimension(SchemeDimension.Kind.HEIGHT, value = spec.heightMm, title = "Высота изделия"),
+                Offset(frame.r + o, frame.t), Offset(frame.r + o, frame.b), "${spec.heightMm}"),
+        )
         if (spec.layout.sections.size > 1) {
             var a = 0.0
-            for (s in spec.layout.sections) {
-                if (spec.layout.split == Split.COLUMNS) {
+            val cols = spec.layout.split == Split.COLUMNS
+            spec.layout.sections.forEachIndexed { i, s ->
+                val dim = SchemeDimension(SchemeDimension.Kind.SECTION, i, 0, s.sizeMm,
+                    "${spec.layout.split.sectionName} ${i + 1} — ${if (cols) "ширина" else "высота"}")
+                if (cols) {
                     val x0 = frame.l + (a * k).toFloat()
                     val x1 = frame.l + ((a + s.sizeMm) * k).toFloat()
-                    out += Triple(Offset(x0, frame.b + o) to Offset(x1, frame.b + o), "${s.sizeMm}", true)
+                    out += Dim(dim, Offset(x0, frame.b + o), Offset(x1, frame.b + o), "${s.sizeMm}")
                 } else {
                     val y0 = frame.t + (a * k).toFloat()
                     val y1 = frame.t + ((a + s.sizeMm) * k).toFloat()
-                    out += Triple(Offset(frame.l - o, y0) to Offset(frame.l - o, y1), "${s.sizeMm}", true)
+                    out += Dim(dim, Offset(frame.l - o, y0), Offset(frame.l - o, y1), "${s.sizeMm}")
                 }
                 a += s.sizeMm
             }
         }
         return out
     }
+
+    /** Зона нажатия на подпись размера — не меньше 44×32 dp. */
+    fun dimHit(dm: Dim): Box {
+        val mx = (dm.a.x + dm.b.x) / 2
+        val my = (dm.a.y + dm.b.y) / 2
+        val along = max(44f * d, dm.text.length * 7f * d + 12f * d) / 2
+        val across = 16f * d
+        return if (dm.vertical) Box(mx - across, my - along, mx + across, my + along) else Box(mx - along, my - across, mx + along, my + across)
+    }
+
+    fun cellLabels(): List<CellLabel> = spec.cellRects.map { r ->
+        val cb = cellBox(r)
+        val g = glassBox(r)
+        val text = "${r.w.toInt()}×${r.h.toInt()}"
+        val ts = max(8f, min(12f, cb.w / 7f / d)) * d
+        val w = text.length * ts * 0.62f + 8 * d
+        val h = ts + 6 * d
+        val box = Box(g.cx - w / 2, g.b - h - 4 * d, g.cx + w / 2, g.b - 4 * d)
+        val many = spec.layout.sections[r.section].cells.size > 1
+        val cols = spec.layout.split == Split.COLUMNS
+        val dim = if (many) SchemeDimension(SchemeDimension.Kind.CELL, r.section, r.index, r.cell.sizeMm,
+            "${spec.layout.split.sectionName} ${r.section + 1}, ячейка ${r.index + 1} — ${if (cols) "высота" else "ширина"}") else null
+        CellLabel(r, box, text, ts, dim)
+    }
+
+    /** Что под пальцем: размер (если можно менять). */
+    fun hitDimension(x: Float, y: Float): SchemeDimension? =
+        dims().firstOrNull { dimHit(it).contains(x, y) }?.dim
+            ?: cellLabels().firstOrNull { it.dim != null && it.box.inset(-8 * d).contains(x, y) }?.dim
 }
 
 fun parseHex(hex: String): Int = try { android.graphics.Color.parseColor(if (hex.startsWith("#")) hex else "#$hex") } catch (e: Exception) { 0xFF45494E.toInt() }
 
 private val GlassColor = Color(0xFFCDE6F7)
 
-/** Отрисовка схемы на обычном Android Canvas (общая для экрана и PDF). */
+/**
+ * Отрисовка схемы на обычном Android Canvas (общая для экрана, PDF и образца ИИ-фото).
+ * editable — голубые размеры, которые можно нажать; clean — без размеров и значков открывания, с ручками.
+ */
 fun drawScheme(canvas: android.graphics.Canvas, spec: WindowSpec, frameHex: String, width: Float, height: Float,
                selectedId: String? = null, density: Float = 1f,
-               labelBg: Int = android.graphics.Color.WHITE, dimColor: Int = 0xFF6B7280.toInt()) {
-    val L = SchemeLayout(spec, width, height, density)
+               labelBg: Int = android.graphics.Color.WHITE, dimColor: Int = 0xFF6B7280.toInt(),
+               editable: Boolean = false, clean: Boolean = false) {
+    val L = SchemeLayout(spec, width, height, density, clean)
     val p = Paint(Paint.ANTI_ALIAS_FLAG)
-    p.color = parseHex(frameHex)
+    val frameColor = parseHex(frameHex)
+    p.color = frameColor
     canvas.drawRect(L.frame.l, L.frame.t, L.frame.r, L.frame.b, p)
-    val text = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Typeface.DEFAULT_BOLD; textAlign = Paint.Align.CENTER }
+    val accent = Accent.toArgb()
     for (r in spec.cellRects) {
         val cb = L.cellBox(r)
         val g = L.glassBox(r)
@@ -119,6 +167,30 @@ fun drawScheme(canvas: android.graphics.Canvas, spec: WindowSpec, frameHex: Stri
         canvas.drawRect(g.l, g.t, g.r, g.b, p)
         p.color = 0x2EFFFFFF
         canvas.drawRect(g.l, g.t, g.l + g.w * 0.35f, g.b, p)
+        if (r.cell.opening != Opening.FIXED) {
+            // Контур створки
+            p.style = Paint.Style.STROKE
+            p.strokeWidth = 1f * density
+            p.color = if (clean) 0x38FFFFFF else 0x59FFFFFF
+            val half = L.profile * 0.5f
+            canvas.drawRect(cb.l + half, cb.t + half, cb.r - half, cb.b - half, p)
+        }
+        if (clean) {
+            // Ручка — со стороны, противоположной петлям
+            if (r.cell.opening != Opening.FIXED) {
+                p.style = Paint.Style.FILL
+                p.color = frameColor
+                val l = max(10f, min(g.h, g.w) * 0.12f)
+                val t = max(2.5f, l * 0.22f)
+                when (r.cell.hinge) {
+                    Hinge.RIGHT -> canvas.drawRoundRect(g.l + t * 1.2f, g.cy - l / 2, g.l + t * 2.2f, g.cy + l / 2, t / 2, t / 2, p)
+                    Hinge.BOTTOM -> canvas.drawRoundRect(g.cx - l / 2, g.t + t * 1.2f, g.cx + l / 2, g.t + t * 2.2f, t / 2, t / 2, p)
+                    Hinge.TOP -> canvas.drawRoundRect(g.cx - l / 2, g.b - t * 2.2f, g.cx + l / 2, g.b - t * 1.2f, t / 2, t / 2, p)
+                    else -> canvas.drawRoundRect(g.r - t * 2.2f, g.cy - l / 2, g.r - t * 1.2f, g.cy + l / 2, t / 2, t / 2, p)
+                }
+            }
+            continue
+        }
         p.style = Paint.Style.STROKE
         p.strokeWidth = 1.6f * density
         p.color = Deep.copy(alpha = 0.85f).toArgb()
@@ -129,61 +201,97 @@ fun drawScheme(canvas: android.graphics.Canvas, spec: WindowSpec, frameHex: Stri
         p.pathEffect = null
         if (r.cell.door) {
             p.style = Paint.Style.FILL
-            p.color = parseHex(frameHex)
+            p.color = frameColor
             val hx = if (r.cell.hinge == Hinge.RIGHT) g.l + 6 * density else g.r - 10 * density
             canvas.drawRoundRect(hx, g.cy - 14 * density, hx + 4 * density, g.cy + 14 * density, 2f, 2f, p)
         }
         if (r.id == selectedId) {
             p.style = Paint.Style.STROKE
             p.strokeWidth = 3f * density
-            p.color = Accent.toArgb()
+            p.color = accent
             canvas.drawRect(cb.l + 1.5f, cb.t + 1.5f, cb.r - 1.5f, cb.b - 1.5f, p)
         }
-        val label = "${r.w.toInt()}×${r.h.toInt()}"
-        text.textSize = max(8f, min(12f, cb.w / 7f / density)) * density
-        val tw = text.measureText(label)
-        if (tw < g.w - 4) {
-            p.style = Paint.Style.FILL
-            p.color = 0xD9FFFFFF.toInt()
-            val bh = text.textSize + 4 * density
-            canvas.drawRoundRect(g.cx - tw / 2 - 4 * density, g.b - bh - 6 * density, g.cx + tw / 2 + 4 * density, g.b - 6 * density, 4f, 4f, p)
-            text.color = Deep.toArgb()
-            canvas.drawText(label, g.cx, g.b - 6 * density - bh / 2 + text.textSize / 3, text)
+    }
+    if (clean) return
+    // Подписи ячеек (голубые, если размер можно поменять)
+    val text = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Typeface.DEFAULT_BOLD; textAlign = Paint.Align.CENTER }
+    for (lb in L.cellLabels()) {
+        val g = L.glassBox(lb.rect)
+        if (lb.box.w >= g.w - 4) continue
+        val tappable = editable && lb.dim != null
+        p.style = Paint.Style.FILL
+        p.color = 0xE0FFFFFF.toInt()
+        canvas.drawRoundRect(lb.box.l, lb.box.t, lb.box.r, lb.box.b, 4 * density, 4 * density, p)
+        if (tappable) {
+            p.style = Paint.Style.STROKE
+            p.strokeWidth = 1f * density
+            p.color = accent
+            canvas.drawRoundRect(lb.box.l, lb.box.t, lb.box.r, lb.box.b, 4 * density, 4 * density, p)
         }
+        text.textSize = lb.textSize
+        text.color = if (tappable) accent else Deep.toArgb()
+        canvas.drawText(lb.text, lb.box.cx, lb.box.cy + lb.textSize / 3, text)
     }
     // Размеры
     val dimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { strokeWidth = 1f * density }
     val dimText = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 11f * density; textAlign = Paint.Align.CENTER }
-    for ((seg, label, accent) in L.dims()) {
-        val (a, b) = seg
-        val col = if (accent) Accent.toArgb() else dimColor
+    for (dm in L.dims()) {
+        val a = dm.a
+        val b = dm.b
+        val col = if (editable || dm.dim.kind == SchemeDimension.Kind.SECTION) accent else dimColor
         dimPaint.color = col
         dimText.color = col
+        dimText.typeface = if (editable) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
         canvas.drawLine(a.x, a.y, b.x, b.y, dimPaint)
-        val vertical = kotlin.math.abs(a.x - b.x) < 1
         for (e in listOf(a, b)) {
-            if (vertical) canvas.drawLine(e.x - 4 * density, e.y, e.x + 4 * density, e.y, dimPaint)
+            if (dm.vertical) canvas.drawLine(e.x - 4 * density, e.y, e.x + 4 * density, e.y, dimPaint)
             else canvas.drawLine(e.x, e.y - 4 * density, e.x, e.y + 4 * density, dimPaint)
         }
         val mx = (a.x + b.x) / 2
         val my = (a.y + b.y) / 2
-        val tw = dimText.measureText(label)
-        val bg = Paint().apply { color = labelBg }
+        val tw = dimText.measureText(dm.text)
         canvas.save()
         canvas.translate(mx, my)
-        if (vertical) canvas.rotate(-90f)
-        canvas.drawRect(-tw / 2 - 3 * density, -dimText.textSize / 2 - 1, tw / 2 + 3 * density, dimText.textSize / 2 + 1, bg)
-        canvas.drawText(label, 0f, dimText.textSize / 3, dimText)
+        if (dm.vertical) canvas.rotate(-90f)
+        val l = -tw / 2 - 5 * density
+        val t = -dimText.textSize / 2 - 2 * density
+        val rr = tw / 2 + 5 * density
+        val bb = dimText.textSize / 2 + 2 * density
+        canvas.drawRoundRect(l, t, rr, bb, 5 * density, 5 * density, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = labelBg })
+        if (editable) {
+            canvas.drawRoundRect(l, t, rr, bb, 5 * density, 5 * density, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Accent.copy(alpha = 0.14f).toArgb() })
+            canvas.drawRoundRect(l, t, rr, bb, 5 * density, 5 * density, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE; strokeWidth = 1f * density; color = Accent.copy(alpha = 0.6f).toArgb()
+            })
+        }
+        canvas.drawText(dm.text, 0f, dimText.textSize / 3, dimText)
         canvas.restore()
     }
 }
 
+/** Чистый фасад окна (без размеров и значков открывания) — образец для ИИ-фото, PNG до 512 px. */
+fun cleanSchemePng(spec: WindowSpec, frameHex: String): ByteArray {
+    val ratio = spec.widthMm.toFloat() / spec.heightMm.coerceAtLeast(1)
+    val w = if (ratio >= 1) 512 else max(128, (512 * ratio).toInt())
+    val h = if (ratio >= 1) max(128, (512 / ratio).toInt()) else 512
+    val bmp = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888)
+    val cv = android.graphics.Canvas(bmp)
+    cv.drawColor(android.graphics.Color.WHITE)
+    drawScheme(cv, spec, frameHex, w.toFloat(), h.toFloat(), clean = true)
+    val out = java.io.ByteArrayOutputStream()
+    bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)
+    return out.toByteArray()
+}
+
 /**
  * Схема на экране: вписывается и по ширине, и по высоте (не больше maxHeight), как на iPhone.
- * Нажатие по ячейке выбирает её.
+ * Нажатие по голубому размеру — изменить размер, по ячейке — выбрать её.
  */
 @Composable
-fun SchemeView(spec: WindowSpec, frameHex: String, selectedId: String?, maxHeight: Dp = 380.dp, onTap: (CellRect) -> Unit) {
+fun SchemeView(
+    spec: WindowSpec, frameHex: String, selectedId: String?, maxHeight: Dp = 380.dp,
+    onDimension: ((SchemeDimension) -> Unit)? = null, onTap: (CellRect) -> Unit,
+) {
     val p = pal()
     BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         // Пропорции изделия + поля под размеры; высота ограничена — узкое высокое окно сужается, а не вылезает
@@ -192,14 +300,17 @@ fun SchemeView(spec: WindowSpec, frameHex: String, selectedId: String?, maxHeigh
         val h = minOf((maxWidth - pad) / ratio + pad, maxHeight)
         val labelBg = p.card.toArgb()
         val dim = p.secondary.toArgb()
+        val editable = onDimension != null
         Canvas(
-            Modifier.fillMaxWidth().height(h).clipToBounds().pointerInput(spec) {
+            Modifier.fillMaxWidth().height(h).clipToBounds().pointerInput(spec, editable) {
                 detectTapGestures { pos ->
-                    SchemeLayout(spec, size.width.toFloat(), size.height.toFloat(), density).hit(pos.x, pos.y)?.let(onTap)
+                    val L = SchemeLayout(spec, size.width.toFloat(), size.height.toFloat(), density)
+                    val d = if (onDimension != null) L.hitDimension(pos.x, pos.y) else null
+                    if (d != null) onDimension?.invoke(d) else L.hit(pos.x, pos.y)?.let(onTap)
                 }
             },
         ) {
-            drawIntoCanvas { drawScheme(it.nativeCanvas, spec, frameHex, size.width, size.height, selectedId, density, labelBg, dim) }
+            drawIntoCanvas { drawScheme(it.nativeCanvas, spec, frameHex, size.width, size.height, selectedId, density, labelBg, dim, editable) }
         }
     }
 }

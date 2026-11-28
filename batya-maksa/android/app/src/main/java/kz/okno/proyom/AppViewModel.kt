@@ -7,7 +7,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import kotlin.math.max
 import kotlin.math.min
@@ -21,6 +23,18 @@ sealed interface Phase {
     data class Failed(val message: String) : Phase
 }
 
+/** Стиль ИИ-фото. */
+enum class RenderStyle(val key: String, val title: String) { FACADE("facade", "Фасад"), INTERIOR("interior", "Интерьер"), STUDIO("studio", "Студия") }
+
+/** Размер на схеме, который можно изменить нажатием (выделен голубым). */
+data class SchemeDimension(val kind: Kind, val section: Int = 0, val index: Int = 0, val value: Int, val title: String) {
+    enum class Kind { WIDTH, HEIGHT, SECTION, CELL }
+}
+
+/**
+ * Коммерческое предложение из нескольких окон. Редактируется «текущее» окно;
+ * «Добавить» — новое окно в КП, «Новый» — начать КП заново. Логика как в iOS (EstimateViewModel).
+ */
 class AppViewModel(app: Application) : AndroidViewModel(app) {
     val prefs = Prefs(app)
     private val catalogStore = CatalogStore(app)
@@ -28,12 +42,23 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     var tab by mutableStateOf(Tab.ESTIMATE)
     var phase by mutableStateOf<Phase>(Phase.Idle)
-    var drawing by mutableStateOf<Bitmap?>(null)
-    var render by mutableStateOf<Bitmap?>(null)
-    var isRendering by mutableStateOf(false)
-    var renderError by mutableStateOf<String?>(null)
-    var spec by mutableStateOf(WindowSpec())
-    var selection by mutableStateOf(Selection())
+    var positions by mutableStateOf(listOf<Position>())
+        private set
+    var current by mutableStateOf(0)
+        private set
+    var options by mutableStateOf(OfferOptions())
+    var drawings by mutableStateOf(mapOf<String, Bitmap>())
+        private set
+    var renders by mutableStateOf(mapOf<String, Bitmap>())
+        private set
+    var rendering by mutableStateOf(setOf<String>())
+        private set
+    var renderErrors by mutableStateOf(mapOf<String, String>())
+        private set
+    var renderStyle by mutableStateOf(RenderStyle.FACADE)
+    /** Фото, которое сейчас распознаётся (экран анализа и «Повторить»). */
+    var pendingImage by mutableStateOf<Bitmap?>(null)
+        private set
     var catalog by mutableStateOf(catalogStore.load())
         private set
     var catalogModified by mutableStateOf(catalogStore.isModified)
@@ -46,18 +71,52 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     var theme by mutableStateOf(prefs.theme)
         private set
 
-    val breakdown: Breakdown get() = Pricing.calculate(spec, selection, catalog)
+    private var historyId: String? = null
+    private var savedState by mutableStateOf<Pair<List<Position>, OfferOptions>?>(null)
 
     private fun api() = Api(BuildConfig.WORKER_URL)
 
+    // ---------- Текущее окно ----------
+
+    private val cur: Int? get() = current.takeIf { it in positions.indices }
+    var spec: WindowSpec
+        get() = cur?.let { positions[it].spec } ?: WindowSpec()
+        set(v) { cur?.let { i -> positions = positions.toMutableList().also { it[i] = it[i].copy(spec = v) } } }
+    var selection: Selection
+        get() = cur?.let { positions[it].selection } ?: Selection()
+        set(v) { cur?.let { i -> positions = positions.toMutableList().also { it[i] = it[i].copy(selection = v) } } }
+    var mark: String
+        get() = cur?.let { positions[it].mark } ?: ""
+        set(v) { cur?.let { i -> positions = positions.toMutableList().also { it[i] = it[i].copy(mark = v) } } }
+    val currentId: String? get() = cur?.let { positions[it].id }
+    val drawing: Bitmap? get() = currentId?.let { drawings[it] }
+    val render: Bitmap? get() = currentId?.let { renders[it] }
+    val isRendering: Boolean get() = currentId?.let { it in rendering } ?: false
+    val renderError: String? get() = currentId?.let { renderErrors[it] }
+
+    /** Расчёт всего КП (общий раскрой и уплотнители). */
+    val offer: OfferBreakdown get() = Pricing.offer(positions, options, catalog)
+    val isSaved: Boolean get() = positions.isNotEmpty() && savedState == (positions to options)
+
+    fun updateSpec(f: (WindowSpec) -> WindowSpec) { spec = f(spec) }
+    fun updateSelection(f: (Selection) -> Selection) { selection = f(selection) }
+    fun updateOptions(f: (OfferOptions) -> OfferOptions) { options = f(options) }
+
+    // ---------- Добавление окон ----------
+
+    /** Новое окно по фото чертежа. */
     fun start(image: Bitmap) {
-        drawing = image; render = null; renderError = null
+        pendingImage = image
         phase = Phase.Analyzing
         viewModelScope.launch {
             try {
                 val result = api().analyze(image)
-                selection = Pricing.autoSelection(result, catalog)
-                spec = result
+                val p = Position(mark = nextMark(), spec = result.copy(quantity = max(1, result.quantity)),
+                    selection = Pricing.autoSelection(result, catalog))
+                drawings = drawings + (p.id to image)
+                pendingImage = null
+                positions = positions + p
+                current = positions.lastIndex
                 phase = Phase.Ready
                 renderPhoto()
             } catch (e: Exception) {
@@ -66,37 +125,104 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun retry() { drawing?.let { start(it) } }
+    fun retry() { pendingImage?.let { start(it) } }
 
-    fun reset() {
-        phase = Phase.Idle; drawing = null; render = null; renderError = null; spec = WindowSpec()
+    /** Вернуться к КП после ошибки распознавания. */
+    fun cancelAdding() { pendingImage = null; phase = if (positions.isEmpty()) Phase.Idle else Phase.Ready }
+
+    /** Новое окно вручную (с выбором как у последнего окна КП). */
+    fun addManual() {
+        val last = positions.lastOrNull()
+        val sel = last?.selection?.copy(overrides = emptyList()) ?: Pricing.autoSelection(WindowSpec(), catalog)
+        append(Position(mark = nextMark(), selection = sel))
     }
 
-    fun manual() {
-        spec = WindowSpec(); drawing = null; render = null
-        selection = Pricing.autoSelection(spec, catalog)
+    fun manual() = addManual()
+
+    /** Копия текущего окна. */
+    fun duplicateCurrent() {
+        val i = cur ?: return
+        val src = positions[i]
+        val p = src.copy(id = java.util.UUID.randomUUID().toString(), mark = nextMark())
+        drawings[src.id]?.let { drawings = drawings + (p.id to it) }
+        renders[src.id]?.let { renders = renders + (p.id to it) }
+        append(p)
+    }
+
+    fun removePosition(i: Int) {
+        if (i !in positions.indices) return
+        val id = positions[i].id
+        positions = positions.filterIndexed { j, _ -> j != i }
+        drawings = drawings - id; renders = renders - id; renderErrors = renderErrors - id
+        current = min(current, max(0, positions.lastIndex))
+        if (positions.isEmpty()) phase = Phase.Idle
+    }
+
+    fun select(i: Int) { if (i in positions.indices) current = i }
+
+    private fun append(p: Position) {
+        positions = positions + p
+        current = positions.lastIndex
         phase = Phase.Ready
+        tab = Tab.ESTIMATE
     }
+
+    private fun nextMark(): String {
+        val used = positions.mapNotNull { it.mark.filter(Char::isDigit).toIntOrNull() }
+        return "ОК-${(used.maxOrNull() ?: 0) + 1}"
+    }
+
+    /** «Новый»: начать КП заново. */
+    fun reset() {
+        phase = Phase.Idle
+        positions = emptyList(); current = 0; options = OfferOptions()
+        drawings = emptyMap(); renders = emptyMap(); renderErrors = emptyMap(); rendering = emptySet()
+        pendingImage = null; historyId = null; savedState = null
+    }
+
+    // ---------- ИИ-фото по схеме ----------
 
     fun renderPhoto() {
-        if (isRendering) return
-        isRendering = true; renderError = null
+        val i = cur ?: return
+        val p = positions[i]
+        if (p.id in rendering) return
+        rendering = rendering + p.id
+        renderErrors = renderErrors - p.id
         viewModelScope.launch {
             try {
-                val col = catalog.color(selection.colorId)
-                render = api().render(if (col != null) spec.copy(color = "${col.code} ${col.name}") else spec)
-            } catch (e: Exception) { renderError = e.message }
-            isRendering = false
+                val col = catalog.color(p.selection.colorId)
+                val scheme = withContext(Dispatchers.Default) { cleanSchemePng(p.spec, col?.hex ?: "#45494E") }
+                val s = if (col != null) p.spec.copy(color = "${col.code} ${col.name}") else p.spec
+                val bmp = api().render(s, scheme, renderStyle.key)
+                renders = renders + (p.id to bmp)
+            } catch (e: Exception) {
+                renderErrors = renderErrors + (p.id to (e.message ?: "Ошибка"))
+            }
+            rendering = rendering - p.id
         }
     }
 
-    fun updateSpec(f: (WindowSpec) -> WindowSpec) { spec = f(spec) }
-    fun updateSelection(f: (Selection) -> Selection) { selection = f(selection) }
+    // ---------- Нестандарт ----------
+
+    fun applyRecommendation(w: LimitWarning) {
+        if (w.role.isEmpty()) return
+        selection = selection.withOverride(w.role, if (w.applied) null else w.code)
+    }
+
+    /** Изменение размера, нажатого на схеме. */
+    fun applyDimension(d: SchemeDimension, value: Int) {
+        when (d.kind) {
+            SchemeDimension.Kind.WIDTH -> setSize(width = value)
+            SchemeDimension.Kind.HEIGHT -> setSize(height = value)
+            SchemeDimension.Kind.SECTION -> setSectionSize(d.section, value)
+            SchemeDimension.Kind.CELL -> setCellSize(d.section, d.index, value)
+        }
+    }
 
     // ---------- Редактирование сетки ----------
 
     fun setSize(width: Int? = null, height: Int? = null) {
-        spec = spec.copy(widthMm = max(100, width ?: spec.widthMm), heightMm = max(100, height ?: spec.heightMm)).fitted()
+        spec = spec.copy(widthMm = min(20000, max(100, width ?: spec.widthMm)), heightMm = min(20000, max(100, height ?: spec.heightMm))).fitted()
     }
 
     fun setSplit(split: Split) {
@@ -182,28 +308,43 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     // ---------- История ----------
 
     fun saveToHistory() {
-        val b = breakdown
-        val item = HistoryItem(spec = spec, selection = selection, total = b.total, currency = b.currency)
-        historyStore.writeImage(item.id, "d", drawing)
-        historyStore.writeImage(item.id, "r", render)
-        history = listOf(item) + history
+        if (positions.isEmpty()) return
+        val o = offer
+        val item = HistoryItem(id = historyId ?: java.util.UUID.randomUUID().toString(), positions = positions, options = options,
+            total = o.total, currency = o.currency)
+        for (p in positions) {
+            historyStore.writeImage(p.id, "d", drawings[p.id])
+            historyStore.writeImage(p.id, "r", renders[p.id])
+        }
+        history = listOf(item) + history.filter { it.id != item.id }
         historyStore.save(history)
+        historyId = item.id
+        savedState = positions to options
     }
 
     fun open(item: HistoryItem) {
-        spec = item.spec
-        selection = if (catalog.system(item.selection.systemId) != null) item.selection else Pricing.autoSelection(item.spec, catalog)
-        drawing = historyStore.image(item.id, "d"); render = historyStore.image(item.id, "r")
-        renderError = null; phase = Phase.Ready; tab = Tab.ESTIMATE
+        positions = item.positions.map { p ->
+            if (catalog.system(p.selection.systemId) != null) p else p.copy(selection = Pricing.autoSelection(p.spec, catalog))
+        }
+        options = item.options
+        drawings = positions.mapNotNull { p -> historyStore.image(p.id, "d")?.let { p.id to it } }.toMap()
+        renders = positions.mapNotNull { p -> historyStore.image(p.id, "r")?.let { p.id to it } }.toMap()
+        renderErrors = emptyMap()
+        current = 0
+        historyId = item.id
+        savedState = positions to options
+        phase = if (positions.isEmpty()) Phase.Idle else Phase.Ready
+        tab = Tab.ESTIMATE
     }
 
     fun delete(item: HistoryItem) {
-        historyStore.deleteImages(item.id)
+        item.positions.forEach { historyStore.deleteImages(it.id) }
         history = history.filter { it.id != item.id }
         historyStore.save(history)
     }
 
-    fun thumbnail(item: HistoryItem): Bitmap? = historyStore.image(item.id, "r") ?: historyStore.image(item.id, "d")
+    fun thumbnail(item: HistoryItem): Bitmap? =
+        item.positions.firstNotNullOfOrNull { historyStore.image(it.id, "r") ?: historyStore.image(it.id, "d") }
 
     // ---------- Настройки и каталог ----------
 
@@ -220,22 +361,26 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun resetCatalog() { catalog = catalogStore.reset(); catalogModified = false }
 
     fun summary(): String {
-        val b = breakdown
-        val sys = catalog.system(selection.systemId)?.name ?: ""
-        val col = catalog.color(selection.colorId)?.title ?: ""
+        val o = offer
         return buildString {
-            append("${spec.product.title} ${spec.widthMm}×${spec.heightMm} мм, $sys, заполнение ${selection.fillMm} мм, $col\n")
-            spec.cellRects.forEach { r ->
-                val c = r.cell
-                append("• ${spec.layout.split.sectionName} ${r.section + 1}, ячейка ${r.index + 1}: ${r.w.toInt()}×${r.h.toInt()} — ")
-                append((if (c.door) "дверь, " else "") + c.opening.title + (if (c.hinge != Hinge.NONE) ", " + c.hinge.title.lowercase() else "") + "\n")
+            append(if (options.objectName.isEmpty()) "Коммерческое предложение\n" else "КП: ${options.objectName}\n")
+            positions.forEachIndexed { i, p ->
+                val b = o.items[i]
+                val sys = catalog.system(p.selection.systemId)?.name ?: ""
+                val col = catalog.color(p.selection.colorId)?.code ?: ""
+                append("\n${i + 1}. ${p.mark}: ${p.spec.product.title} ${p.spec.widthMm}×${p.spec.heightMm} мм, $sys, $col")
+                append("\n   ${b.quantity} шт × ${Money.format(b.unitTotal, b.currency)} = ${Money.format(b.total, b.currency)}")
             }
-            append("Цена за 1 шт: ${Money.format(b.unitTotal, b.currency)}")
-            if (b.quantity > 1) append("\nИтого за ${b.quantity} шт: ${Money.format(b.total, b.currency)}")
+            append("\n\nПлощадь: ${"%.2f".format(o.areaM2)} м²")
+            if (o.discount > 0) append("\nСкидка ${options.discountPercent.toInt()}%: −${Money.format(o.discount, o.currency)}")
+            append("\nИтого: ${Money.format(o.total, o.currency)} (в т. ч. НДС ${catalog.vatPercent.toInt()}%: ${Money.format(o.vatIncluded, o.currency)})")
+            append("\n" + if (options.scope == OfferScope.MATERIALS) "В цену входят: алюминиевый профиль, комплектующие, уплотнители."
+                else "В цену входят: профиль, комплектующие, уплотнители, стеклопакеты, фурнитура, изготовление" +
+                    (if (positions.any { it.selection.installation }) ", монтаж" else "") + ".")
         }
     }
 
-    /** Демо для проверки: тот же пример, что в iOS (-demo). */
+    /** Демо для проверки: тот же пример, что в iOS (-demo) — КП из двух окон. */
     fun demo() {
         val s = WindowSpec(
             widthMm = 1200, heightMm = 2700, product = Product.WINDOW,
@@ -248,8 +393,17 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 InfoItem("Схема открывания", "поворотно-откидная, петли слева")),
             notes = "1200 2700 1700 1000 800 400. Система BKT 77, заполнение 32, цвет RAL 7024",
         )
-        spec = s
-        selection = Pricing.autoSelection(s, catalog)
+        val s2 = WindowSpec(
+            widthMm = 1500, heightMm = 2300, quantity = 2,
+            layout = Layout(Split.COLUMNS, listOf(
+                Section(750, listOf(Cell(1650, Opening.TILT_TURN, Hinge.LEFT), Cell(650))),
+                Section(750, listOf(Cell(1650), Cell(650))),
+            )),
+        )
+        val sel = Pricing.autoSelection(s, catalog)
+        positions = listOf(Position(mark = "ОК-1", spec = s, selection = sel), Position(mark = "ОК-2", spec = s2, selection = sel))
+        options = OfferOptions(objectName = "Демо-объект")
+        current = 0
         phase = Phase.Ready
         tab = Tab.ESTIMATE
     }

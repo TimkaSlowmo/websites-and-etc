@@ -22,9 +22,30 @@ class Prefs(ctx: Context) {
 class CatalogStore(private val ctx: Context) {
     private val userFile = File(ctx.filesDir, "catalog.json")
 
-    fun load(): Catalog = runCatching { Catalog.parse(userFile.readText()) }.getOrNull() ?: bundled()
+    fun load(): Catalog {
+        if (!userFile.exists()) return bundled()
+        val text = runCatching { userFile.readText() }.getOrNull() ?: return bundled()
+        runCatching { return Catalog.parse(text) }
+        // Правки из каталога старой версии — переносим ставки на новый встроенный каталог
+        return runCatching { migrate(JSONObject(text)).also { save(it) } }.getOrElse { bundled() }
+    }
 
     fun bundled(): Catalog = Catalog.parse(ctx.assets.open("catalog.json").bufferedReader().use { it.readText() })
+
+    private fun migrate(old: JSONObject): Catalog = bundled().edited { o ->
+        for (k in listOf("markup_percent", "vat_percent", "waste_percent", "labor_per_m2", "install_per_m2", "install_min", "two_color_percent")) {
+            if (old.has(k)) o.put(k, old.optDouble(k))
+        }
+        fun copy(arr: String, key: String, field: String) {
+            val src = old.optJSONArray(arr).objects()
+            o.optJSONArray(arr).objects().forEach { dst ->
+                src.firstOrNull { it.opt(key)?.toString() == dst.opt(key)?.toString() }?.let { if (it.has(field)) dst.put(field, it.optDouble(field)) }
+            }
+        }
+        copy("glass", "fill_mm", "price_per_m2")
+        copy("hardware", "opening", "price")
+        copy("color_groups", "id", "surcharge_percent")
+    }
 
     fun save(c: Catalog) { userFile.writeText(c.toJsonString()) }
 
@@ -33,14 +54,23 @@ class CatalogStore(private val ctx: Context) {
     fun reset(): Catalog { userFile.delete(); return bundled() }
 }
 
+/** Сохранённое КП: несколько окон, настройки расчёта и итог. */
 data class HistoryItem(
     val id: String = UUID.randomUUID().toString(),
     val date: Long = System.currentTimeMillis(),
-    val spec: WindowSpec,
-    val selection: Selection,
+    val positions: List<Position>,
+    val options: OfferOptions,
     val total: Double,
     val currency: String,
-)
+) {
+    val windows: Int get() = positions.sumOf { maxOf(1, it.spec.quantity) }
+    val title: String
+        get() {
+            val p = positions.firstOrNull() ?: return "КП"
+            val first = "${p.spec.product.title} ${p.spec.widthMm}×${p.spec.heightMm}"
+            return if (positions.size == 1) first else "$first и ещё ${positions.size - 1}"
+        }
+}
 
 class HistoryStore(ctx: Context) {
     private val dir = File(ctx.filesDir, "history").apply { mkdirs() }
@@ -49,8 +79,12 @@ class HistoryStore(ctx: Context) {
     fun load(): List<HistoryItem> = runCatching {
         JSONArray(index.readText()).objects().mapNotNull {
             runCatching {
-                HistoryItem(it.getString("id"), it.getLong("date"), WindowSpec.fromJson(it.getJSONObject("spec")),
-                    selectionOf(it.optJSONObject("selection")), it.getDouble("total"), it.getString("currency"))
+                val id = it.getString("id")
+                val positions = it.optJSONArray("positions")?.objects()?.map { p -> Position.fromJson(p) }
+                    // Старый формат — одно окно; id позиции = id записи, чтобы нашлись старые картинки
+                    ?: listOf(Position(id, "ОК-1", WindowSpec.fromJson(it.getJSONObject("spec")), selectionOf(it.optJSONObject("selection"))))
+                val options = it.optJSONObject("options")?.let { o -> OfferOptions.fromJson(o) } ?: OfferOptions(scope = OfferScope.TURNKEY)
+                HistoryItem(id, it.getLong("date"), positions, options, it.getDouble("total"), it.getString("currency"))
             }.getOrNull()
         }
     }.getOrDefault(emptyList())
@@ -61,8 +95,8 @@ class HistoryStore(ctx: Context) {
     fun save(items: List<HistoryItem>) {
         val arr = JSONArray()
         items.forEach {
-            arr.put(JSONObject().put("id", it.id).put("date", it.date).put("spec", it.spec.toJson())
-                .put("selection", it.selection.toJson()).put("total", it.total).put("currency", it.currency))
+            arr.put(JSONObject().put("id", it.id).put("date", it.date).put("positions", JSONArray(it.positions.map { p -> p.toJson() }))
+                .put("options", it.options.toJson()).put("total", it.total).put("currency", it.currency))
         }
         index.writeText(arr.toString())
     }

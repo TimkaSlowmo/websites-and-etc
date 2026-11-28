@@ -4,8 +4,9 @@ import XCTest
 /// Сверка с эталонным расчётом tools/pricing_ref.py (catalog/test-cases.json).
 final class PricingEngineTests: XCTestCase {
 
-    struct Expected: Decodable { let subtotal: Double; let unitTotal: Double; let total: Double; let lines: Int }
-    struct Case: Decodable { let name: String; let spec: WindowSpec; let selection: Selection; let expected: Expected }
+    struct Item: Decodable { let spec: WindowSpec; let selection: Selection }
+    struct Offer: Decodable { let options: OfferOptions; let items: [Item] }
+    struct Case: Decodable { let name: String; let offer: Offer }
 
     private func bundle() -> Bundle { Bundle(for: PricingEngineTests.self) }
 
@@ -33,15 +34,39 @@ final class PricingEngineTests: XCTestCase {
     func testMatchesReferenceCalculation() throws {
         let c = try catalog()
         let url = try XCTUnwrap(bundle().url(forResource: "test-cases", withExtension: "json"))
-        let cases = try JSONDecoder.snake.decode([Case].self, from: Data(contentsOf: url))
-        XCTAssertEqual(cases.count, 5)
-        for t in cases {
-            let b = PricingEngine.calculate(spec: t.spec, selection: t.selection, catalog: c)
-            XCTAssertEqual(b.subtotal, t.expected.subtotal, accuracy: 0.5, t.name)
-            XCTAssertEqual(b.unitTotal, t.expected.unitTotal, t.name)
-            XCTAssertEqual(b.total, t.expected.total, t.name)
-            XCTAssertEqual(b.lines.count, t.expected.lines, t.name)
+        let data = try Data(contentsOf: url)
+        let cases = try JSONDecoder.snake.decode([Case].self, from: data)
+        let raw = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [[String: Any]])
+        XCTAssertEqual(cases.count, 8)
+        for (t, r) in zip(cases, raw) {
+            let e = try XCTUnwrap(r["expected"] as? [String: Any])
+            let positions = t.offer.items.map { Position(spec: $0.spec, selection: $0.selection) }
+            let b = PricingEngine.offer(positions, options: t.offer.options, catalog: c)
+            XCTAssertEqual(b.items.map(\.unitTotal), (e["unit_totals"] as? [Double]) ?? [], t.name)
+            XCTAssertEqual(b.items.map(\.total), (e["totals"] as? [Double]) ?? [], t.name)
+            XCTAssertEqual(b.subtotal, e["subtotal"] as? Double ?? -1, t.name)
+            XCTAssertEqual(b.discount, e["discount"] as? Double ?? -1, t.name)
+            XCTAssertEqual(b.total, e["total"] as? Double ?? -1, t.name)
+            XCTAssertEqual(b.vatIncluded, e["vat_included"] as? Double ?? -1, t.name)
+            XCTAssertEqual(b.bars, (e["bars"] as? [String: Int]) ?? [:], t.name)
+            XCTAssertEqual(b.items.map { $0.limits.map(\.kind) }, (e["warnings"] as? [[String]]) ?? [], t.name)
         }
+    }
+
+    /// Карты раскроя ORGADATA (окно 1500×2300): длины деталей до миллиметра.
+    func testGeometryMatchesOrgadata() throws {
+        let c = try catalog()
+        var s = WindowSpec()
+        s.widthMm = 1500; s.heightMm = 2300
+        s.layout = Layout(split: .columns, sections: [
+            GridSection(sizeMm: 750, cells: [Cell(sizeMm: 1650, opening: .tilt_turn, hinge: .left), Cell(sizeMm: 650)]),
+            GridSection(sizeMm: 750, cells: [Cell(sizeMm: 1650), Cell(sizeMm: 650)]),
+        ])
+        let g = PricingEngine.geometry(s, try XCTUnwrap(c.system("bkt77")))
+        XCTAssertEqual(g.pieces["frame"]?.sorted(), [1500, 1500, 2300, 2300])
+        XCTAssertEqual(g.pieces["impost"]?.sorted(), [687, 687, 2216])
+        XCTAssertEqual(g.pieces["sash"]?.sorted(), [699, 699, 1599, 1599])
+        XCTAssertEqual(g.pieces["bead"]?.reduce(0, +), 13416)
     }
 
     func testWorkerResponseDecodes() throws {
@@ -113,8 +138,10 @@ final class PDFExporterTests: XCTestCase {
         ])
         s.info = [InfoItem(label: "Система", value: "BKT 77")]
         let sel = PricingEngine.autoSelection(spec: s, catalog: c)
-        let b = PricingEngine.calculate(spec: s, selection: sel, catalog: c)
-        let pdf = try XCTUnwrap(PDFExporter.makeOffer(spec: s, selection: sel, breakdown: b, catalog: c, company: "Тест", drawing: nil, render: nil))
+        let positions = [Position(mark: "ОК-1", spec: s, selection: sel), Position(mark: "ОК-2", spec: s, selection: sel)]
+        let b = PricingEngine.offer(positions, options: OfferOptions(), catalog: c)
+        let pdf = try XCTUnwrap(PDFExporter.makeOffer(positions: positions, options: OfferOptions(), breakdown: b, catalog: c,
+                                                      company: "Тест", images: [:]))
         let size = try XCTUnwrap(try FileManager.default.attributesOfItem(atPath: pdf.path)[.size] as? Int)
         XCTAssertGreaterThan(size, 10_000)
     }

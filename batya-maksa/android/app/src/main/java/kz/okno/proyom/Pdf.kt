@@ -7,99 +7,222 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
+import android.text.Layout
+import android.text.StaticLayout
+import android.text.TextPaint
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** Коммерческое предложение в PDF (A4): схема, фото, параметры, данные с чертежа, стоимость по группам. */
+/**
+ * Коммерческое предложение в PDF (A4) по образцу КП BKM Aluminium — как на iPhone:
+ * 1) таблица окон (схема, наименование, кол-во, м², цена за м², стоимость), итог, НДС, что входит/не входит, срок;
+ * 2) спецификация материалов (профили хлыстами, комплектующие, уплотнители);
+ * 3) окна по отдельности: схема, ИИ-фото, параметры, данные с чертежа.
+ */
 object Pdf {
-    fun offer(ctx: Context, spec: WindowSpec, sel: Selection, b: Breakdown, catalog: Catalog, company: String,
-              drawing: Bitmap?, render: Bitmap?): File {
+    private const val LEFT = 40f
+    private const val WIDTH = 515f
+    private const val BOTTOM = 800f
+
+    fun offer(ctx: Context, positions: List<Position>, opt: OfferOptions, o: OfferBreakdown, catalog: Catalog, company: String,
+              drawings: Map<String, Bitmap>, renders: Map<String, Bitmap>): File {
         val doc = PdfDocument()
         var pageNo = 1
         var page = doc.startPage(PdfDocument.PageInfo.Builder(595, 842, pageNo).create())
         var c = page.canvas
-        val left = 40f
-        val right = 555f
-        var y = 50f
-        fun paint(size: Float, bold: Boolean = false, color: Int = Color.BLACK) = Paint().apply {
+        var y = 40f
+        val cur = o.currency
+        fun money(v: Double) = Money.format(v, cur)
+        val accent = 0xFF127A8C.toInt()
+
+        fun newPage() {
+            doc.finishPage(page); pageNo++
+            page = doc.startPage(PdfDocument.PageInfo.Builder(595, 842, pageNo).create()); c = page.canvas; y = 40f
+        }
+        fun ensure(h: Float) { if (y + h > BOTTOM) newPage() }
+        fun tp(size: Float, bold: Boolean = false, color: Int = Color.BLACK) = TextPaint().apply {
             textSize = size; this.color = color; isAntiAlias = true
             typeface = Typeface.create(Typeface.DEFAULT, if (bold) Typeface.BOLD else Typeface.NORMAL)
         }
-        fun ensure(h: Float) {
-            if (y + h > 800) {
-                doc.finishPage(page); pageNo++
-                page = doc.startPage(PdfDocument.PageInfo.Builder(595, 842, pageNo).create()); c = page.canvas; y = 50f
+        fun layout(text: String, p: TextPaint, w: Float, align: Layout.Alignment = Layout.Alignment.ALIGN_NORMAL) =
+            StaticLayout.Builder.obtain(text, 0, text.length, p, w.toInt().coerceAtLeast(10)).setAlignment(align).build()
+        fun drawAt(l: StaticLayout, x: Float, yy: Float) { c.save(); c.translate(x, yy); l.draw(c); c.restore() }
+        fun text(s: String, p: TextPaint, gap: Float = 5f, align: Layout.Alignment = Layout.Alignment.ALIGN_NORMAL) {
+            val l = layout(s, p, WIDTH, align)
+            ensure(l.height.toFloat())
+            drawAt(l, LEFT, y)
+            y += l.height + gap
+        }
+        fun hline(yy: Float) { c.drawLine(LEFT, yy, LEFT + WIDTH, yy, Paint().apply { color = 0xFFD1D1D6.toInt(); strokeWidth = 0.6f }) }
+        class Col(val x: Float, val w: Float, val align: Layout.Alignment)
+        val R = Layout.Alignment.ALIGN_OPPOSITE
+        val L0 = Layout.Alignment.ALIGN_NORMAL
+        val C = Layout.Alignment.ALIGN_CENTER
+        fun tableRow(cells: List<String>, cols: List<Col>, p: TextPaint, minH: Float = 0f, fill: Int? = null, image: Bitmap? = null, imageCol: Int = -1) {
+            val layouts = cells.mapIndexed { i, s -> layout(s, p, cols[i].w, cols[i].align) }
+            val h = maxOf(minH, layouts.maxOf { it.height.toFloat() }) + 8f
+            ensure(h)
+            if (fill != null) c.drawRect(LEFT, y, LEFT + WIDTH, y + h, Paint().apply { color = fill })
+            layouts.forEachIndexed { i, l ->
+                if (i == imageCol && image != null) {
+                    val side = minOf(cols[i].w, h - 6f)
+                    val k = minOf(side / image.width, side / image.height)
+                    val w = image.width * k
+                    val hh = image.height * k
+                    c.drawBitmap(image, null, RectF(cols[i].x + (cols[i].w - w) / 2, y + (h - hh) / 2, cols[i].x + (cols[i].w + w) / 2, y + (h + hh) / 2), null)
+                } else drawAt(l, cols[i].x, y + 4f)
             }
+            y += h
+            hline(y)
         }
-        fun line(text: String, p: Paint, gap: Float = 6f) { ensure(p.textSize); c.drawText(text, left, y, p); y += p.textSize + gap }
-        fun row(title: String, value: String, p: Paint) {
-            ensure(p.textSize)
-            c.drawText(title, left, y, p)
-            c.drawText(value, right - p.measureText(value), y, p)
-            y += p.textSize + 5
-        }
-        val color = catalog.color(sel.colorId)
-
-        if (company.isNotBlank()) line(company, paint(20f, true))
-        line("Коммерческое предложение", paint(15f, color = Color.DKGRAY))
-        line(SimpleDateFormat("d MMMM yyyy", Locale("ru")).format(Date()), paint(10f, color = Color.GRAY))
-        y += 6
-
-        // Схема рисуется той же функцией, что и на экране.
-        val scheme = Bitmap.createBitmap(720, 720, Bitmap.Config.ARGB_8888).also {
+        fun scheme(p: Position, side: Int): Bitmap = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888).also {
             val cv = android.graphics.Canvas(it)
             cv.drawColor(Color.WHITE)
-            drawScheme(cv, spec, color?.hex ?: "#45494E", 720f, 720f, null, 2f)
+            drawScheme(cv, p.spec, catalog.color(p.selection.colorId)?.hex ?: "#45494E", side.toFloat(), side.toFloat(), null, side / 360f)
         }
-        val imgs = listOfNotNull(scheme, render ?: drawing)
-        val slot = (right - left - 12f * (imgs.size - 1)) / imgs.size
-        val maxH = 230f
-        imgs.forEachIndexed { i, img ->
-            val r = minOf(slot / img.width, maxH / img.height)
-            val x = left + i * (slot + 12f) + (slot - img.width * r) / 2
-            c.drawBitmap(img, null, RectF(x, y, x + img.width * r, y + img.height * r), null)
+        fun total(t: String, v: String, bold: Boolean = false, size: Float = 10.5f, color: Int = Color.BLACK) {
+            val p = tp(size, bold, color)
+            ensure(size + 6)
+            drawAt(layout(t, p, 200f, R), LEFT + 200f, y)
+            drawAt(layout(v, p, 110f, R), LEFT + 405f, y)
+            y += size + 6f
         }
-        y += maxH + 22
 
-        val p10 = paint(10.5f)
-        val p9 = paint(9.5f)
-        line("Изделие", paint(13f, true))
-        row("Тип", spec.product.title, p10)
-        row("Система", catalog.system(sel.systemId)?.name ?: "—", p10)
-        row("Размер", "${spec.widthMm} × ${spec.heightMm} мм (%.2f м²)".format(spec.areaM2), p10)
-        row("Количество", "${spec.quantity} шт", p10)
-        row("Заполнение", "${sel.fillMm} мм" + if (spec.glass.isBlank()) "" else " (${spec.glass})", p10)
-        row("Цвет снаружи", color?.title ?: "—", p10)
-        if (sel.colorInsideId.isNotEmpty()) catalog.color(sel.colorInsideId)?.let { row("Цвет внутри", it.title, p10) }
-        spec.cellRects.forEach { r ->
-            val cl = r.cell
-            val what = (if (cl.door) "дверь, " else "") + cl.opening.title.lowercase() + if (cl.hinge != Hinge.NONE) ", " + cl.hinge.title.lowercase() else ""
-            row("${spec.layout.split.sectionName} ${r.section + 1}, ячейка ${r.index + 1}", "${r.w.toInt()}×${r.h.toInt()} — $what", p9)
+        // ---------- Страница 1: КП ----------
+        if (company.isNotBlank()) text(company, tp(20f, true), 2f)
+        text(if (opt.scope == OfferScope.MATERIALS) "Коммерческое предложение на поставку архитектурных систем алюминиевых профилей"
+             else "Коммерческое предложение на изготовление оконно-дверных конструкций", tp(14f, color = Color.DKGRAY), 2f)
+        if (opt.objectName.isNotBlank()) text("по объекту: ${opt.objectName}", tp(12f, true), 2f)
+        text(SimpleDateFormat("d MMMM yyyy", Locale("ru")).format(Date()), tp(10f, color = Color.GRAY))
+        y += 6f
+        val cols = listOf(Col(LEFT + 2, 18f, L0), Col(LEFT + 22, 62f, C), Col(LEFT + 88, 197f, L0), Col(LEFT + 288, 38f, R),
+            Col(LEFT + 330, 50f, R), Col(LEFT + 384, 60f, R), Col(LEFT + 448, 65f, R))
+        tableRow(listOf("№", "Схема", "Наименование", "Кол-во", "м²", "Цена 1 м²", "Стоимость"), cols, tp(8.5f, true, Color.DKGRAY), fill = 0xFFF2F2F2.toInt())
+        positions.forEachIndexed { i, p ->
+            val b = o.items[i]
+            val sys = catalog.system(p.selection.systemId)?.name ?: ""
+            val col = catalog.color(p.selection.colorId)
+            var name = "${p.mark} · ${p.spec.product.title} ${p.spec.widthMm}×${p.spec.heightMm} мм\n$sys, ${col?.code ?: ""}"
+            if (p.selection.colorInsideId.isNotEmpty()) catalog.color(p.selection.colorInsideId)?.let { name += " / внутри ${it.code}" }
+            name += ", заполнение ${p.selection.fillMm} мм"
+            val open = p.spec.layout.sections.flatMap { it.cells }.filter { it.opening != Opening.FIXED }
+            name += "\n" + if (open.isEmpty()) "глухое" else open.joinToString(", ") { (if (it.door) "дверь " else "") + it.opening.title.lowercase() }
+            tableRow(listOf("${i + 1}", "", name, "${b.quantity} шт", "%.2f".format(b.areaM2 * b.quantity), money(b.pricePerM2), money(b.total)),
+                cols, tp(8.5f), minH = 56f, image = scheme(p, 360), imageCol = 1)
         }
-        if (spec.info.isNotEmpty()) {
-            y += 6
-            line("С чертежа", paint(13f, true))
-            spec.info.forEach { row(it.label, it.value, p9) }
+        y += 6f
+        total("Итоговая площадь, м²:", "%.2f".format(o.areaM2))
+        if (o.discount > 0) {
+            total("Сумма без скидки:", money(o.subtotal))
+            total("Скидка ${"%.0f".format(opt.discountPercent)}%:", "−" + money(o.discount))
         }
-        y += 8
-        line("Стоимость", paint(13f, true))
-        LineGroup.entries.forEach { g -> val s = b.sum(g); if (s > 0) row(g.title, Money.format(s, b.currency), p10) }
-        row("Наценка", Money.format(b.markup, b.currency), p10)
-        row("НДС ${catalog.vatPercent.toInt()}%", Money.format(b.vat, b.currency), p10)
-        y += 4
-        if (b.quantity > 1) {
-            row("Цена за 1 шт", Money.format(b.unitTotal, b.currency), paint(12f, true))
-            row("Итого за ${b.quantity} шт", Money.format(b.total, b.currency), paint(15f, true))
-        } else row("Итого", Money.format(b.total, b.currency), paint(15f, true))
-        y += 12
-        val note = paint(8.5f, color = Color.GRAY)
-        line("Расчёт ориентировочный, по прайсу «${catalog.name}». Окончательная стоимость определяется после замера.", note, 2f)
-        line("Изображение готового изделия создано ИИ и носит иллюстративный характер.", note)
+        total("Итоговая стоимость:", money(o.total), bold = true, size = 14f, color = accent)
+        total("В т. ч. НДС (${catalog.vatPercent.toInt()}%):", money(o.vatIncluded), size = 9.5f, color = Color.DKGRAY)
+        if (o.areaM2 > 0) total("Стоимость за м²:", money(o.total / o.areaM2), size = 9.5f, color = Color.DKGRAY)
+        y += 10f
+        val small = tp(9.5f)
+        text("Расчёт выполнен на основании предоставленных заказчиком чертежей.", small)
+        val install = positions.any { it.selection.installation }
+        val incl = if (opt.scope == OfferScope.MATERIALS)
+            listOf("Алюминиевый профиль систем ${catalog.name} в виде материала", "Комплектующие и метизы для сборки изделий", "Резиновые уплотнители")
+        else listOf("Алюминиевый профиль, комплектующие и уплотнители", "Стеклопакеты", "Фурнитура", "Изготовление изделий") + (if (install) listOf("Монтаж") else emptyList())
+        val excl = if (opt.scope == OfferScope.MATERIALS)
+            listOf("Сборка и монтаж изделий", "Заполнения (стеклопакеты, стекло и т. д.)", "Фурнитура (электроприводы, доводчики и т. д.)")
+        else (if (install) emptyList() else listOf("Монтаж")) + listOf("Откосы, подоконники, отливы", "Доставка")
+        text("В стоимость коммерческого предложения входит:", tp(9.5f, true), 2f)
+        incl.forEach { text("•  $it", small, 1f) }
+        y += 4f
+        text("В стоимость коммерческого предложения не входит:", tp(9.5f, true), 2f)
+        excl.forEach { text("•  $it", small, 1f) }
+        y += 6f
+        text("Коммерческое предложение действует в течение ${catalog.validDays} дней.", small, 2f)
+        text("Стоимость рассчитана на базе курса от ${SimpleDateFormat("dd.MM.yyyy", Locale("ru")).format(Date())}. В случае колебаний валютного курса возможна корректировка итоговой стоимости на момент оплаты.",
+            tp(8.5f, color = Color.GRAY))
 
+        // ---------- Спецификация материалов ----------
+        newPage()
+        text("Спецификация материалов", tp(15f, true), 2f)
+        text((if (opt.cutting) "Профили — целыми хлыстами по раскрою всего КП (пропил ${catalog.kerf.toInt()} мм, обрезка ${catalog.trim.toInt()} мм). "
+              else "Профили — по длине с отходом ${catalog.wastePercent.toInt()}%. ") +
+             (if (opt.gasketRound) "Уплотнители — кратно ${catalog.gasketStep.toInt()} м." else "Уплотнители — по расчёту."), tp(9f, color = Color.GRAY))
+        y += 4f
+        for ((group, title) in listOf(LineGroup.PROFILE to "Профили", LineGroup.ACCESSORY to "Комплектующие", LineGroup.GASKET to "Уплотнители")) {
+            val list = o.materials.filter { it.group == group }
+            if (list.isEmpty()) continue
+            ensure(60f)
+            text(title, tp(11f, true), 3f)
+            val mc = listOf(Col(LEFT + 2, 92f, L0), Col(LEFT + 96, 185f, L0), Col(LEFT + 283, 72f, R), Col(LEFT + 357, 70f, R), Col(LEFT + 430, 85f, R))
+            val head = when (group) {
+                LineGroup.PROFILE -> listOf("Артикул", "Наименование, цвет", "Нужно / хлысты", "Цена за м", "Сумма")
+                LineGroup.GASKET -> listOf("Артикул", "Наименование", "Нужно / к отпуску", "Цена за м", "Сумма")
+                else -> listOf("Артикул", "Наименование", "Кол-во", "Цена", "Сумма")
+            }
+            tableRow(head, mc, tp(8f, true, Color.DKGRAY), fill = 0xFFF2F2F2.toInt())
+            for (m in list) {
+                var name = m.name
+                if (group == LineGroup.PROFILE) catalog.color(m.colorKey.substringBefore("/"))?.let { name += " · ${it.code}" }
+                val qty = when (group) {
+                    LineGroup.PROFILE -> "%.2f м".format(m.need) + (m.bars?.let { "\n$it × ${"%.1f".format((m.barMm ?: 0.0) / 1000)} м" } ?: "\n%.2f м".format(m.bought))
+                    LineGroup.GASKET -> "%.2f м\n%.0f м".format(m.need, m.bought)
+                    else -> "%.0f шт".format(m.need)
+                }
+                tableRow(listOf(m.code, name, qty, money(m.price), money(m.amount)), mc, tp(8f))
+            }
+            total("$title, итого:", money(list.sumOf { it.amount }), bold = true, size = 9.5f)
+            y += 6f
+        }
+        if (o.weightKg > 0) text("Вес профилей ≈ ${"%.0f".format(o.weightKg)} кг", tp(9f, color = Color.GRAY))
+        if (opt.scope == OfferScope.TURNKEY) text("Стеклопакеты, фурнитура, изготовление и монтаж — в стоимости окон (страница 1).", tp(9f, color = Color.GRAY))
+
+        // ---------- Окна по отдельности ----------
+        positions.forEachIndexed { i, p ->
+            val b = o.items[i]
+            newPage()
+            text("${i + 1}. ${p.mark} — ${p.spec.product.title} ${p.spec.widthMm}×${p.spec.heightMm} мм, ${b.quantity} шт", tp(14f, true), 8f)
+            val imgs = listOfNotNull(scheme(p, 720), renders[p.id] ?: drawings[p.id])
+            val slot = (WIDTH - 12f * (imgs.size - 1)) / imgs.size
+            val maxH = 250f
+            imgs.forEachIndexed { k, img ->
+                val r = minOf(slot / img.width, maxH / img.height)
+                val w = img.width * r
+                val h = img.height * r
+                val x = LEFT + k * (slot + 12f) + (slot - w) / 2
+                c.drawBitmap(img, null, RectF(x, y, x + w, y + h), null)
+            }
+            y += maxH + 12f
+            val pc = listOf(Col(LEFT + 2, 200f, L0), Col(LEFT + 205, 310f, R))
+            val col = catalog.color(p.selection.colorId)
+            val rows = mutableListOf(
+                "Система" to (catalog.system(p.selection.systemId)?.name ?: "—"),
+                "Площадь" to "%.2f м²".format(b.areaM2),
+                "Заполнение" to ("${p.selection.fillMm} мм" + if (p.spec.glass.isNotEmpty()) " (${p.spec.glass})" else ""),
+                "Цвет снаружи" to (col?.title ?: "—"),
+            )
+            if (p.selection.colorInsideId.isNotEmpty()) catalog.color(p.selection.colorInsideId)?.let { rows += "Цвет внутри" to it.title }
+            for (r in p.spec.cellRects) {
+                val cl = r.cell
+                val what = (if (cl.door) "дверь, " else "") + cl.opening.title.lowercase() + if (cl.hinge != Hinge.NONE) ", " + cl.hinge.title.lowercase() else ""
+                rows += "${p.spec.layout.split.sectionName} ${r.section + 1}, ячейка ${r.index + 1}" to "${r.w.toInt()}×${r.h.toInt()} — $what"
+            }
+            b.limits.forEach { w -> rows += "Нестандарт" to (w.text + if (w.applied) " · применено: ${w.code}" else "") }
+            rows += "Цена за 1 шт" to money(b.unitTotal)
+            rows += "Стоимость" to money(b.total)
+            rows.forEach { tableRow(listOf(it.first, it.second), pc, tp(9.5f)) }
+            if (p.spec.info.isNotEmpty()) {
+                y += 8f
+                text("С чертежа", tp(11f, true), 3f)
+                p.spec.info.forEach { tableRow(listOf(it.label, it.value), pc, tp(9f)) }
+            }
+            if (renders[p.id] != null) {
+                y += 6f
+                text("Изображение готового изделия создано ИИ по схеме и носит иллюстративный характер.", tp(8f, color = Color.GRAY))
+            }
+        }
         doc.finishPage(page)
-        val file = File(ctx.cacheDir, "КП-${System.currentTimeMillis() / 1000}.pdf")
+        val stamp = SimpleDateFormat("yyyyMMdd", Locale.US).format(Date())
+        val file = File(ctx.cacheDir, "КП-$stamp-${System.currentTimeMillis() % 100000}.pdf")
         file.outputStream().use { doc.writeTo(it) }
         doc.close()
         return file

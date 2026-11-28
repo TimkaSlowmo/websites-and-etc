@@ -27,6 +27,21 @@ tap_text() {
   done
   return 1
 }
+# Точное совпадение текста (например, поле «1200», а не «1200×2700» на ленте окон)
+tap_exact() {
+  local t=$1 x1 y1 x2 y2
+  for i in 1 2 3 4 5 6 7; do
+    dump | grep "text=\"$t\"" | grep -oE 'bounds="\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]"' | tr -c '0-9\n' ' ' > /tmp/bounds.txt
+    while read -r x1 y1 x2 y2; do
+      if [ -n "${y2:-}" ] && [ "$y1" -gt $((H*10/100)) ] && [ "$y2" -lt $((H*86/100)) ]; then
+        adb shell input tap $(( (x1 + x2) / 2 )) $(( (y1 + y2) / 2 )); return 0
+      fi
+    done < /tmp/bounds.txt
+    swipe; sleep 1
+  done
+  return 1
+}
+has() { dump | grep -q "text=\"$1"; }
 keyboard() { adb shell dumpsys input_method | grep -q "mInputShown=true"; }
 
 run() {
@@ -34,13 +49,27 @@ run() {
   start; shot "$m-1-home" 6
   start --ez demo true; shot "$m-2-result" 5
   # нажатие по верхней левой ячейке схемы — откроется редактор ячейки
-  adb shell input tap $((W*38/100)) $((H*36/100)); shot "$m-3-cell-editor" 3
+  adb shell input tap $((W*40/100)) $((H*53/100)); shot "$m-3-cell-editor" 3
   adb shell input keyevent KEYCODE_BACK; sleep 2
   for i in 4 5 6 7; do swipe; shot "$m-$i-result-scroll" 2; done
   if [ "$m" = light ]; then
+    # Голубой размер на схеме: нажатие по ширине сверху — окно ввода, 1500, «Готово»
+    start --ez demo true; sleep 4
+    adb shell input tap $((W*50/100)) $((H*444/1000)); sleep 2; shot "$m-3b-dim-alert" 1
+    if has "Ширина изделия"; then
+      adb shell input text 1500; sleep 1; tap_text "Готово"; sleep 2
+      has "1500×2700" || { echo "Размер со схемы не применился"; FAIL=1; }
+      shot "$m-3c-dim-applied" 1
+    else echo "Окно размера по нажатию на схему не открылось"; FAIL=1; fi
+    # «Добавить» → «Ввести вручную»: в КП третье окно
+    start --ez demo true; sleep 4
+    tap_text "Добавить"; sleep 1; shot "$m-3d-add-menu" 1
+    tap_text "Ввести вручную"; sleep 2
+    has "ОК-3" || { echo "Окно не добавилось в КП"; FAIL=1; }
+    shot "$m-3e-added" 1
     # Цифровое поле: клавиатура только с цифрами, ввод 1500, «Готово» прячет клавиатуру и применяет размер
     start --ez demo true; sleep 4
-    if tap_text "1200"; then
+    if tap_exact "1200"; then
       sleep 2; shot "$m-8-keypad" 1
       if keyboard; then KB=1; else KB=0; echo "WARN: экранная клавиатура не показалась (аппаратная клавиатура эмулятора?)"; fi
       adb shell input keyevent KEYCODE_MOVE_END
@@ -56,7 +85,7 @@ run() {
       dump | grep -q 'text="1500"' || { echo "Ширина 1500 не применилась"; FAIL=1; }
       shot "$m-9-after-done" 1
       # Повторно: фокус в поле и тап мимо — клавиатура должна уйти
-      tap_text "1500" && sleep 2 && tap_text "Площадь" && sleep 2
+      tap_exact "1500" && sleep 2 && tap_text "Площадь" && sleep 2
       [ $KB = 1 ] && keyboard && { echo "Клавиатура не скрылась по тапу мимо поля (2)"; FAIL=1; }
     else echo "Поле ширины не найдено"; FAIL=1; fi
     # КП (PDF): должно открыться окно «Поделиться», без падения

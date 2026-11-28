@@ -24,12 +24,15 @@ OUT = [
 
 KIND = {"RAL + L": "profile", " L": "profile", "L": "profile", "EPDM": "gasket", "Accs": "accessory"}
 
+# Вес профилей BKT 77, которого нет в прайсе (из расчёта ORGADATA, кг/м)
+PROFILE_KG = {"WDT.77.F0002": 1.49, "WDT.77.M0002": 1.62, "WDT.77.V0018": 1.65, "WDT.67.G0007": 0.30, "WDT.67.G0003": 0.30}
+
 
 def load_articles():
     ws = openpyxl.load_workbook(SRC, data_only=True).worksheets[0]
     out, seen = [], set()
     for row in ws.iter_rows(min_row=2, values_only=True):
-        code, price, _cur, desc, _pack, _type, unit, kind = (list(row) + [None] * 8)[:8]
+        code, price, _cur, desc, pack, _type, unit, kind = (list(row) + [None] * 8)[:8]
         if not code or not isinstance(desc, str) or not desc.strip():
             continue
         code = str(code).strip()
@@ -40,13 +43,21 @@ def load_articles():
         name = desc
         if name.startswith(code):
             name = name[len(code):].lstrip(". ").strip()
-        out.append({
+        a = {
             "code": code,
             "name": name or code,
             "price": round(float(price or 0), 2),
             "unit": "m" if str(unit or "").startswith("м") else "pc",
             "kind": KIND.get(str(kind or ""), "other"),
-        })
+        }
+        if isinstance(pack, (int, float)) and pack > 0:
+            if a["kind"] == "gasket":
+                a["pack_m"] = float(pack)          # метров в рулоне/коробке
+            elif a["kind"] == "profile":
+                a["kg_m"] = round(float(pack), 3)  # вес профиля, кг/м
+        if code in PROFILE_KG:
+            a["kg_m"] = PROFILE_KG[code]
+        out.append(a)
     return out
 
 
@@ -114,8 +125,10 @@ def colors():
 # base — от чего считается количество:
 #   frame_perimeter_m, impost_length_m, imposts, sash_perimeter_m, sashes, door_perimeter_m, doors,
 #   glass_perimeter_m, glass_area_m2, panes, door_width_m, vert_len_m, horiz_len_m, grid_len_m, area_m2, frame_corners
-def R(role, code, base, qty=1, profile=False, door_code=None, by_fill=None):
+def R(role, code, base, qty=1, profile=False, door_code=None, by_fill=None, plus=None):
     r = {"role": role, "code": code, "base": base, "qty": qty, "profile": profile}
+    if plus:
+        r["plus"] = [{"base": b, "qty": q} for b, q in plus]
     if door_code:
         r["door_code"] = door_code
     if by_fill:
@@ -143,33 +156,47 @@ SYSTEMS = [
         "keywords": ["bkt 77", "bkt77", "bkt-77", "бкт 77", "бкт77", "вкт 77", "вкт77", "wdt.77", "wdt 77"],
         "products": ["window", "door", "balcony_block", "partition"],
         "fill_min": 20, "fill_max": 52, "fill_default": 32,
-        "deduction_fixed_mm": 70, "deduction_sash_mm": 190, "deduction_door_mm": 230,
+        # Вычеты как в ORGADATA (Logikal, BKT 77 Стандарт): видимая рама 42, импост 42, нахлёст створки 6,
+        # створка до стекла 59, штапик укорачивается на 22 с каждого конца, стекло меньше проёма на 6 с каждой стороны
+        "geo": {"frame_face": 42, "impost_face": 42, "sash_overlap": 6, "sash_face": 59, "door_face": 73,
+                "bead_deduct": 22, "glass_gap": 6},
+        # Стандартные размеры для утверждённых профилей (рама F0002, створка V0018, импост M0002).
+        # Больше — нестандарт: считаем по умолчанию стандартными профилями, но показываем предупреждение и рекомендацию.
+        "limits": {"sash_min_w": 400, "sash_min_h": 500, "sash_max_w": 1300, "sash_max_h": 2400, "sash_max_kg": 100,
+                   "door_max_w": 1100, "door_max_h": 2500, "impost_max_mm": 2700},
+        "recommend": [
+            {"when": "impost_long", "role": "Импост", "code": "WDT.77.M0003", "text": "Длинный импост — усиленный импост 102 мм"},
+            {"when": "sash_big", "role": "Створка оконная", "code": "WDT.77.V0019", "text": "Большая створка — усиленная створка 97 мм"},
+            {"when": "frame_long", "role": "Рама", "code": "WDT.77.F0007", "text": "Сторона длиннее хлыста — усиленная рама 80×161 мм со стыковкой"},
+        ],
         "rules": [
             R("Рама", "WDT.77.F0002", "frame_perimeter_m", profile=True, door_code="WDT.77.F0004"),
             R("Импост", "WDT.77.M0002", "impost_length_m", profile=True),
-            R("Створка оконная", "WDT.77.V0003", "sash_perimeter_m", profile=True),
+            R("Створка оконная", "WDT.77.V0018", "sash_perimeter_m", profile=True),
             R("Створка дверная", "WDT.77.V0007", "door_perimeter_m", profile=True),
             R("Порог", "WDT.77.P0002", "door_width_m", profile=True),
-            R("Штапик", None, "glass_perimeter_m", profile=True, by_fill=BKT_BEADS),
-            R("Уплотнитель стекла наружный", "EPDM0001", "glass_perimeter_m"),
-            R("Уплотнитель стекла внутренний", None, "glass_perimeter_m", by_fill=BKT_INNER_GASKET),
-            R("Уплотнительный жгут штапика", "EPDM0024", "glass_perimeter_m"),
-            R("Центральный уплотнитель", "EPDM0041", "sash_perimeter_m"),
-            R("Уплотнитель притвора", "EPDM0057", "sash_perimeter_m"),
-            R("Уплотнитель пылезащитный", "EPDM0044", "sash_perimeter_m"),
+            R("Штапик", None, "bead_length_m", profile=True, by_fill=BKT_BEADS),
+            R("Уплотнитель заполнения наружный", "EPDM0002", "glass_perimeter_m"),
+            R("Уплотнитель заполнения внутренний", None, "glass_perimeter_m", by_fill=BKT_INNER_GASKET),
+            R("Уплотнительный жгут штапика", "EPDM0024", "bead_length_m", qty=1.05),
+            R("Центральный уплотнитель", "EPDM0039", "sash_perimeter_m", plus=[("sashes", 0.088)]),
+            R("Уплотнитель притвора", "EPDM0057", "sash_perimeter_m", plus=[("sashes", 0.138)]),
+            R("Уплотнитель пылезащитный", "EPDM0044", "sash_perimeter_m", plus=[("sashes", 0.138)]),
             R("Уплотнитель притвора двери", "EPDM0057", "door_perimeter_m", qty=2),
             R("Уплотнитель порога", "EPDM0047", "door_width_m"),
             R("Закладная угловая рамы (наружная)", "CLX.03.W0280.L18", "frame_corners", door_code="CLX.03.W0440.L21"),
             R("Закладная угловая рамы (внутренняя)", "CLX.03.W0280.L9", "frame_corners", door_code="CLX.03.W0380.L5"),
-            R("Закладная угловая створки (25,8 мм)", "CLX.03.W0280.L25.8", "sashes", qty=4),
+            R("Закладная угловая створки (25,8 мм)", "CLX.03.W0240.L25.8", "sashes", qty=4),
             R("Закладная угловая створки (5 мм)", "CLX.03.W0240.L5", "sashes", qty=4),
+            R("Угловой уплотнитель створки", "EPDC0039", "sashes", qty=4),
+            R("Выравнивающий уголок створки", "CLS.00.W12.4x13-K-Tech", "sashes", qty=12),
             R("Закладная угловая двери (21 мм)", "CLX.03.W0440.L21", "doors", qty=4),
             R("Закладная угловая двери (5 мм)", "CLX.03.W0380.L5", "doors", qty=4),
-            R("Выравнивающий уголок створки", "CLS.00.W12.4x13-K-Tech", "sashes", qty=4),
-            R("Закладная импоста внутренняя", "Q14*27.9-K-Tech", "imposts", qty=2),
-            R("Закладная импоста наружная", "K14*27.9-K-Tech", "imposts", qty=2),
-            R("Соединитель импоста стягивающий", "CLS.00.W20.5-K-Tech", "imposts", qty=2),
-            R("Подкладка под стеклопакет", "PVI.CP.GH005.L100", "panes", qty=4),
+            R("Закладная Т-образная импоста", "Q14*27.9-K-Tech", "imposts", qty=2),
+            R("Соединитель импоста стягивающий", "CLS.00.W20.5-K-Tech", "imposts", qty=4),
+            R("Штифт/нагель 5×12 DIN 6325", "5X12 DIN 6325D", "imposts", qty=8),
+            R("Гужон M5×8 DIN 914 для закладной импоста", "M5X8 DIN 914", "imposts", qty=4),
+            R("Подкладка под стеклопакет", "PVI.CP.GH005.L100", "panes", qty=4, plus=[("sash_panes", 2)]),
         ],
     },
     {
@@ -177,7 +204,7 @@ SYSTEMS = [
         "keywords": ["bkf 50", "bkf50", "bkf-50", "бкф 50", "бкф50", "вкф 50", "fst.50", "fst 50", "фасад", "витраж"],
         "products": ["facade"],
         "fill_min": 10, "fill_max": 62, "fill_default": 32,
-        "deduction_fixed_mm": 30, "deduction_sash_mm": 150, "deduction_door_mm": 150,
+        "geo": {"frame_face": 12, "impost_face": 24, "sash_overlap": 6, "sash_face": 63, "door_face": 63, "bead_deduct": 0, "glass_gap": 3},
         "rules": [
             R("Стойка 86 мм", "FST.50.S0005", "vert_len_m", profile=True),
             R("Ригель 70 мм", "FST.50.R0004", "horiz_len_m", profile=True),
@@ -201,14 +228,14 @@ SYSTEMS = [
         "keywords": ["bko 45", "bko45", "бко 45", "бко45", "холодн"],
         "products": ["window", "door", "balcony_block", "partition"],
         "fill_min": 4, "fill_max": 8, "fill_default": 6,
-        "deduction_fixed_mm": 60, "deduction_sash_mm": 150, "deduction_door_mm": 180,
+        "geo": {"frame_face": 24, "impost_face": 48, "sash_overlap": 6, "sash_face": 51, "door_face": 66, "bead_deduct": 15, "glass_gap": 6},
         "rules": [
             R("Рама", "EXHW1711", "frame_perimeter_m", profile=True, door_code="EXHW1710"),
             R("Импост", "EXHW4444", "impost_length_m", profile=True),
             R("Створка оконная", "КПС265", "sash_perimeter_m", profile=True),
             R("Створка дверная", "EXHW1709", "door_perimeter_m", profile=True),
             R("Порог", "EXHW1657", "door_width_m", profile=True),
-            R("Штапик", "EXSD1656", "glass_perimeter_m", profile=True),
+            R("Штапик", "EXSD1656", "bead_length_m", profile=True),
             R("Уплотнитель стекла наружный", "ТПУ-002ММ", "glass_perimeter_m"),
             R("Уплотнитель стекла внутренний", "ТПУ-004ММ", "glass_perimeter_m"),
             R("Уплотнитель притвора окна", "КПУ-243", "sash_perimeter_m"),
@@ -222,7 +249,7 @@ SYSTEMS = [
         "keywords": ["opc 40", "opc40", "опс 40", "перегородк"],
         "products": ["door", "partition"],
         "fill_min": 4, "fill_max": 32, "fill_default": 6,
-        "deduction_fixed_mm": 50, "deduction_sash_mm": 120, "deduction_door_mm": 120,
+        "geo": {"frame_face": 19, "impost_face": 38, "sash_overlap": 6, "sash_face": 41, "door_face": 41, "bead_deduct": 15, "glass_gap": 6},
         "rules": [
             R("Рама дверная", "OPC.40.F0003", "frame_perimeter_m", profile=True),
             R("Импост", "OPC.40.M0003", "impost_length_m", profile=True),
@@ -237,12 +264,12 @@ SYSTEMS = [
         "keywords": ["wdc 47", "wdc47", "wdc.47"],
         "products": ["window", "partition"],
         "fill_min": 4, "fill_max": 8, "fill_default": 6,
-        "deduction_fixed_mm": 50, "deduction_sash_mm": 130, "deduction_door_mm": 130,
+        "geo": {"frame_face": 19, "impost_face": 38, "sash_overlap": 6, "sash_face": 46, "door_face": 46, "bead_deduct": 15, "glass_gap": 6},
         "rules": [
             R("Рама оконная", "WDC.47.F0003", "frame_perimeter_m", profile=True),
             R("Импост (рамный профиль)", "WDC.47.F0003", "impost_length_m", profile=True),
             R("Створка оконная усиленная", "WDC.47.V0004", "sash_perimeter_m", profile=True),
-            R("Штапик 19 мм", "WDC.47.G0004", "glass_perimeter_m", profile=True),
+            R("Штапик 19 мм", "WDC.47.G0004", "bead_length_m", profile=True),
             R("Уплотнитель внутреннего остекления", "EPDM0059", "glass_perimeter_m"),
             R("Уплотнитель стекла наружный", "EPDM0001", "glass_perimeter_m"),
             R("Уплотнитель притвора", "EPDM0043", "sash_perimeter_m"),
@@ -252,14 +279,14 @@ SYSTEMS = [
 
 # Цены, которых нет в прайсе (стеклопакеты, фурнитура, работа) — редактируются в приложении.
 GLASS = [
-    {"fill_mm": 6, "name": "Стекло 6 мм (закалённое)", "price_per_m2": 9000},
-    {"fill_mm": 24, "name": "Стеклопакет 24 мм (4-16-4)", "price_per_m2": 13000},
-    {"fill_mm": 28, "name": "Стеклопакет 28 мм (4-20-4)", "price_per_m2": 14500},
-    {"fill_mm": 32, "name": "Стеклопакет 32 мм (4-10-4-10-4)", "price_per_m2": 17000},
-    {"fill_mm": 36, "name": "Стеклопакет 36 мм (4-12-4-12-4)", "price_per_m2": 18500},
-    {"fill_mm": 40, "name": "Стеклопакет 40 мм (4-14-4-14-4)", "price_per_m2": 20000},
-    {"fill_mm": 44, "name": "Стеклопакет 44 мм (4-16-4-16-4)", "price_per_m2": 22000},
-    {"fill_mm": 52, "name": "Стеклопакет 52 мм (6-18-4-18-6)", "price_per_m2": 26000},
+    {"fill_mm": 6, "name": "Стекло 6 мм (закалённое)", "price_per_m2": 9000, "kg_m2": 15},
+    {"fill_mm": 24, "name": "Стеклопакет 24 мм (4-16-4)", "price_per_m2": 13000, "kg_m2": 20},
+    {"fill_mm": 28, "name": "Стеклопакет 28 мм (4-20-4)", "price_per_m2": 14500, "kg_m2": 20},
+    {"fill_mm": 32, "name": "Стеклопакет 32 мм (4-10-4-10-4)", "price_per_m2": 17000, "kg_m2": 30},
+    {"fill_mm": 36, "name": "Стеклопакет 36 мм (4-12-4-12-4)", "price_per_m2": 18500, "kg_m2": 30},
+    {"fill_mm": 40, "name": "Стеклопакет 40 мм (4-14-4-14-4)", "price_per_m2": 20000, "kg_m2": 30},
+    {"fill_mm": 44, "name": "Стеклопакет 44 мм (4-16-4-16-4)", "price_per_m2": 22000, "kg_m2": 30},
+    {"fill_mm": 52, "name": "Стеклопакет 52 мм (6-18-4-18-6)", "price_per_m2": 26000, "kg_m2": 40},
 ]
 HARDWARE = [
     {"opening": "tilt_turn", "name": "Фурнитура поворотно-откидная", "price": 28000},
@@ -284,7 +311,7 @@ def main():
         raise SystemExit("Нет в прайсе: %s" % missing)
 
     catalog = {
-        "version": 2,
+        "version": 3,
         "name": "BENKAM",
         "currency": "KZT",
         "vat_percent": 16,
@@ -294,6 +321,16 @@ def main():
         "install_per_m2": 9000,
         "install_min": 25000,
         "two_color_percent": 15,
+        # Раскрой: длина хлыста (по артикулу или началу артикула), ширина пропила, обрезки с концов хлыста
+        # (массивами, а не словарями: ключи словарей ломаются при snake_case-кодировании в iOS)
+        "bar_default_mm": 6500,
+        "bar_lengths": [{"prefix": "WDT.77.V", "mm": 6000}],
+        "saw_kerf_mm": 10,
+        "bar_trim_mm": 20,
+        # Уплотнители отпускаются кратно этому числу метров (на весь заказ)
+        "gasket_step_m": 20,
+        # КП: срок действия и что входит в цену в режиме «Материалы» (как в КП BKM Aluminium)
+        "offer_valid_days": 5,
         "color_groups": [
             {"id": "ral", "name": "RAL (порошковая покраска)", "surcharge_percent": 0},
             {"id": "anod", "name": "Анодирование", "surcharge_percent": 10},

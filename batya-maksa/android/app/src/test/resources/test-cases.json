@@ -1,297 +1,988 @@
 [
  {
-  "name": "Фото 1: окно 1200×2700, левая колонка 800 разделена 1700/1000, правая 400 глухая",
-  "spec": {
-   "width_mm": 1200,
-   "height_mm": 2700,
-   "product": "window",
-   "quantity": 1,
-   "layout": {
-    "split": "columns",
-    "sections": [
-     {
-      "size_mm": 800,
-      "cells": [
-       {
-        "size_mm": 1700,
-        "opening": "tilt_turn",
-        "hinge": "left",
-        "inward": true,
-        "door": false
-       },
-       {
-        "size_mm": 1000,
-        "opening": "fixed",
-        "hinge": "none",
-        "inward": true,
-        "door": false
-       }
-      ]
+  "name": "ORGADATA тип 1: 3200×1700, 3 шт, середина поворотно-откидная (материалы, раскрой)",
+  "offer": {
+   "options": {
+    "scope": "materials",
+    "cutting": true,
+    "gasket_round": true,
+    "discount_percent": 0
+   },
+   "items": [
+    {
+     "spec": {
+      "width_mm": 3200,
+      "height_mm": 1700,
+      "product": "window",
+      "quantity": 3,
+      "layout": {
+       "split": "columns",
+       "sections": [
+        {
+         "size_mm": 1250,
+         "cells": [
+          {
+           "size_mm": 1700,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          }
+         ]
+        },
+        {
+         "size_mm": 700,
+         "cells": [
+          {
+           "size_mm": 1700,
+           "opening": "tilt_turn",
+           "hinge": "left",
+           "inward": true,
+           "door": false
+          }
+         ]
+        },
+        {
+         "size_mm": 1250,
+         "cells": [
+          {
+           "size_mm": 1700,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          }
+         ]
+        }
+       ]
+      }
      },
-     {
-      "size_mm": 400,
-      "cells": [
-       {
-        "size_mm": 2700,
-        "opening": "fixed",
-        "hinge": "none",
-        "inward": true,
-        "door": false
-       }
-      ]
+     "selection": {
+      "system_id": "bkt77",
+      "fill_mm": 32,
+      "color_id": "ral7024",
+      "color_inside_id": "",
+      "installation": false
      }
-    ]
-   }
-  },
-  "selection": {
-   "system_id": "bkt77",
-   "fill_mm": 32,
-   "color_id": "ral7024",
-   "color_inside_id": "",
-   "installation": false
+    }
+   ]
   },
   "expected": {
-   "subtotal": 292117.94,
-   "unit_total": 440500,
-   "total": 440500,
-   "lines": 22,
-   "profiles": 157969.85
+   "unit_totals": [
+    229878
+   ],
+   "totals": [
+    689634
+   ],
+   "subtotal": 689634,
+   "discount": 0,
+   "total": 689634,
+   "vat_included": 95122,
+   "bars": {
+    "WDT.77.F0002": 5,
+    "WDT.77.M0002": 2,
+    "WDT.77.V0018": 3,
+    "WDT.67.G0003": 8
+   },
+   "warnings": [
+    []
+   ]
   }
  },
  {
-  "name": "Фото 3: дверь 1200×2700, левая 400 (1350/1350 глухие), правая 800 — дверная створка",
-  "spec": {
-   "width_mm": 1200,
-   "height_mm": 2700,
-   "product": "door",
-   "quantity": 1,
-   "layout": {
-    "split": "columns",
-    "sections": [
-     {
-      "size_mm": 400,
-      "cells": [
-       {
-        "size_mm": 1350,
-        "opening": "fixed",
-        "hinge": "none",
-        "inward": true,
-        "door": false
-       },
-       {
-        "size_mm": 1350,
-        "opening": "fixed",
-        "hinge": "none",
-        "inward": true,
-        "door": false
-       }
-      ]
+  "name": "ORGADATA тип 2: 1500×2300, 4 ячейки (материалы, раскрой)",
+  "offer": {
+   "options": {
+    "scope": "materials",
+    "cutting": true,
+    "gasket_round": true,
+    "discount_percent": 0
+   },
+   "items": [
+    {
+     "spec": {
+      "width_mm": 1500,
+      "height_mm": 2300,
+      "product": "window",
+      "quantity": 1,
+      "layout": {
+       "split": "columns",
+       "sections": [
+        {
+         "size_mm": 750,
+         "cells": [
+          {
+           "size_mm": 1650,
+           "opening": "tilt_turn",
+           "hinge": "left",
+           "inward": true,
+           "door": false
+          },
+          {
+           "size_mm": 650,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          }
+         ]
+        },
+        {
+         "size_mm": 750,
+         "cells": [
+          {
+           "size_mm": 1650,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          },
+          {
+           "size_mm": 650,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          }
+         ]
+        }
+       ]
+      }
      },
-     {
-      "size_mm": 800,
-      "cells": [
-       {
-        "size_mm": 2700,
-        "opening": "turn",
-        "hinge": "right",
-        "inward": false,
-        "door": true
-       }
-      ]
+     "selection": {
+      "system_id": "bkt77",
+      "fill_mm": 32,
+      "color_id": "ral7024",
+      "color_inside_id": "",
+      "installation": false
      }
-    ]
-   }
-  },
-  "selection": {
-   "system_id": "bkt77",
-   "fill_mm": 32,
-   "color_id": "ral7016",
-   "color_inside_id": "ral9016",
-   "installation": true
+    }
+   ]
   },
   "expected": {
-   "subtotal": 417136.56,
-   "unit_total": 629000,
-   "total": 629000,
-   "lines": 23,
-   "profiles": 191936.11
+   "unit_totals": [
+    289074
+   ],
+   "totals": [
+    289074
+   ],
+   "subtotal": 289074,
+   "discount": 0,
+   "total": 289074,
+   "vat_included": 39872,
+   "bars": {
+    "WDT.77.F0002": 2,
+    "WDT.77.M0002": 1,
+    "WDT.77.V0018": 1,
+    "WDT.67.G0003": 3
+   },
+   "warnings": [
+    []
+   ]
   }
  },
  {
-  "name": "Фото 4: дверь 1000×2000, фрамуга 700 откидная + дверь 1300",
-  "spec": {
-   "width_mm": 1000,
-   "height_mm": 2000,
-   "product": "door",
-   "quantity": 2,
-   "layout": {
-    "split": "rows",
-    "sections": [
-     {
-      "size_mm": 700,
-      "cells": [
-       {
-        "size_mm": 1000,
-        "opening": "tilt",
-        "hinge": "bottom",
-        "inward": true,
-        "door": false
-       }
-      ]
+  "name": "КП из двух окон: тип 1 ×3 + тип 2 (общий раскрой)",
+  "offer": {
+   "options": {
+    "scope": "materials",
+    "cutting": true,
+    "gasket_round": true,
+    "discount_percent": 5
+   },
+   "items": [
+    {
+     "spec": {
+      "width_mm": 3200,
+      "height_mm": 1700,
+      "product": "window",
+      "quantity": 3,
+      "layout": {
+       "split": "columns",
+       "sections": [
+        {
+         "size_mm": 1250,
+         "cells": [
+          {
+           "size_mm": 1700,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          }
+         ]
+        },
+        {
+         "size_mm": 700,
+         "cells": [
+          {
+           "size_mm": 1700,
+           "opening": "tilt_turn",
+           "hinge": "left",
+           "inward": true,
+           "door": false
+          }
+         ]
+        },
+        {
+         "size_mm": 1250,
+         "cells": [
+          {
+           "size_mm": 1700,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          }
+         ]
+        }
+       ]
+      }
      },
-     {
-      "size_mm": 1300,
-      "cells": [
-       {
-        "size_mm": 1000,
-        "opening": "turn",
-        "hinge": "left",
-        "inward": true,
-        "door": true
-       }
-      ]
+     "selection": {
+      "system_id": "bkt77",
+      "fill_mm": 32,
+      "color_id": "ral7024",
+      "color_inside_id": "",
+      "installation": false
      }
-    ]
-   }
-  },
-  "selection": {
-   "system_id": "bkt77",
-   "fill_mm": 40,
-   "color_id": "decor2178001",
-   "color_inside_id": "",
-   "installation": false
+    },
+    {
+     "spec": {
+      "width_mm": 1500,
+      "height_mm": 2300,
+      "product": "window",
+      "quantity": 1,
+      "layout": {
+       "split": "columns",
+       "sections": [
+        {
+         "size_mm": 750,
+         "cells": [
+          {
+           "size_mm": 1650,
+           "opening": "tilt_turn",
+           "hinge": "left",
+           "inward": true,
+           "door": false
+          },
+          {
+           "size_mm": 650,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          }
+         ]
+        },
+        {
+         "size_mm": 750,
+         "cells": [
+          {
+           "size_mm": 1650,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          },
+          {
+           "size_mm": 650,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          }
+         ]
+        }
+       ]
+      }
+     },
+     "selection": {
+      "system_id": "bkt77",
+      "fill_mm": 32,
+      "color_id": "ral7024",
+      "color_inside_id": "",
+      "installation": false
+     }
+    }
+   ]
   },
   "expected": {
-   "subtotal": 340748.84,
-   "unit_total": 513800,
-   "total": 1027600,
-   "lines": 30,
-   "profiles": 150459.51
+   "unit_totals": [
+    223964,
+    211882
+   ],
+   "totals": [
+    671892,
+    211882
+   ],
+   "subtotal": 883774,
+   "discount": 44189,
+   "total": 839585,
+   "vat_included": 115805,
+   "bars": {
+    "WDT.77.F0002": 6,
+    "WDT.77.M0002": 3,
+    "WDT.77.V0018": 4,
+    "WDT.67.G0003": 10
+   },
+   "warnings": [
+    [],
+    []
+   ]
   }
  },
  {
-  "name": "Фасад BKF 50 3000×3000: верх 1000 (глухое + верхнеподвесное), низ 2000 (3 глухих)",
-  "spec": {
-   "width_mm": 3000,
-   "height_mm": 3000,
-   "product": "facade",
-   "quantity": 1,
-   "layout": {
-    "split": "rows",
-    "sections": [
-     {
-      "size_mm": 1000,
-      "cells": [
-       {
-        "size_mm": 1500,
-        "opening": "fixed",
-        "hinge": "none",
-        "inward": true,
-        "door": false
-       },
-       {
-        "size_mm": 1500,
-        "opening": "top_hung",
-        "hinge": "top",
-        "inward": false,
-        "door": false
-       }
-      ]
+  "name": "Тип 2 под ключ без раскроя, монтаж, двухцветное",
+  "offer": {
+   "options": {
+    "scope": "turnkey",
+    "cutting": false,
+    "gasket_round": false,
+    "discount_percent": 0
+   },
+   "items": [
+    {
+     "spec": {
+      "width_mm": 1500,
+      "height_mm": 2300,
+      "product": "window",
+      "quantity": 1,
+      "layout": {
+       "split": "columns",
+       "sections": [
+        {
+         "size_mm": 750,
+         "cells": [
+          {
+           "size_mm": 1650,
+           "opening": "tilt_turn",
+           "hinge": "left",
+           "inward": true,
+           "door": false
+          },
+          {
+           "size_mm": 650,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          }
+         ]
+        },
+        {
+         "size_mm": 750,
+         "cells": [
+          {
+           "size_mm": 1650,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          },
+          {
+           "size_mm": 650,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          }
+         ]
+        }
+       ]
+      }
      },
-     {
-      "size_mm": 2000,
-      "cells": [
-       {
-        "size_mm": 1000,
-        "opening": "fixed",
-        "hinge": "none",
-        "inward": true,
-        "door": false
-       },
-       {
-        "size_mm": 1000,
-        "opening": "fixed",
-        "hinge": "none",
-        "inward": true,
-        "door": false
-       },
-       {
-        "size_mm": 1000,
-        "opening": "fixed",
-        "hinge": "none",
-        "inward": true,
-        "door": false
-       }
-      ]
+     "selection": {
+      "system_id": "bkt77",
+      "fill_mm": 32,
+      "color_id": "ral7024",
+      "color_inside_id": "ral9016",
+      "installation": true
      }
-    ]
-   }
-  },
-  "selection": {
-   "system_id": "bkf50",
-   "fill_mm": 32,
-   "color_id": "anodc0",
-   "color_inside_id": "",
-   "installation": false
+    }
+   ]
   },
   "expected": {
-   "subtotal": 637549.24,
-   "unit_total": 961400,
-   "total": 961400,
-   "lines": 19,
-   "profiles": 287887.71
+   "unit_totals": [
+    474193
+   ],
+   "totals": [
+    474193
+   ],
+   "subtotal": 474193,
+   "discount": 0,
+   "total": 474193,
+   "vat_included": 65406,
+   "bars": {},
+   "warnings": [
+    []
+   ]
   }
  },
  {
-  "name": "BKO 45 холодное окно 1500×1500, 2 шт",
-  "spec": {
-   "width_mm": 1500,
-   "height_mm": 1500,
-   "product": "window",
-   "quantity": 2,
-   "layout": {
-    "split": "columns",
-    "sections": [
-     {
-      "size_mm": 750,
-      "cells": [
-       {
-        "size_mm": 1500,
-        "opening": "turn",
-        "hinge": "left",
-        "inward": true,
-        "door": false
-       }
-      ]
+  "name": "Нестандарт: 2800×2900, створка 1400×2900 и рекомендация",
+  "offer": {
+   "options": {
+    "scope": "materials",
+    "cutting": true,
+    "gasket_round": true,
+    "discount_percent": 0
+   },
+   "items": [
+    {
+     "spec": {
+      "width_mm": 2800,
+      "height_mm": 2900,
+      "product": "window",
+      "quantity": 1,
+      "layout": {
+       "split": "columns",
+       "sections": [
+        {
+         "size_mm": 1400,
+         "cells": [
+          {
+           "size_mm": 2900,
+           "opening": "turn",
+           "hinge": "left",
+           "inward": true,
+           "door": false
+          }
+         ]
+        },
+        {
+         "size_mm": 1400,
+         "cells": [
+          {
+           "size_mm": 2900,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          }
+         ]
+        }
+       ]
+      }
      },
-     {
-      "size_mm": 750,
-      "cells": [
+     "selection": {
+      "system_id": "bkt77",
+      "fill_mm": 32,
+      "color_id": "ral7024",
+      "color_inside_id": "",
+      "installation": false
+     }
+    }
+   ]
+  },
+  "expected": {
+   "unit_totals": [
+    329695
+   ],
+   "totals": [
+    329695
+   ],
+   "subtotal": 329695,
+   "discount": 0,
+   "total": 329695,
+   "vat_included": 45475,
+   "bars": {
+    "WDT.77.F0002": 2,
+    "WDT.77.M0002": 1,
+    "WDT.77.V0018": 2,
+    "WDT.67.G0003": 3
+   },
+   "warnings": [
+    [
+     "impost_long",
+     "sash_big"
+    ]
+   ]
+  }
+ },
+ {
+  "name": "Нестандарт с применённой рекомендацией (усиленная створка)",
+  "offer": {
+   "options": {
+    "scope": "materials",
+    "cutting": true,
+    "gasket_round": true,
+    "discount_percent": 0
+   },
+   "items": [
+    {
+     "spec": {
+      "width_mm": 2800,
+      "height_mm": 2900,
+      "product": "window",
+      "quantity": 1,
+      "layout": {
+       "split": "columns",
+       "sections": [
+        {
+         "size_mm": 1400,
+         "cells": [
+          {
+           "size_mm": 2900,
+           "opening": "turn",
+           "hinge": "left",
+           "inward": true,
+           "door": false
+          }
+         ]
+        },
+        {
+         "size_mm": 1400,
+         "cells": [
+          {
+           "size_mm": 2900,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          }
+         ]
+        }
+       ]
+      }
+     },
+     "selection": {
+      "system_id": "bkt77",
+      "fill_mm": 32,
+      "color_id": "ral7024",
+      "color_inside_id": "",
+      "installation": false,
+      "overrides": [
        {
-        "size_mm": 1500,
-        "opening": "fixed",
-        "hinge": "none",
-        "inward": true,
-        "door": false
+        "role": "Створка оконная",
+        "code": "WDT.77.V0019"
        }
       ]
      }
-    ]
-   }
-  },
-  "selection": {
-   "system_id": "bko45",
-   "fill_mm": 6,
-   "color_id": "ral9016",
-   "color_inside_id": "",
-   "installation": true
+    }
+   ]
   },
   "expected": {
-   "subtotal": 172036.94,
-   "unit_total": 259400,
-   "total": 518800,
-   "lines": 12,
-   "profiles": 76119.55
+   "unit_totals": [
+    338519
+   ],
+   "totals": [
+    338519
+   ],
+   "subtotal": 338519,
+   "discount": 0,
+   "total": 338519,
+   "vat_included": 46692,
+   "bars": {
+    "WDT.77.F0002": 2,
+    "WDT.77.M0002": 1,
+    "WDT.77.V0019": 2,
+    "WDT.67.G0003": 3
+   },
+   "warnings": [
+    [
+     "impost_long",
+     "sash_big"
+    ]
+   ]
+  }
+ },
+ {
+  "name": "Прежние 5 изделий одним КП под ключ (двери, фасад, BKO 45, ряды)",
+  "offer": {
+   "options": {
+    "scope": "turnkey",
+    "cutting": true,
+    "gasket_round": true,
+    "discount_percent": 0
+   },
+   "items": [
+    {
+     "spec": {
+      "width_mm": 1200,
+      "height_mm": 2700,
+      "product": "window",
+      "quantity": 1,
+      "layout": {
+       "split": "columns",
+       "sections": [
+        {
+         "size_mm": 800,
+         "cells": [
+          {
+           "size_mm": 1700,
+           "opening": "tilt_turn",
+           "hinge": "left",
+           "inward": true,
+           "door": false
+          },
+          {
+           "size_mm": 1000,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          }
+         ]
+        },
+        {
+         "size_mm": 400,
+         "cells": [
+          {
+           "size_mm": 2700,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          }
+         ]
+        }
+       ]
+      }
+     },
+     "selection": {
+      "system_id": "bkt77",
+      "fill_mm": 32,
+      "color_id": "ral7024",
+      "color_inside_id": "",
+      "installation": false
+     }
+    },
+    {
+     "spec": {
+      "width_mm": 1200,
+      "height_mm": 2700,
+      "product": "door",
+      "quantity": 1,
+      "layout": {
+       "split": "columns",
+       "sections": [
+        {
+         "size_mm": 400,
+         "cells": [
+          {
+           "size_mm": 1350,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          },
+          {
+           "size_mm": 1350,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          }
+         ]
+        },
+        {
+         "size_mm": 800,
+         "cells": [
+          {
+           "size_mm": 2700,
+           "opening": "turn",
+           "hinge": "right",
+           "inward": false,
+           "door": true
+          }
+         ]
+        }
+       ]
+      }
+     },
+     "selection": {
+      "system_id": "bkt77",
+      "fill_mm": 32,
+      "color_id": "ral7016",
+      "color_inside_id": "ral9016",
+      "installation": true
+     }
+    },
+    {
+     "spec": {
+      "width_mm": 1000,
+      "height_mm": 2000,
+      "product": "door",
+      "quantity": 2,
+      "layout": {
+       "split": "rows",
+       "sections": [
+        {
+         "size_mm": 700,
+         "cells": [
+          {
+           "size_mm": 1000,
+           "opening": "tilt",
+           "hinge": "bottom",
+           "inward": true,
+           "door": false
+          }
+         ]
+        },
+        {
+         "size_mm": 1300,
+         "cells": [
+          {
+           "size_mm": 1000,
+           "opening": "turn",
+           "hinge": "left",
+           "inward": true,
+           "door": true
+          }
+         ]
+        }
+       ]
+      }
+     },
+     "selection": {
+      "system_id": "bkt77",
+      "fill_mm": 40,
+      "color_id": "decor2178001",
+      "color_inside_id": "",
+      "installation": false
+     }
+    },
+    {
+     "spec": {
+      "width_mm": 3000,
+      "height_mm": 3000,
+      "product": "facade",
+      "quantity": 1,
+      "layout": {
+       "split": "rows",
+       "sections": [
+        {
+         "size_mm": 1000,
+         "cells": [
+          {
+           "size_mm": 1500,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          },
+          {
+           "size_mm": 1500,
+           "opening": "top_hung",
+           "hinge": "top",
+           "inward": false,
+           "door": false
+          }
+         ]
+        },
+        {
+         "size_mm": 2000,
+         "cells": [
+          {
+           "size_mm": 1000,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          },
+          {
+           "size_mm": 1000,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          },
+          {
+           "size_mm": 1000,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          }
+         ]
+        }
+       ]
+      }
+     },
+     "selection": {
+      "system_id": "bkf50",
+      "fill_mm": 32,
+      "color_id": "anodc0",
+      "color_inside_id": "",
+      "installation": false
+     }
+    },
+    {
+     "spec": {
+      "width_mm": 1500,
+      "height_mm": 1500,
+      "product": "window",
+      "quantity": 2,
+      "layout": {
+       "split": "columns",
+       "sections": [
+        {
+         "size_mm": 750,
+         "cells": [
+          {
+           "size_mm": 1500,
+           "opening": "turn",
+           "hinge": "left",
+           "inward": true,
+           "door": false
+          }
+         ]
+        },
+        {
+         "size_mm": 750,
+         "cells": [
+          {
+           "size_mm": 1500,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          }
+         ]
+        }
+       ]
+      }
+     },
+     "selection": {
+      "system_id": "bko45",
+      "fill_mm": 6,
+      "color_id": "ral9016",
+      "color_inside_id": "",
+      "installation": true
+     }
+    }
+   ]
+  },
+  "expected": {
+   "unit_totals": [
+    486615,
+    722810,
+    542480,
+    905374,
+    247309
+   ],
+   "totals": [
+    486615,
+    722810,
+    1084960,
+    905374,
+    494618
+   ],
+   "subtotal": 3694377,
+   "discount": 0,
+   "total": 3694377,
+   "vat_included": 509569,
+   "bars": {
+    "WDT.77.F0002": 2,
+    "WDT.77.M0002": 3,
+    "WDT.77.V0018": 3,
+    "WDT.67.G0003": 5,
+    "WDT.77.F0004": 4,
+    "WDT.77.V0007": 4,
+    "WDT.77.P0002": 2,
+    "WDT.67.G0001": 2,
+    "FST.50.S0005": 2,
+    "FST.50.R0004": 2,
+    "FST.50.PP001": 4,
+    "FST.50.CP002": 2,
+    "FST.50.CP001": 2,
+    "FWT.50.F0001": 1,
+    "FWT.50.V0001": 1,
+    "EXHW1711": 2,
+    "EXHW4444": 1,
+    "КПС265": 2,
+    "EXSD1656": 3
+   },
+   "warnings": [
+    [],
+    [
+     "door_big"
+    ],
+    [],
+    [],
+    []
+   ]
+  }
+ },
+ {
+  "name": "Фото 1 (материалы, без раскроя и округления)",
+  "offer": {
+   "options": {
+    "scope": "materials",
+    "cutting": false,
+    "gasket_round": false,
+    "discount_percent": 0
+   },
+   "items": [
+    {
+     "spec": {
+      "width_mm": 1200,
+      "height_mm": 2700,
+      "product": "window",
+      "quantity": 1,
+      "layout": {
+       "split": "columns",
+       "sections": [
+        {
+         "size_mm": 800,
+         "cells": [
+          {
+           "size_mm": 1700,
+           "opening": "tilt_turn",
+           "hinge": "left",
+           "inward": true,
+           "door": false
+          },
+          {
+           "size_mm": 1000,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          }
+         ]
+        },
+        {
+         "size_mm": 400,
+         "cells": [
+          {
+           "size_mm": 2700,
+           "opening": "fixed",
+           "hinge": "none",
+           "inward": true,
+           "door": false
+          }
+         ]
+        }
+       ]
+      }
+     },
+     "selection": {
+      "system_id": "bkt77",
+      "fill_mm": 32,
+      "color_id": "ral7024",
+      "color_inside_id": "",
+      "installation": false
+     }
+    }
+   ]
+  },
+  "expected": {
+   "unit_totals": [
+    192303
+   ],
+   "totals": [
+    192303
+   ],
+   "subtotal": 192303,
+   "discount": 0,
+   "total": 192303,
+   "vat_included": 26525,
+   "bars": {},
+   "warnings": [
+    []
+   ]
   }
  }
 ]

@@ -8,7 +8,7 @@ struct HistoryView: View {
         Group {
             if history.items.isEmpty {
                 ContentUnavailableView("Пока пусто", systemImage: "clock",
-                                       description: Text("Сохраняйте расчёты кнопкой «Сохранить в историю»."))
+                                       description: Text("Сохраняйте КП кнопкой «Сохранить в историю»."))
             } else {
                 List {
                     ForEach(history.items) { item in
@@ -25,7 +25,7 @@ struct HistoryView: View {
     private func row(_ item: HistoryItem) -> some View {
         HStack(spacing: 12) {
             Group {
-                if let img = history.render(for: item) ?? history.drawing(for: item) {
+                if let img = history.thumbnail(for: item) {
                     Image(uiImage: img).resizable().scaledToFill()
                 } else {
                     Image(systemName: "window.vertical.closed").foregroundStyle(.secondary)
@@ -36,8 +36,8 @@ struct HistoryView: View {
             .clipShape(RoundedRectangle(cornerRadius: 10))
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(verbatim: "\(item.spec.product.title) \(item.spec.widthMm)×\(item.spec.heightMm)").font(.body)
-                Text(item.date.formatted(date: .abbreviated, time: .shortened)).font(.caption).foregroundStyle(.secondary)
+                Text(verbatim: item.options.objectName.isEmpty ? item.title : item.options.objectName).font(.body).lineLimit(1)
+                Text(verbatim: "\(item.date.formatted(date: .abbreviated, time: .shortened)) · окон: \(item.windows)").font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
             Text(Money.format(item.total, currency: item.currency)).font(.callout.bold()).monospacedDigit()

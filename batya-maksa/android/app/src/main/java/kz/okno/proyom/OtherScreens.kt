@@ -62,7 +62,7 @@ fun HistoryScreen(vm: AppViewModel) {
             Column(Modifier.fillMaxSize().padding(bottom = 60.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 Icon(Icons.Outlined.Schedule, null, tint = p.secondary, modifier = Modifier.size(52.dp))
                 Text("Пока пусто", color = p.text, fontSize = 22.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 10.dp))
-                Text("Сохраняйте расчёты кнопкой «Сохранить в историю».", color = p.secondary, fontSize = 15.sp,
+                Text("Сохраняйте КП кнопкой «Сохранить в историю».", color = p.secondary, fontSize = 15.sp,
                     textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 40.dp, vertical = 6.dp))
             }
         } else {
@@ -88,9 +88,8 @@ fun HistoryScreen(vm: AppViewModel) {
                                         else Icon(Icons.Outlined.Window, null, tint = p.secondary)
                                     }
                                     Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                                        Text("${item.spec.product.title} ${item.spec.widthMm}×${item.spec.heightMm}", color = p.text, fontSize = 17.sp)
-                                        Text(fmt.format(Date(item.date)) + if (item.spec.quantity > 1) " · ${item.spec.quantity} шт" else "",
-                                            fontSize = 12.sp, color = p.secondary)
+                                        Text(item.options.objectName.ifEmpty { item.title }, color = p.text, fontSize = 17.sp, maxLines = 1)
+                                        Text(fmt.format(Date(item.date)) + " · окон: ${item.windows}", fontSize = 12.sp, color = p.secondary)
                                     }
                                     Text(Money.format(item.total, item.currency), color = p.text, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 }
@@ -112,11 +111,16 @@ private val baseNames = mapOf(
     "doors" to "на дверь", "glass_perimeter_m" to "периметр стёкол", "glass_area_m2" to "площадь стёкол", "panes" to "на стекло",
     "door_width_m" to "ширина двери", "vert_len_m" to "длина стоек", "horiz_len_m" to "длина ригелей",
     "grid_len_m" to "длина стоек и ригелей", "area_m2" to "площадь", "frame_corners" to "на угол рамы",
+    "bead_length_m" to "длина штапиков", "sash_panes" to "на стекло в створке",
 )
+
+private fun plusTitle(r: Rule): String = r.plus.joinToString("") { p ->
+    if (p.qty < 1) " + ${Math.round(p.qty * 1000)} мм ${baseTitle(p.base, 1.0)}" else " + ${baseTitle(p.base, p.qty)}"
+}
 
 private fun baseTitle(base: String, qty: Double): String {
     val n = baseNames[base] ?: base
-    return if (qty == 1.0) n else (if (qty < 1) "%.1f".format(qty) else "%.0f".format(qty)) + " × " + n
+    return if (qty == 1.0) n else (if (qty < 1) "%.2f".format(qty) else "%.0f".format(qty)) + " × " + n
 }
 
 @Composable
@@ -202,6 +206,24 @@ private fun SystemDetail(system: SystemDef, c: Catalog, onBack: () -> Unit) {
         })
         LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
             item { Group { NoteRow(system.description) } }
+            system.geo?.let { g ->
+                item {
+                    Group("Вычеты профилей, мм") {
+                        NoteRow("Рама ${g.frameFace.toInt()} · импост ${g.impostFace.toInt()} · нахлёст створки ${g.sashOverlap.toInt()} · створка до стекла ${g.sashFace.toInt()} · штапик −${g.beadDeduct.toInt()} · стекло −${g.glassGap.toInt()} мм")
+                    }
+                }
+            }
+            if (system.recommend.isNotEmpty()) item {
+                Group("Рекомендации для нестандарта") {
+                    system.recommend.forEachIndexed { i, r ->
+                        if (i > 0) Sep()
+                        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
+                            Text(r.text, fontSize = 15.sp, color = p.text)
+                            Text("${r.role} → ${r.code} · ${c.article(r.code)?.name ?: "нет в прайсе"}", fontSize = 12.sp, color = p.secondary)
+                        }
+                    }
+                }
+            }
             item { GroupHeader("Что входит в расчёт") }
             itemsIndexed(system.rules) { i, r ->
                 GroupItem(i, system.rules.size) {
@@ -212,7 +234,7 @@ private fun SystemDetail(system: SystemDef, c: Catalog, onBack: () -> Unit) {
                         } else if (r.code != null) {
                             val a = c.article(r.code)
                             Text("${r.code} · ${a?.name ?: "нет в прайсе"}", fontSize = 12.sp, color = p.secondary)
-                            if (a != null) Text("${Money.format(a.price, c.currency)}/${a.unitTitle} · ${baseTitle(r.base, r.qty)}", fontSize = 11.sp, color = p.tertiary)
+                            if (a != null) Text("${Money.format(a.price, c.currency)}/${a.unitTitle} · ${baseTitle(r.base, r.qty)}${plusTitle(r)}", fontSize = 11.sp, color = p.tertiary)
                             r.doorCode?.let { Text("для дверей: $it", fontSize = 11.sp, color = p.tertiary) }
                         }
                     }
@@ -242,6 +264,28 @@ fun SettingsScreen(vm: AppViewModel) {
         }
         Group("Коммерческое предложение") {
             TextRow("Название компании (для КП)", vm.company) { vm.changeCompany(it) }
+            Sep(); RateRow("Срок действия КП", c.validDays.toDouble(), "дн.") { vm.editCatalog { o -> o.put("offer_valid_days", maxOf(1, it.toInt())) } }
+        }
+        Group("Раскрой и упаковка", footer = "Как в картах раскроя ORGADATA: детали всех окон КП раскладываются по хлыстам, платим за целые хлысты.") {
+            RateRow("Хлыст профиля", c.barDefaultMm, "мм") { set("bar_default_mm", maxOf(1000.0, it)) }
+            c.barLengths.forEachIndexed { i, b ->
+                Sep(); RateRow("Хлыст ${b.prefix}…", b.mm, "мм") { setIn("bar_lengths", i, "mm", maxOf(1000.0, it)) }
+            }
+            Sep(); RateRow("Ширина пропила", c.kerf, "мм") { set("saw_kerf_mm", it) }
+            Sep(); RateRow("Обрезка концов хлыста", c.trim, "мм") { set("bar_trim_mm", it) }
+            Sep(); RateRow("Уплотнитель кратно", c.gasketStep, "м") { set("gasket_step_m", maxOf(1.0, it)) }
+        }
+        c.systems.forEachIndexed { si, sys ->
+            val l = sys.limits ?: return@forEachIndexed
+            fun setL(k: String, v: Double) = vm.editCatalog { o -> o.getJSONArray("systems").getJSONObject(si).getJSONObject("limits").put(k, v) }
+            Group("Стандартные размеры · ${sys.name}", footer = "Больше — нестандарт: расчёт по стандартным профилям с предупреждением и рекомендацией профиля.") {
+                RateRow("Створка, макс. ширина", l.sashMaxW ?: 0.0, "мм") { setL("sash_max_w", it) }
+                Sep(); RateRow("Створка, макс. высота", l.sashMaxH ?: 0.0, "мм") { setL("sash_max_h", it) }
+                Sep(); RateRow("Створка, макс. вес", l.sashMaxKg ?: 0.0, "кг") { setL("sash_max_kg", it) }
+                Sep(); RateRow("Импост, макс. длина", l.impostMaxMm ?: 0.0, "мм") { setL("impost_max_mm", it) }
+                Sep(); RateRow("Дверь, макс. ширина", l.doorMaxW ?: 0.0, "мм") { setL("door_max_w", it) }
+                Sep(); RateRow("Дверь, макс. высота", l.doorMaxH ?: 0.0, "мм") { setL("door_max_h", it) }
+            }
         }
         Group("Коэффициенты расчёта") {
             RateRow("Наценка", c.markupPercent, "%") { set("markup_percent", it) }

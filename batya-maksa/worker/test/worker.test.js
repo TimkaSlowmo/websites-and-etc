@@ -162,3 +162,14 @@ test("info: numbering and checkmarks are cleaned, duplicates and unconfirmed qua
   const r = reconcile([a, b]);
   assert.deepEqual(r.info.map((x) => [x.label, x.value]), [["3. Система", "BKT 77, BKF 50"], ["1. Высота", "✓"], ["Цвет", "RAL 7024"]]);
 });
+
+test("reference render: prompt keeps the grid, size follows proportions", async () => {
+  const { buildReferencePrompt, renderSize, REFERENCE_MODELS } = await import("../src/index.js");
+  const p = buildReferencePrompt({ product: "window", color: "RAL 7024", width_mm: 1500, height_mm: 2300 }, "interior");
+  assert.match(p, /Image 0/);
+  assert.match(p, /graphite grey/);
+  assert.match(p, /living room/);
+  assert.deepEqual(renderSize({ width_mm: 1500, height_mm: 2300 }), { width: 640, height: 1024 });
+  assert.deepEqual(renderSize({ width_mm: 3200, height_mm: 1700 }), { width: 1024, height: 576 });
+  assert.equal(REFERENCE_MODELS[0], "@cf/black-forest-labs/flux-2-klein-9b");
+});

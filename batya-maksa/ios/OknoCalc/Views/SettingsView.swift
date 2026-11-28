@@ -19,7 +19,32 @@ struct SettingsView: View {
 
             Section {
                 TextField("Название компании (для КП)", text: $settings.companyName)
+                unit("Срок действия КП", Double(c.validDays), "дн.") { v in store.update { $0.offerValidDays = max(1, Int(v)) } }
             } header: { Text("Коммерческое предложение") }
+
+            Section {
+                unit("Хлыст профиля", c.barDefaultMm ?? 6500, "мм") { v in store.update { $0.barDefaultMm = max(1000, v) } }
+                ForEach(Array((c.barLengths ?? []).enumerated()), id: \.element.prefix) { i, b in
+                    unit("Хлыст \(b.prefix)…", b.mm, "мм") { v in store.update { $0.barLengths?[i].mm = max(1000, v) } }
+                }
+                unit("Ширина пропила", c.kerf, "мм") { v in store.update { $0.sawKerfMm = v } }
+                unit("Обрезка концов хлыста", c.trim, "мм") { v in store.update { $0.barTrimMm = v } }
+                unit("Уплотнитель кратно", c.gasketStep, "м") { v in store.update { $0.gasketStepM = max(1, v) } }
+            } header: { Text("Раскрой и упаковка") }
+            footer: { Text("Как в картах раскроя ORGADATA: детали всех окон КП раскладываются по хлыстам, платим за целые хлысты.") }
+
+            ForEach(Array(c.systems.enumerated()).filter { $0.element.limits != nil }, id: \.element.id) { si, sys in
+                Section {
+                    let l = sys.limits ?? Limits()
+                    unit("Створка, макс. ширина", l.sashMaxW ?? 0, "мм") { v in store.update { $0.systems[si].limits?.sashMaxW = v } }
+                    unit("Створка, макс. высота", l.sashMaxH ?? 0, "мм") { v in store.update { $0.systems[si].limits?.sashMaxH = v } }
+                    unit("Створка, макс. вес", l.sashMaxKg ?? 0, "кг") { v in store.update { $0.systems[si].limits?.sashMaxKg = v } }
+                    unit("Импост, макс. длина", l.impostMaxMm ?? 0, "мм") { v in store.update { $0.systems[si].limits?.impostMaxMm = v } }
+                    unit("Дверь, макс. ширина", l.doorMaxW ?? 0, "мм") { v in store.update { $0.systems[si].limits?.doorMaxW = v } }
+                    unit("Дверь, макс. высота", l.doorMaxH ?? 0, "мм") { v in store.update { $0.systems[si].limits?.doorMaxH = v } }
+                } header: { Text("Стандартные размеры · \(sys.name)") }
+                footer: { Text("Больше — нестандарт: расчёт по стандартным профилям с предупреждением и рекомендацией профиля.") }
+            }
 
             Section {
                 percent("Наценка", c.markupPercent) { v in store.update { $0.markupPercent = v } }
@@ -66,6 +91,16 @@ struct SettingsView: View {
         }
         .navigationTitle("Настройки")
         .keyboardDone()
+    }
+
+    private func unit(_ title: String, _ value: Double, _ suffix: String, set: @escaping (Double) -> Void) -> some View {
+        LabeledContent(title) {
+            HStack(spacing: 4) {
+                TextField("0", value: Binding(get: { value }, set: set), format: .number.grouping(.never).precision(.fractionLength(0)))
+                    .keyboardType(.numberPad).multilineTextAlignment(.trailing).frame(width: 80)
+                Text(suffix).foregroundStyle(.secondary)
+            }
+        }
     }
 
     private func percent(_ title: String, _ value: Double, set: @escaping (Double) -> Void) -> some View {

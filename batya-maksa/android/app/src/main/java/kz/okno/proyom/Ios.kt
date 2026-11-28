@@ -41,6 +41,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.composed
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -421,5 +422,72 @@ fun SearchField(query: String, placeholder: String, onChange: (String) -> Unit) 
                 keyboardActions = KeyboardActions(onSearch = { focus.clearFocus() }), modifier = Modifier.fillMaxWidth().trackFocus())
         }
         if (query.isNotEmpty()) Text("✕", color = p.secondary, fontSize = 15.sp, modifier = Modifier.clickable { onChange("") }.padding(4.dp))
+    }
+}
+
+// ---------- Алерт как UIAlertController ----------
+
+data class AlertButton(val text: String, val destructive: Boolean = false, val cancel: Boolean = false, val action: () -> Unit)
+
+/** Диалог в стиле iOS: заголовок, текст, (поле), кнопки — две в ряд, больше — столбиком. */
+@Composable
+fun IosAlert(
+    title: String, message: String? = null, onDismiss: () -> Unit, buttons: List<AlertButton>,
+    content: (@Composable () -> Unit)? = null,
+) {
+    val p = pal()
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        Column(Modifier.width(280.dp).clip(RoundedCornerShape(14.dp)).background(if (p.dark) Color(0xFF2C2C2E) else Color(0xFFF2F2F2))) {
+            Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(title, color = p.text, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+                if (message != null) Text(message, color = p.text, fontSize = 13.sp, textAlign = TextAlign.Center, lineHeight = 17.sp)
+                if (content != null) { Spacer(Modifier.height(8.dp)); content() }
+            }
+            HorizontalDivider(thickness = 0.5.dp, color = p.separator)
+            @Composable
+            fun btn(b: AlertButton, modifier: Modifier) {
+                Box(modifier.height(44.dp).clickable { onDismiss(); b.action() }, contentAlignment = Alignment.Center) {
+                    Text(b.text, color = if (b.destructive) Danger else Accent, fontSize = 17.sp,
+                        fontWeight = if (b.cancel) FontWeight.SemiBold else FontWeight.Normal, textAlign = TextAlign.Center,
+                        maxLines = 2, modifier = Modifier.padding(horizontal = 8.dp))
+                }
+            }
+            if (buttons.size == 2) {
+                Row(Modifier.fillMaxWidth()) {
+                    btn(buttons[0], Modifier.weight(1f))
+                    Box(Modifier.width(0.5.dp).height(44.dp).background(p.separator))
+                    btn(buttons[1], Modifier.weight(1f))
+                }
+            } else {
+                buttons.forEachIndexed { i, b ->
+                    if (i > 0) HorizontalDivider(thickness = 0.5.dp, color = p.separator)
+                    btn(b, Modifier.fillMaxWidth())
+                }
+            }
+        }
+    }
+}
+
+/** Ввод одного числа в алерте: цифровая клавиатура открывается сразу, «Готово» применяет. */
+@Composable
+fun NumberAlert(title: String, value: Int, onDismiss: () -> Unit, onDone: (Int) -> Unit) {
+    var text by remember { mutableStateOf(androidx.compose.ui.text.input.TextFieldValue(value.toString(),
+        androidx.compose.ui.text.TextRange(0, value.toString().length))) }
+    val fr = remember { androidx.compose.ui.focus.FocusRequester() }
+    val p = pal()
+    fun done() { text.text.toIntOrNull()?.takeIf { it > 0 }?.let(onDone) }
+    IosAlert(title, "Сейчас $value мм", onDismiss, listOf(AlertButton("Отмена", cancel = true) {}, AlertButton("Готово") { done() })) {
+        BasicTextField(
+            value = text, onValueChange = { v -> text = v.copy(text = v.text.filter { it.isDigit() }.take(6)) },
+            singleLine = true,
+            textStyle = TextStyle(color = p.text, fontSize = 17.sp, textAlign = TextAlign.Center),
+            cursorBrush = SolidColor(Accent),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { done(); onDismiss() }),
+            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(7.dp)).background(p.card)
+                .padding(horizontal = 8.dp, vertical = 8.dp).focusRequester(fr),
+        )
+        LaunchedEffect(Unit) { fr.requestFocus() }
     }
 }

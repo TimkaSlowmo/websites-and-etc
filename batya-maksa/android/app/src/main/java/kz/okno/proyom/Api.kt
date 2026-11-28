@@ -21,8 +21,11 @@ class Api(private val baseUrl: String) {
         return WindowSpec.fromJson(res.getJSONObject("spec"))
     }
 
-    suspend fun render(spec: WindowSpec): Bitmap {
-        val res = post("render", JSONObject().put("spec", spec.toJson()))
+    /** ИИ-фото: scheme — PNG чистой схемы (до 512 px), по нему FLUX.2 рисует ту же сетку и створки. */
+    suspend fun render(spec: WindowSpec, scheme: ByteArray?, style: String): Bitmap {
+        val body = JSONObject().put("spec", spec.toJson()).put("style", style)
+        if (scheme != null) body.put("scheme", Base64.encodeToString(scheme, Base64.NO_WRAP))
+        val res = post("render", body)
         val bytes = Base64.decode(res.getString("image"), Base64.DEFAULT)
         return BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: throw ApiException("Сервер вернул неожиданный ответ")
     }
@@ -31,7 +34,7 @@ class Api(private val baseUrl: String) {
         val conn = (URL(baseUrl.trimEnd('/') + "/" + path).openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
             connectTimeout = 15000
-            readTimeout = 120000
+            readTimeout = 150000
             doOutput = true
             setRequestProperty("Content-Type", "application/json")
         }

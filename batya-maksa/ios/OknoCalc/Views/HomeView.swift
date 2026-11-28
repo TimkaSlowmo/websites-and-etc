@@ -6,13 +6,15 @@ struct HomeView: View {
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var history: HistoryStore
     @State private var showCamera = false
+    @State private var showGallery = false
     @State private var photoItem: PhotosPickerItem?
+    @State private var confirmNew = false
 
     var body: some View {
         VStack(spacing: 0) {
             switch vm.phase {
             case .idle: idle.transition(.opacity.combined(with: .scale(scale: 0.97)))
-            case .analyzing: AnalyzingView(image: vm.drawing).transition(.opacity)
+            case .analyzing: AnalyzingView(image: vm.pendingImage).transition(.opacity)
             case .failed(let msg): failed(msg).transition(.opacity)
             case .ready: ResultView().transition(.move(edge: .bottom).combined(with: .opacity))
             }
@@ -23,10 +25,34 @@ struct HomeView: View {
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 if vm.phase != .idle {
-                    Button { vm.reset() } label: { HStack(spacing: 4) { Image(systemName: "plus"); Text("Новый") } }
+                    // «Новый» — сбросить КП и начать заново
+                    Button { if vm.isSaved || vm.positions.isEmpty { vm.reset() } else { confirmNew = true } } label: {
+                        HStack(spacing: 4) { Image(systemName: "doc.badge.plus"); Text("Новый") }
+                    }
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                if vm.phase == .ready {
+                    // «Добавить» — ещё одно окно в КП
+                    Menu {
+                        Button { showCamera = true } label: { Label("Снять чертёж", systemImage: "camera") }
+                            .disabled(!CameraPicker.isAvailable)
+                        Button { showGallery = true } label: { Label("Чертёж из галереи", systemImage: "photo.on.rectangle") }
+                        Button { vm.addManual() } label: { Label("Ввести вручную", systemImage: "square.and.pencil") }
+                        Button { vm.duplicateCurrent() } label: { Label("Копия текущего окна", systemImage: "plus.square.on.square") }
+                    } label: {
+                        HStack(spacing: 4) { Image(systemName: "plus"); Text("Добавить") }
+                    }
                 }
             }
         }
+        .confirmationDialog("Начать новое КП?", isPresented: $confirmNew, titleVisibility: .visible) {
+            Button("Сохранить в историю и начать новое") { vm.saveToHistory(); vm.reset() }
+            Button("Начать без сохранения", role: .destructive) { vm.reset() }
+        } message: {
+            Text(verbatim: "Окон в текущем КП: \(vm.positions.count). Они не сохранены.")
+        }
+        .photosPicker(isPresented: $showGallery, selection: $photoItem, matching: .images)
         .fullScreenCover(isPresented: $showCamera) {
             CameraPicker { vm.start(with: $0) }.ignoresSafeArea()
         }
@@ -76,8 +102,8 @@ struct HomeView: View {
                     HStack {
                         Image(systemName: "clock.arrow.circlepath").foregroundStyle(Theme.accent)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Последний расчёт").font(.caption).foregroundStyle(.secondary)
-                            Text(verbatim: "\(last.spec.product.title) \(last.spec.widthMm)×\(last.spec.heightMm)").font(.callout)
+                            Text("Последнее КП").font(.caption).foregroundStyle(.secondary)
+                            Text(verbatim: last.title).font(.callout).lineLimit(1)
                         }
                         Spacer()
                         Text(Money.format(last.total, currency: last.currency)).font(.callout.bold())
@@ -97,7 +123,8 @@ struct HomeView: View {
             Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 48)).foregroundStyle(.orange)
             Text(msg).multilineTextAlignment(.center).padding(.horizontal, 32)
             Button("Повторить") { vm.retry() }.buttonStyle(.borderedProminent)
-            Button("Ввести вручную") { vm.startManual() }
+            Button("Ввести вручную") { vm.addManual() }
+            if !vm.positions.isEmpty { Button("Вернуться к КП") { vm.cancelAdding() } }
             Spacer()
         }
     }

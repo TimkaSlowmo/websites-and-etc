@@ -11,6 +11,16 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.outlined.Circle
+import androidx.compose.material.icons.outlined.ListAlt
+import androidx.compose.material.icons.outlined.Straighten
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -85,19 +95,25 @@ fun ResultView(vm: AppViewModel) {
     val c = vm.catalog
     val spec = vm.spec
     val sel = vm.selection
-    val b = vm.breakdown
+    val o = vm.offer
+    val b = o.items.getOrNull(vm.current)
     val system = c.system(sel.systemId)
     val outside = c.color(sel.colorId)
     var tab by remember { mutableIntStateOf(0) }
-    var saved by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     var picking by remember { mutableStateOf<String?>(null) }   // "out" | "in"
     var expanded by remember { mutableStateOf(setOf<LineGroup>()) }
     var notesOpen by remember { mutableStateOf(false) }
+    var dim by remember { mutableStateOf<SchemeDimension?>(null) }
+    var materials by remember { mutableStateOf(false) }
+    var confirmRemove by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { haptic.performHapticFeedback(HapticFeedbackType.LongPress) }
-    LaunchedEffect(spec, sel) { saved = false }
+    LaunchedEffect(vm.current) { editing = null }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        // Окна КП
+        Group { PositionsStrip(vm, o) }
+
         // Схема / чертёж / ИИ-фото
         Group {
             Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -106,11 +122,13 @@ fun ResultView(vm: AppViewModel) {
                     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         when (t) {
                             0 -> {
-                                SchemeView(spec, outside?.hex ?: "#45494E", editing?.let { "${it.first}-${it.second}" }) { r ->
+                                SchemeView(spec, outside?.hex ?: "#45494E", editing?.let { "${it.first}-${it.second}" },
+                                    onDimension = { d -> haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); dim = d }) { r ->
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     editing = r.section to r.index
                                 }
-                                Text("Нажмите на ячейку, чтобы изменить открывание и размер", fontSize = 12.sp, color = p.secondary, textAlign = TextAlign.Center)
+                                Text("Голубые размеры можно менять нажатием. Нажмите на ячейку, чтобы выбрать открывание.",
+                                    fontSize = 12.sp, color = p.secondary, textAlign = TextAlign.Center)
                             }
                             1 -> {
                                 val d = vm.drawing
@@ -118,18 +136,19 @@ fun ResultView(vm: AppViewModel) {
                                 else Placeholder("Чертёж не загружен (ручной ввод)")
                             }
                             else -> {
+                                Segmented(RenderStyle.entries.map { it.title }, vm.renderStyle.ordinal) { vm.renderStyle = RenderStyle.entries[it] }
                                 val r = vm.render
                                 when {
+                                    vm.isRendering -> Shimmer("Рисую окно по схеме…", Modifier.fillMaxWidth().height(240.dp))
                                     r != null -> {
                                         AnimatedVisibility(visible = true, enter = fadeIn(tween(500)) + scaleIn(initialScale = 0.96f)) {
                                             Image(r.asImageBitmap(), null, Modifier.fillMaxWidth().heightIn(max = 340.dp).clip(RoundedCornerShape(10.dp)), contentScale = ContentScale.Fit)
                                         }
-                                        Text("Примерный вид, сгенерирован ИИ", fontSize = 12.sp, color = p.secondary)
+                                        Text("Сгенерировано ИИ по схеме окна", fontSize = 12.sp, color = p.secondary)
                                     }
-                                    vm.isRendering -> Shimmer("Рисую готовое изделие…", Modifier.fillMaxWidth().height(240.dp))
                                     else -> Placeholder(vm.renderError ?: "Фото ещё не создано")
                                 }
-                                if (!vm.isRendering) BorderedButton("Сгенерировать по параметрам", Icons.Filled.Refresh, onClick = vm::renderPhoto)
+                                if (!vm.isRendering) BorderedButton(if (r == null) "Сгенерировать по схеме" else "Сгенерировать заново", Icons.Filled.AutoAwesome, onClick = vm::renderPhoto)
                             }
                         }
                     }
@@ -137,41 +156,15 @@ fun ResultView(vm: AppViewModel) {
             }
         }
 
-        if (spec.confidence < 0.6 && vm.drawing != null) Group {
-            WarnRow(Icons.Filled.Warning, "ИИ не уверен в распознавании — сверьте схему с чертежом.")
-        }
-        if (b.warnings.isNotEmpty()) Group {
-            b.warnings.forEachIndexed { i, w -> if (i > 0) Sep(); WarnRow(Icons.Filled.ErrorOutline, w) }
-            if (spec.layoutMismatch != null) { Sep(); ButtonRow("Подогнать сетку под размеры") { vm.updateSpec { it.fitted() } } }
-        }
-
-        // С чертежа
-        if (spec.info.isNotEmpty() || spec.notes.isNotBlank()) Group("С чертежа") {
-            spec.info.forEachIndexed { i, item -> if (i > 0) Sep(); ValueRow(item.label, item.value) }
-            if (spec.notes.isNotBlank()) {
-                if (spec.info.isNotEmpty()) Sep()
-                RowBase(onClick = { notesOpen = !notesOpen }) {
-                    Text("Весь текст", color = p.text, fontSize = 17.sp, modifier = Modifier.weight(1f))
-                    Text(if (notesOpen) "⌄" else "›", color = Accent, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
-                }
-                AnimatedVisibility(notesOpen) {
-                    Text(spec.notes, color = p.text, fontSize = 16.sp, lineHeight = 21.sp, modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp))
-                }
-            }
-        }
-
-        // Изделие
-        Group("Изделие") {
-            PickerRow("Изделие", spec.product.title, Product.entries, { it.title }) { pr -> vm.updateSpec { it.copy(product = pr) } }
-            Sep()
-            PickerRow("Система", system?.name ?: "—", c.systems, { it.name }) { s ->
-                vm.updateSelection { it.copy(systemId = s.id, fillMm = if (it.fillMm in s.fillMin..s.fillMax) it.fillMm else s.fillDefault) }
-            }
-            system?.let { Sep(); NoteRow(it.description) }
-            Sep()
+        // Размеры — сразу под схемой
+        Group("Размеры") {
             NumberRow("Ширина, мм", spec.widthMm, min = 100) { v -> vm.setSize(width = v) }
             Sep()
             NumberRow("Высота, мм", spec.heightMm, min = 100) { v -> vm.setSize(height = v) }
+            if (spec.layout.sections.size > 1) spec.layout.sections.forEachIndexed { si, s ->
+                Sep()
+                NumberRow("${spec.layout.split.sectionName} ${si + 1}, мм", s.sizeMm, min = 100) { v -> vm.setSectionSize(si, v) }
+            }
             if (spec.altWidths.isNotEmpty() || spec.altHeights.isNotEmpty()) {
                 Sep()
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -194,8 +187,61 @@ fun ResultView(vm: AppViewModel) {
                 onPlus = { vm.updateSpec { it.copy(quantity = minOf(999, it.quantity + 1)) } })
         }
 
+        if (spec.confidence < 0.6 && vm.drawing != null) Group {
+            WarnRow(Icons.Filled.Warning, "ИИ не уверен в распознавании — сверьте схему с чертежом.")
+        }
+        if (b != null && b.warnings.isNotEmpty()) Group {
+            b.warnings.forEachIndexed { i, w -> if (i > 0) Sep(); WarnRow(Icons.Filled.ErrorOutline, w) }
+            if (spec.layoutMismatch != null) { Sep(); ButtonRow("Подогнать сетку под размеры") { vm.updateSpec { it.fitted() } } }
+        }
+        // Нестандартные размеры: предупреждение и рекомендация
+        if (b != null && b.limits.isNotEmpty()) Group("Нестандарт", footer = "По умолчанию считается стандартными профилями. Нестандартные размеры рассматриваются индивидуально.") {
+            b.limits.forEachIndexed { i, w ->
+                if (i > 0) Sep()
+                Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(verticalAlignment = Alignment.Top) {
+                        Icon(Icons.Outlined.Straighten, null, tint = Warn, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(w.text, color = Warn, fontSize = 13.sp, lineHeight = 17.sp)
+                    }
+                    if (w.code.isNotEmpty()) Text(
+                        if (w.applied) "Применено: ${w.code}. Вернуть стандартный профиль" else "Рекомендация: ${w.rec} (${w.code}) — применить",
+                        color = Accent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.clip(RoundedCornerShape(6.dp)).clickable { vm.applyRecommendation(w) }.padding(vertical = 4.dp),
+                    )
+                }
+            }
+        }
+
+        // С чертежа
+        if (spec.info.isNotEmpty() || spec.notes.isNotBlank()) Group("С чертежа") {
+            spec.info.forEachIndexed { i, item -> if (i > 0) Sep(); ValueRow(item.label, item.value) }
+            if (spec.notes.isNotBlank()) {
+                if (spec.info.isNotEmpty()) Sep()
+                RowBase(onClick = { notesOpen = !notesOpen }) {
+                    Text("Весь текст", color = p.text, fontSize = 17.sp, modifier = Modifier.weight(1f))
+                    Text(if (notesOpen) "⌄" else "›", color = Accent, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                }
+                AnimatedVisibility(notesOpen) {
+                    Text(spec.notes, color = p.text, fontSize = 16.sp, lineHeight = 21.sp, modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp))
+                }
+            }
+        }
+
+        // Изделие
+        Group("Изделие") {
+            TextRow("ОК-1", vm.mark, label = "Марка") { v -> vm.mark = v }
+            Sep()
+            PickerRow("Изделие", spec.product.title, Product.entries, { it.title }) { pr -> vm.updateSpec { it.copy(product = pr) } }
+            Sep()
+            PickerRow("Система", system?.name ?: "—", c.systems, { it.name }) { s ->
+                vm.updateSelection { it.copy(systemId = s.id, fillMm = if (it.fillMm in s.fillMin..s.fillMax) it.fillMm else s.fillDefault, overrides = emptyList()) }
+            }
+            system?.let { Sep(); NoteRow(it.description) }
+        }
+
         // Заполнение, цвет, монтаж
-        Group("Заполнение, цвет, монтаж") {
+        Group(if (vm.options.scope == OfferScope.TURNKEY) "Заполнение, цвет, монтаж" else "Заполнение и цвет") {
             val fills = (c.glass.map { it.fillMm }.filter { f -> system == null || f in system.fillMin..system.fillMax } +
                 listOfNotNull(system?.fillDefault, sel.fillMm)).distinct().sorted()
             PickerRow("Заполнение", "${sel.fillMm} мм", fills, { "$it мм" }) { f -> vm.updateSelection { it.copy(fillMm = f) } }
@@ -206,8 +252,10 @@ fun ResultView(vm: AppViewModel) {
             ColorRow("Цвет снаружи", outside, "—") { picking = "out" }
             Sep()
             ColorRow("Цвет внутри", if (sel.colorInsideId.isEmpty()) null else c.color(sel.colorInsideId), "Как снаружи") { picking = "in" }
-            Sep()
-            ToggleRow("Монтаж", sel.installation) { on -> vm.updateSelection { it.copy(installation = on) } }
+            if (vm.options.scope == OfferScope.TURNKEY) {
+                Sep()
+                ToggleRow("Монтаж", sel.installation) { on -> vm.updateSelection { it.copy(installation = on) } }
+            }
         }
 
         // Сетка и створки
@@ -219,10 +267,7 @@ fun ResultView(vm: AppViewModel) {
                 Column(Modifier.animateContentSize().padding(vertical = 4.dp)) {
                     Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text("${spec.layout.split.sectionName} ${si + 1}", color = p.text, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                        if (spec.layout.sections.size > 1) {
-                            NumberField(s.sizeMm.toLong(), 100, 70.dp) { v -> vm.setSectionSize(si, v.toInt()) }
-                            Text(" мм", color = p.secondary, fontSize = 17.sp)
-                        } else Text("${s.sizeMm} мм", color = p.secondary, fontSize = 17.sp)
+                        Text("${s.sizeMm} мм", color = p.secondary, fontSize = 17.sp)
                     }
                     s.cells.forEachIndexed { ci, cell ->
                         Row(
@@ -255,9 +300,10 @@ fun ResultView(vm: AppViewModel) {
             ButtonRow("Добавить ${if (cols) "колонку" else "ряд"}", icon = { Icon(Icons.Outlined.AddCircleOutline, null, tint = Accent) }, onClick = vm::addSection)
         }
 
-        // Стоимость
-        Group("Стоимость (по прайсу ${c.name})",
-            footer = "Профили, уплотнители и комплектующие — по артикулам прайса. Стеклопакеты, фурнитура и работа — по ставкам из «Настроек». Точную цену подтверждает замер.") {
+        // Стоимость окна
+        if (b != null) Group("Стоимость окна ${vm.mark}",
+            footer = if (vm.options.scope == OfferScope.MATERIALS) "Профили, комплектующие и уплотнители по прайсу ${c.name} (цены с НДС)."
+                     else "Материалы по прайсу ${c.name}, стеклопакеты, фурнитура и работа — по ставкам из «Настроек».") {
             var first = true
             LineGroup.entries.forEach { g ->
                 val lines = b.lines.filter { it.group == g }
@@ -287,33 +333,70 @@ fun ResultView(vm: AppViewModel) {
                     }
                 }
             }
-            Sep(); ValueRow("Наценка ${c.markupPercent.toInt()}%", Money.format(b.markup, b.currency))
-            Sep(); ValueRow("НДС ${c.vatPercent.toInt()}%", Money.format(b.vat, b.currency))
+            if (b.markup > 0) { Sep(); ValueRow("Наценка ${c.markupPercent.toInt()}%", Money.format(b.markup, b.currency)) }
             val shownUnit by animateFloatAsState(b.unitTotal.toFloat(), tween(450), label = "unit")
-            val shownTotal by animateFloatAsState(b.total.toFloat(), tween(450), label = "total")
             Sep()
-            TotalRow(if (b.quantity > 1) "За 1 шт" else "Итого", Money.format(shownUnit.toDouble(), b.currency), big = b.quantity == 1)
-            if (b.quantity > 1) { Sep(); TotalRow("Итого за ${b.quantity} шт", Money.format(shownTotal.toDouble(), b.currency), big = true) }
+            TotalRow("За 1 шт", Money.format(shownUnit.toDouble(), b.currency), big = false)
+            if (b.quantity > 1) { Sep(); ValueRow("За ${b.quantity} шт", Money.format(b.total, b.currency)) }
+        }
+
+        // Коммерческое предложение
+        Group("Коммерческое предложение · окон: ${vm.positions.size}",
+            footer = if (vm.options.scope == OfferScope.MATERIALS) "Как в КП BKM Aluminium: профиль, комплектующие, уплотнители. Не входят сборка, монтаж, стеклопакеты и фурнитура."
+                     else "Под ключ: материалы, стеклопакеты, фурнитура, изготовление и монтаж (если отмечен) с наценкой.") {
+            TextRow("Название объекта", vm.options.objectName, label = "Объект") { v -> vm.updateOptions { it.copy(objectName = v) } }
+            Sep()
+            Segmented(OfferScope.entries.map { it.title }, vm.options.scope.ordinal, Modifier.padding(12.dp)) { i ->
+                vm.updateOptions { it.copy(scope = OfferScope.entries[i]) }
+            }
+            Sep()
+            ToggleRow("Раскрой профилей (целые хлысты)", vm.options.cutting) { on -> vm.updateOptions { it.copy(cutting = on) } }
+            Sep()
+            ToggleRow("Уплотнители кратно ${c.gasketStep.toInt()} м", vm.options.gasketRound) { on -> vm.updateOptions { it.copy(gasketRound = on) } }
+            Sep()
+            RateRow("Скидка", vm.options.discountPercent, "%") { v -> vm.updateOptions { it.copy(discountPercent = v.coerceIn(0.0, 100.0)) } }
+            vm.positions.forEachIndexed { i, pos ->
+                Sep()
+                RowBase(onClick = { vm.select(i) }) {
+                    Icon(if (i == vm.current) Icons.Filled.Edit else Icons.Outlined.Circle, null, tint = Accent, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("${pos.mark} · ${pos.spec.product.title} ${pos.spec.widthMm}×${pos.spec.heightMm}", color = p.text, fontSize = 16.sp)
+                        Text("${pos.spec.quantity} шт × ${Money.format(o.items[i].unitTotal, o.currency)}", color = p.secondary, fontSize = 12.sp)
+                    }
+                    Text(Money.format(o.items[i].total, o.currency), color = p.text, fontSize = 16.sp)
+                }
+            }
+            Sep(); ValueRow("Площадь", "%.2f м²".format(o.areaM2))
+            if (o.discount > 0) { Sep(); ValueRow("Скидка", "−" + Money.format(o.discount, o.currency)) }
+            val shownTotal by animateFloatAsState(o.total.toFloat(), tween(450), label = "total")
+            Sep(); TotalRow("Итого по КП", Money.format(shownTotal.toDouble(), o.currency), big = true)
+            Sep(); ValueRow("В т. ч. НДС ${c.vatPercent.toInt()}%", Money.format(o.vatIncluded, o.currency))
+            Sep(); NavRow("Спецификация материалов", leading = { Icon(Icons.Outlined.ListAlt, null, tint = Accent) }) { materials = true }
         }
 
         // Действия
         Group {
             ButtonRow("Создать и отправить КП (PDF)", icon = { Icon(Icons.Outlined.Description, null, tint = Accent) }) {
-                val f = Pdf.offer(ctx, spec, sel, b, c, vm.company, vm.drawing, vm.render)
+                val f = Pdf.offer(ctx, vm.positions, vm.options, o, c, vm.company, vm.drawings, vm.renders)
                 val uri = FileProvider.getUriForFile(ctx, ctx.packageName + ".files", f)
                 val i = Intent(Intent.ACTION_SEND).setType("application/pdf").putExtra(Intent.EXTRA_STREAM, uri)
                     .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 ctx.startActivity(Intent.createChooser(i, "Отправить КП"))
             }
             Sep(52.dp)
-            ButtonRow("Поделиться текстом расчёта", icon = { Icon(Icons.Outlined.ChatBubbleOutline, null, tint = Accent) }) {
+            ButtonRow("Поделиться текстом КП", icon = { Icon(Icons.Outlined.ChatBubbleOutline, null, tint = Accent) }) {
                 val i = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, vm.summary())
-                ctx.startActivity(Intent.createChooser(i, "Поделиться расчётом"))
+                ctx.startActivity(Intent.createChooser(i, "Поделиться КП"))
             }
             Sep(52.dp)
-            ButtonRow(if (saved) "Сохранено" else "Сохранить в историю", enabled = !saved,
-                icon = { Icon(if (saved) Icons.Filled.CheckCircle else Icons.Filled.MoveToInbox, null, tint = if (saved) p.secondary else Accent) }) {
-                vm.saveToHistory(); saved = true; haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            ButtonRow(if (vm.isSaved) "Сохранено" else "Сохранить в историю", enabled = !vm.isSaved,
+                icon = { Icon(if (vm.isSaved) Icons.Filled.CheckCircle else Icons.Filled.MoveToInbox, null, tint = if (vm.isSaved) p.secondary else Accent) }) {
+                vm.saveToHistory(); haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            }
+            if (vm.positions.size > 1) {
+                Sep(52.dp)
+                ButtonRow("Убрать окно ${vm.mark} из КП", color = Danger, icon = { Icon(Icons.Outlined.Delete, null, tint = Danger) }) { confirmRemove = true }
             }
         }
         Spacer(Modifier.height(28.dp))
@@ -330,6 +413,92 @@ fun ResultView(vm: AppViewModel) {
             onDismiss = { picking = null },
         )
     }
+    dim?.let { d -> NumberAlert(d.title, d.value, onDismiss = { dim = null }) { v -> vm.applyDimension(d, v) } }
+    if (materials) MaterialsScreen(o, vm.options, c) { materials = false }
+    if (confirmRemove) IosAlert("Убрать окно ${vm.mark} из КП?", null, { confirmRemove = false },
+        listOf(AlertButton("Отмена", cancel = true) {}, AlertButton("Убрать", destructive = true) { vm.removePosition(vm.current) }))
+}
+
+/** Лента окон КП: нажатие — редактировать окно, удержание — копия / убрать. */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun PositionsStrip(vm: AppViewModel, o: OfferBreakdown) {
+    val p = pal()
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    var menuFor by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(vm.current, vm.positions.size) { if (vm.current in vm.positions.indices) listState.animateScrollToItem(vm.current) }
+    Column(Modifier.padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        androidx.compose.foundation.lazy.LazyRow(state = listState, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(vm.positions.size) { i ->
+                val pos = vm.positions[i]
+                val on = i == vm.current
+                Box {
+                    Column(
+                        Modifier.clip(RoundedCornerShape(12.dp)).background(if (on) Accent else p.fill)
+                            .combinedClickable(onClick = { vm.select(i) }, onLongClick = { menuFor = i })
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                    ) {
+                        val fg = if (on) Color.White else p.text
+                        Text(pos.mark, color = fg, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                        Text("${pos.spec.widthMm}×${pos.spec.heightMm}" + if (pos.spec.quantity > 1) " · ${pos.spec.quantity} шт" else "", color = fg, fontSize = 11.sp)
+                        o.items.getOrNull(i)?.let { Text(Money.format(it.total, o.currency), color = fg, fontSize = 11.sp) }
+                    }
+                    DropdownMenu(expanded = menuFor == i, onDismissRequest = { menuFor = null }, modifier = Modifier.background(p.card)) {
+                        DropdownMenuItem(text = { Text("Копия окна", color = p.text) }, onClick = { menuFor = null; vm.select(i); vm.duplicateCurrent() })
+                        if (vm.positions.size > 1) DropdownMenuItem(text = { Text("Убрать из КП", color = Danger) }, onClick = { menuFor = null; vm.removePosition(i) })
+                    }
+                }
+            }
+        }
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+            Text("Окон в КП: ${vm.positions.sumOf { it.spec.quantity }}", color = p.secondary, fontSize = 12.sp, modifier = Modifier.weight(1f))
+            Text("Итого: ${Money.format(o.total, o.currency)}", color = Accent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+/** Спецификация материалов по всему КП: профили хлыстами, комплектующие, уплотнители. */
+@Composable
+private fun MaterialsScreen(o: OfferBreakdown, opt: OfferOptions, c: Catalog, onDismiss: () -> Unit) {
+    val p = pal()
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+        Column(Modifier.fillMaxSize().background(p.bg).statusBarsPadding()) {
+            TopBar("Спецификация", leading = {
+                Text("‹ Расчёт", color = Accent, fontSize = 17.sp,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onDismiss).padding(horizontal = 8.dp, vertical = 6.dp))
+            })
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(bottom = 24.dp)) {
+                for ((g, title) in listOf(LineGroup.PROFILE to "Профили", LineGroup.ACCESSORY to "Комплектующие", LineGroup.GASKET to "Уплотнители")) {
+                    val list = o.materials.filter { it.group == g }
+                    if (list.isEmpty()) continue
+                    Group(title, footer = "Итого: ${Money.format(list.sumOf { it.amount }, o.currency)}") {
+                        list.forEachIndexed { i, m ->
+                            if (i > 0) Sep()
+                            Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Row {
+                                    Text(m.code, color = Accent, fontSize = 12.sp, fontFamily = FontFamily.Monospace, modifier = Modifier.weight(1f))
+                                    Text(Money.format(m.amount, o.currency), color = p.text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                                }
+                                val col = if (g == LineGroup.PROFILE) c.color(m.colorKey.substringBefore("/"))?.let { " · ${it.code}" } ?: "" else ""
+                                Text(m.name + col, color = p.text, fontSize = 15.sp)
+                                Text(materialDetail(m, o.currency), color = p.secondary, fontSize = 12.sp)
+                            }
+                        }
+                    }
+                }
+                if (o.weightKg > 0) Group { ValueRow("Вес профилей", "≈ %.0f кг".format(o.weightKg)) }
+            }
+        }
+    }
+}
+
+private fun materialDetail(m: MaterialLine, cur: String): String = when (m.group) {
+    LineGroup.PROFILE -> if (m.bars != null && m.barMm != null)
+        "Нужно %.2f м → %d × %s м = %.1f м, отход %.0f%%".format(m.need, m.bars, "%.1f".format(m.barMm / 1000), m.bought, m.wastePercent)
+        else "Нужно %.2f м, с отходом %.2f м".format(m.need, m.bought)
+    LineGroup.GASKET -> "Нужно %.2f м → к отпуску %.0f м".format(m.need, m.bought) + (m.packM?.let { " · в рулоне %.0f м".format(it) } ?: "")
+    else -> "%.0f шт × %s".format(m.need, Money.format(m.price, cur))
 }
 
 fun cellSummary(c: Cell): String {

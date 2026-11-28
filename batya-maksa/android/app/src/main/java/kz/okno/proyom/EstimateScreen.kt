@@ -43,6 +43,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.NoteAdd
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CameraAlt
@@ -100,16 +105,51 @@ import androidx.core.content.FileProvider
 import kotlinx.coroutines.delay
 import java.io.File
 
+/** Камера и галерея — общие для главного экрана и кнопки «Добавить». */
+class Pickers(val camera: () -> Unit, val gallery: () -> Unit)
+
 @Composable
 fun EstimateScreen(vm: AppViewModel) {
+    val ctx = LocalContext.current
+    val photoFile = remember { File(ctx.cacheDir, "drawing.jpg") }
+    val photoUri = remember { FileProvider.getUriForFile(ctx, ctx.packageName + ".files", photoFile) }
+    val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
+        if (ok) decodeImage(ctx, photoUri)?.let(vm::start)
+    }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        uri?.let { decodeImage(ctx, it) }?.let(vm::start)
+    }
+    val pickers = remember { Pickers({ camera.launch(photoUri) }, { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) }
+    var addMenu by remember { mutableStateOf(false) }
+    var confirmNew by remember { mutableStateOf(false) }
+    val p = pal()
+
     Column(Modifier.fillMaxSize()) {
         TopBar(
             title = if (vm.phase == Phase.Idle) "Проём" else "Расчёт",
             leading = if (vm.phase == Phase.Idle) null else ({
-                Row(Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = vm::reset).padding(horizontal = 8.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Add, null, tint = Accent, modifier = Modifier.size(22.dp))
+                // «Новый» — сбросить КП и начать заново
+                Row(Modifier.clip(RoundedCornerShape(8.dp)).clickable { if (vm.isSaved || vm.positions.isEmpty()) vm.reset() else confirmNew = true }
+                    .padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.NoteAdd, null, tint = Accent, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.size(4.dp))
                     Text("Новый", color = Accent, fontSize = 17.sp)
+                }
+            }),
+            trailing = if (vm.phase != Phase.Ready) null else ({
+                // «Добавить» — ещё одно окно в КП
+                Box {
+                    Row(Modifier.clip(RoundedCornerShape(8.dp)).clickable { addMenu = true }.padding(horizontal = 8.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.Add, null, tint = Accent, modifier = Modifier.size(22.dp))
+                        Text("Добавить", color = Accent, fontSize = 17.sp)
+                    }
+                    DropdownMenu(expanded = addMenu, onDismissRequest = { addMenu = false }, modifier = Modifier.background(p.card)) {
+                        MenuItem("Снять чертёж", Icons.Filled.CameraAlt) { addMenu = false; pickers.camera() }
+                        MenuItem("Чертёж из галереи", Icons.Filled.PhotoLibrary) { addMenu = false; pickers.gallery() }
+                        MenuItem("Ввести вручную", Icons.Filled.Edit) { addMenu = false; vm.addManual() }
+                        MenuItem("Копия текущего окна", Icons.Filled.ContentCopy) { addMenu = false; vm.duplicateCurrent() }
+                    }
                 }
             }),
         )
@@ -123,14 +163,31 @@ fun EstimateScreen(vm: AppViewModel) {
             label = "phase",
         ) { phase ->
             when (phase) {
-                Phase.Idle -> IdleView(vm)
+                Phase.Idle -> IdleView(vm, pickers)
                 Phase.Analyzing -> AnalyzingView(vm)
                 Phase.Ready -> ResultView(vm)
                 is Phase.Failed -> FailedView(vm, phase.message)
             }
         }
     }
+    if (confirmNew) {
+        IosAlert(
+            title = "Начать новое КП?",
+            message = "Окон в текущем КП: ${vm.positions.size}. Они не сохранены.",
+            onDismiss = { confirmNew = false },
+            buttons = listOf(
+                AlertButton("Сохранить в историю и начать новое") { vm.saveToHistory(); vm.reset() },
+                AlertButton("Начать без сохранения", destructive = true) { vm.reset() },
+                AlertButton("Отмена", cancel = true) {},
+            ),
+        )
+    }
 }
+
+@Composable
+private fun MenuItem(text: String, icon: ImageVector, onClick: () -> Unit) =
+    DropdownMenuItem(text = { Text(text, color = pal().text, fontSize = 16.sp) }, onClick = onClick,
+        trailingIcon = { Icon(icon, null, tint = pal().text, modifier = Modifier.size(20.dp)) })
 
 /** Кнопки как на iPhone: залитая (borderedProminent) и с лёгкой подложкой (bordered). */
 @Composable
@@ -148,17 +205,8 @@ fun IosButton(text: String, icon: ImageVector? = null, prominent: Boolean = true
 }
 
 @Composable
-private fun IdleView(vm: AppViewModel) {
-    val ctx = LocalContext.current
+private fun IdleView(vm: AppViewModel, pickers: Pickers) {
     val p = pal()
-    val photoFile = remember { File(ctx.cacheDir, "drawing.jpg") }
-    val photoUri = remember { FileProvider.getUriForFile(ctx, ctx.packageName + ".files", photoFile) }
-    val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
-        if (ok) decodeImage(ctx, photoUri)?.let(vm::start)
-    }
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        uri?.let { decodeImage(ctx, it) }?.let(vm::start)
-    }
     val float = rememberInfiniteTransition(label = "float")
     val dy by float.animateFloat(-6f, 6f, infiniteRepeatable(tween(2200, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "dy")
 
@@ -183,10 +231,8 @@ private fun IdleView(vm: AppViewModel) {
         Spacer(Modifier.weight(1f))
         Appear(3) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                IosButton("Снять чертёж", Icons.Filled.CameraAlt) { camera.launch(photoUri) }
-                IosButton("Выбрать из галереи", Icons.Filled.PhotoLibrary, prominent = false) {
-                    picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                }
+                IosButton("Снять чертёж", Icons.Filled.CameraAlt) { pickers.camera() }
+                IosButton("Выбрать из галереи", Icons.Filled.PhotoLibrary, prominent = false) { pickers.gallery() }
                 Text("Ввести параметры вручную", color = Accent, fontSize = 15.sp,
                     modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = vm::manual).padding(8.dp))
             }
@@ -200,8 +246,8 @@ private fun IdleView(vm: AppViewModel) {
                 ) {
                     Icon(Icons.Filled.History, null, tint = Accent)
                     Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
-                        Text("Последний расчёт", fontSize = 12.sp, color = p.secondary)
-                        Text("${last.spec.product.title} ${last.spec.widthMm}×${last.spec.heightMm}", color = p.text, fontSize = 16.sp)
+                        Text("Последнее КП", fontSize = 12.sp, color = p.secondary)
+                        Text(last.title, color = p.text, fontSize = 16.sp, maxLines = 1)
                     }
                     Text(Money.format(last.total, last.currency), fontWeight = FontWeight.Bold, color = p.text, fontSize = 16.sp)
                 }
@@ -226,7 +272,7 @@ private fun AnalyzingView(vm: AppViewModel) {
                 Modifier.fillMaxWidth().heightIn(max = 340.dp).clip(RoundedCornerShape(20.dp))
                     .border(2.dp, Accent.copy(alpha = 0.6f), RoundedCornerShape(20.dp)),
             ) {
-                vm.drawing?.let {
+                vm.pendingImage?.let {
                     Image(it.asImageBitmap(), null, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxWidth())
                 }
                 Canvas(Modifier.matchParentSize()) {
@@ -262,8 +308,10 @@ private fun FailedView(vm: AppViewModel, message: String) {
         Spacer(Modifier.height(16.dp))
         Text(message, textAlign = TextAlign.Center, color = pal().text, fontSize = 17.sp)
         Spacer(Modifier.height(20.dp))
-        IosButton("Повторить", enabled = vm.drawing != null, onClick = vm::retry)
+        IosButton("Повторить", enabled = vm.pendingImage != null, onClick = vm::retry)
         Text("Ввести вручную", color = Accent, fontSize = 17.sp,
-            modifier = Modifier.padding(top = 8.dp).clip(RoundedCornerShape(8.dp)).clickable(onClick = vm::manual).padding(10.dp))
+            modifier = Modifier.padding(top = 8.dp).clip(RoundedCornerShape(8.dp)).clickable(onClick = vm::addManual).padding(10.dp))
+        if (vm.positions.isNotEmpty()) Text("Вернуться к КП", color = Accent, fontSize = 17.sp,
+            modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = vm::cancelAdding).padding(10.dp))
     }
 }

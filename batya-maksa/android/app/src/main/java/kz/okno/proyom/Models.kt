@@ -218,24 +218,45 @@ fun JSONArray?.objects(): List<JSONObject> = if (this == null) emptyList() else 
 
 // ---------- Каталог компании (catalog.json, tools/build_catalog.py) ----------
 
-data class Article(val code: String, val name: String, val price: Double, val unit: String, val kind: String) {
+data class Article(
+    val code: String, val name: String, val price: Double, val unit: String, val kind: String,
+    val packM: Double? = null, val kgM: Double? = null,
+) {
     val unitTitle: String get() = if (unit == "m") "м" else "шт"
 }
 
 data class FillCode(val min: Int, val max: Int, val code: String)
 
+data class RulePlus(val base: String, val qty: Double)
+
 data class Rule(
     val role: String, val code: String?, val base: String, val qty: Double, val profile: Boolean,
-    val doorCode: String?, val byFill: List<FillCode>?,
+    val doorCode: String?, val byFill: List<FillCode>?, val plus: List<RulePlus> = emptyList(),
 )
+
+/** Вычеты профилей системы, мм (как в ORGADATA). */
+data class Geo(
+    val frameFace: Double = 42.0, val impostFace: Double = 42.0, val sashOverlap: Double = 6.0, val sashFace: Double = 59.0,
+    val doorFace: Double = 73.0, val beadDeduct: Double = 22.0, val glassGap: Double = 6.0,
+)
+
+/** Стандартные размеры для утверждённых профилей. */
+data class Limits(
+    val sashMinW: Double?, val sashMinH: Double?, val sashMaxW: Double?, val sashMaxH: Double?, val sashMaxKg: Double?,
+    val doorMaxW: Double?, val doorMaxH: Double?, val impostMaxMm: Double?,
+)
+
+data class Recommendation(val `when`: String, val role: String, val code: String, val text: String)
 
 data class SystemDef(
     val id: String, val name: String, val description: String, val keywords: List<String>, val products: List<String>,
     val fillMin: Int, val fillMax: Int, val fillDefault: Int,
-    val deductionFixedMm: Double, val deductionSashMm: Double, val deductionDoorMm: Double, val rules: List<Rule>,
+    val geo: Geo?, val limits: Limits?, val recommend: List<Recommendation>, val rules: List<Rule>,
 )
 
-data class GlassItem(val fillMm: Int, val name: String, val pricePerM2: Double)
+data class BarLength(val prefix: String, val mm: Double)
+
+data class GlassItem(val fillMm: Int, val name: String, val pricePerM2: Double, val kgM2: Double? = null)
 data class HardwareItem(val opening: String, val name: String, val price: Double)
 data class ColorGroup(val id: String, val name: String, val surchargePercent: Double)
 data class ColorItem(val id: String, val code: String, val name: String, val hex: String, val group: String, val keywords: List<String>) {
@@ -253,6 +274,12 @@ data class Catalog(
     val installPerM2: Double,
     val installMin: Double,
     val twoColorPercent: Double,
+    val barDefaultMm: Double,
+    val barLengths: List<BarLength>,
+    val kerf: Double,
+    val trim: Double,
+    val gasketStep: Double,
+    val validDays: Int,
     val colorGroups: List<ColorGroup>,
     val glass: List<GlassItem>,
     val hardware: List<HardwareItem>,
@@ -266,6 +293,10 @@ data class Catalog(
     fun system(id: String) = systems.firstOrNull { it.id == id }
     fun color(id: String) = colors.firstOrNull { it.id == id }
     fun group(id: String) = colorGroups.firstOrNull { it.id == id }
+
+    /** Длина хлыста: самое длинное совпадение начала артикула, иначе по умолчанию. */
+    fun barLength(code: String): Double =
+        barLengths.filter { code.startsWith(it.prefix) }.maxByOrNull { it.prefix.length }?.mm ?: barDefaultMm
 
     /** Стеклопакет под заполнение: ближайший не тоньше, иначе самый толстый. */
     fun glassItem(fill: Int): GlassItem? {
@@ -285,24 +316,35 @@ data class Catalog(
     companion object {
         fun parse(text: String): Catalog {
             val o = JSONObject(text)
-            require(o.optInt("version", 1) >= 2) { "Каталог старого формата" }
+            require(o.optInt("version", 1) >= 3) { "Каталог старого формата" }
+            fun JSONObject.dbl(k: String): Double? = if (has(k) && !isNull(k)) optDouble(k) else null
             val systems = o.optJSONArray("systems").objects().map { s ->
                 SystemDef(
                     s.getString("id"), s.getString("name"), s.optString("description"), s.optJSONArray("keywords").strings(),
                     s.optJSONArray("products").strings(), s.optInt("fill_min"), s.optInt("fill_max"), s.optInt("fill_default", 32),
-                    s.optDouble("deduction_fixed_mm"), s.optDouble("deduction_sash_mm"), s.optDouble("deduction_door_mm"),
+                    s.optJSONObject("geo")?.let { g ->
+                        Geo(g.optDouble("frame_face", 42.0), g.optDouble("impost_face", 42.0), g.optDouble("sash_overlap", 6.0),
+                            g.optDouble("sash_face", 59.0), g.optDouble("door_face", 73.0), g.optDouble("bead_deduct", 22.0), g.optDouble("glass_gap", 6.0))
+                    },
+                    s.optJSONObject("limits")?.let { l ->
+                        Limits(l.dbl("sash_min_w"), l.dbl("sash_min_h"), l.dbl("sash_max_w"), l.dbl("sash_max_h"), l.dbl("sash_max_kg"),
+                            l.dbl("door_max_w"), l.dbl("door_max_h"), l.dbl("impost_max_mm"))
+                    },
+                    s.optJSONArray("recommend").objects().map { Recommendation(it.optString("when"), it.optString("role"), it.optString("code"), it.optString("text")) },
                     s.optJSONArray("rules").objects().map { r ->
                         Rule(
                             r.getString("role"), if (r.isNull("code") || !r.has("code")) null else r.getString("code"),
                             r.getString("base"), r.optDouble("qty", 1.0), r.optBoolean("profile"),
                             if (r.has("door_code")) r.getString("door_code") else null,
                             r.optJSONArray("by_fill")?.objects()?.map { FillCode(it.getInt("min"), it.getInt("max"), it.getString("code")) },
+                            r.optJSONArray("plus").objects().map { RulePlus(it.getString("base"), it.optDouble("qty", 1.0)) },
                         )
                     },
                 )
             }
             val articles = o.optJSONArray("articles").objects().map {
-                Article(it.getString("code"), it.optString("name"), it.optDouble("price", 0.0), it.optString("unit"), it.optString("kind"))
+                Article(it.getString("code"), it.optString("name"), it.optDouble("price", 0.0), it.optString("unit"), it.optString("kind"),
+                    it.dbl("pack_m"), it.dbl("kg_m"))
             }
             require(systems.isNotEmpty() && articles.isNotEmpty()) { "В каталоге нет систем или прайса" }
             return Catalog(
@@ -316,8 +358,14 @@ data class Catalog(
                 installPerM2 = o.optDouble("install_per_m2", 0.0),
                 installMin = o.optDouble("install_min", 0.0),
                 twoColorPercent = o.optDouble("two_color_percent", 0.0),
+                barDefaultMm = o.optDouble("bar_default_mm", 6500.0),
+                barLengths = o.optJSONArray("bar_lengths").objects().map { BarLength(it.getString("prefix"), it.optDouble("mm", 6500.0)) },
+                kerf = o.optDouble("saw_kerf_mm", 10.0),
+                trim = o.optDouble("bar_trim_mm", 20.0),
+                gasketStep = o.optDouble("gasket_step_m", 20.0),
+                validDays = o.optInt("offer_valid_days", 5),
                 colorGroups = o.optJSONArray("color_groups").objects().map { ColorGroup(it.getString("id"), it.optString("name"), it.optDouble("surcharge_percent", 0.0)) },
-                glass = o.optJSONArray("glass").objects().map { GlassItem(it.getInt("fill_mm"), it.optString("name"), it.optDouble("price_per_m2", 0.0)) },
+                glass = o.optJSONArray("glass").objects().map { GlassItem(it.getInt("fill_mm"), it.optString("name"), it.optDouble("price_per_m2", 0.0), it.dbl("kg_m2")) },
                 hardware = o.optJSONArray("hardware").objects().map { HardwareItem(it.getString("opening"), it.optString("name"), it.optDouble("price", 0.0)) },
                 colors = o.optJSONArray("colors").objects().map {
                     ColorItem(it.getString("id"), it.optString("code"), it.optString("name"), it.optString("hex", "#45494E"), it.optString("group"), it.optJSONArray("keywords").strings())

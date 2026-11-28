@@ -35,10 +35,11 @@ struct APIClient {
         return res.spec
     }
 
-    func render(spec: WindowSpec) async throws -> UIImage {
-        struct Req: Encodable { let spec: WindowSpec }
+    /// ИИ-фото: схема (PNG до 512 px) — образец для точной сетки и створок; style: facade | interior | studio.
+    func render(spec: WindowSpec, scheme: Data?, style: String) async throws -> UIImage {
+        struct Req: Encodable { let spec: WindowSpec; let scheme: String?; let style: String }
         struct Res: Decodable { let image: String }
-        let res: Res = try await post("render", body: Req(spec: spec))
+        let res: Res = try await post("render", body: Req(spec: spec, scheme: scheme?.base64EncodedString(), style: style))
         guard let data = Data(base64Encoded: res.image), let img = UIImage(data: data) else { throw APIError.badResponse }
         return img
     }
@@ -46,7 +47,7 @@ struct APIClient {
     private func post<B: Encodable, R: Decodable>(_ path: String, body: B) async throws -> R {
         var req = URLRequest(url: baseURL.appendingPathComponent(path))
         req.httpMethod = "POST"
-        req.timeoutInterval = 120
+        req.timeoutInterval = 150
         if !token.isEmpty { req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         let enc = JSONEncoder()

@@ -1,6 +1,7 @@
 // Cloudflare Worker: ИИ-бэкенд приложения «Проём».
 // POST /analyze  {image: base64 jpeg}  -> {spec}
-// POST /render   {spec}                -> {image: base64 jpeg}
+// POST /render   {spec, scheme?, style?} -> {image: base64 jpeg|png}
+//   scheme — PNG чистой схемы окна (до 512 px): FLUX.2 рисует фото строго по ней (та же сетка и створки)
 // Без токена: защита — лимит запросов с IP и ограничение размера изображения.
 
 // Первые две работают параллельно: Gemma 4 лучше читает надписи и символы, Mistral — сетку и размеры.
@@ -12,6 +13,12 @@ export const VISION_MODELS = [
 ];
 const LEGACY_VISION_MODEL = "@cf/meta/llama-3.2-11b-vision-instruct";
 const IMAGE_MODEL = "@cf/black-forest-labs/flux-1-schnell";
+// Модели с картинкой-образцом: быстрая klein 9B, запасная klein 4B, медленная, но точная dev
+export const REFERENCE_MODELS = [
+  "@cf/black-forest-labs/flux-2-klein-9b",
+  "@cf/black-forest-labs/flux-2-klein-4b",
+  "@cf/black-forest-labs/flux-2-dev",
+];
 
 export const PRODUCTS = ["window", "door", "balcony_block", "facade", "partition"];
 export const OPENINGS = ["fixed", "turn", "tilt", "tilt_turn", "top_hung", "slide"];
@@ -40,7 +47,7 @@ export default {
     try {
       if (path === "/analyze" && Array.isArray(body.debug_models)) return json(await analyzeDebug(env, body.image, body.debug_models, body.debug_schema !== false, body.debug_extra));
       if (path === "/analyze") return json({ spec: await analyze(env, body.image) });
-      if (path === "/render") return json({ image: await render(env, body.spec) });
+      if (path === "/render") return json(await render(env, body.spec, body.scheme, body.style));
       return json({ error: "not_found" }, 404);
     } catch (e) {
       return json({ error: "ai_failed", message: String(e && e.message ? e.message : e) }, 502);
@@ -652,11 +659,59 @@ export function buildRenderPrompt(spec) {
   );
 }
 
-async function render(env, spec) {
+const STYLE_TEXT = {
+  facade: "installed in the facade of a modern residential building, light plaster wall around the opening, daylight, shot straight-on from outside",
+  interior: "seen from inside a bright modern living room, light walls and a window sill, soft daylight coming through the glass, shot straight-on",
+  studio: "isolated product shot on a clean light-grey studio background, soft even lighting, catalog photography, straight-on front view",
+};
+
+export function buildReferencePrompt(spec, style) {
+  const kind = { door: "aluminium entrance door", facade: "aluminium curtain-wall glazing", balcony_block: "aluminium balcony door and window block", partition: "aluminium glazed partition" }[spec.product] || "aluminium window";
+  return (
+    `Image 0 is an exact elevation drawing of an ${kind}: the dark bars are the frame, mullions, transoms and sash profiles, the light-blue areas are glass, small dark marks are handles. ` +
+    `Create a photorealistic photo of exactly this ${kind}. Keep exactly the same overall proportions, the same number and positions of mullions, transoms and opening sashes, and the same handle positions as in image 0 — do not add or remove any divisions. ` +
+    `Slim thermally broken aluminium profiles, ${colourText(spec.color)} frame, realistic double-glazed units with subtle reflections. ` +
+    `${STYLE_TEXT[style] || STYLE_TEXT.facade}. No text, no dimension lines, no arrows, no labels, no people, no watermark.`
+  );
+}
+
+/** Размер картинки по пропорциям окна (кратно 64, 512…1024). */
+export function renderSize(spec) {
+  const r = Math.min(4, Math.max(0.25, (spec.width_mm || 1300) / (spec.height_mm || 1400)));
+  const snap = (v) => Math.max(512, Math.min(1024, Math.round(v / 64) * 64));
+  return r >= 1 ? { width: 1024, height: snap(1024 / r) } : { width: snap(1024 * r), height: 1024 };
+}
+
+async function render(env, spec, scheme, style) {
   if (!spec) throw new Error("spec is required");
-  const out = await env.AI.run(IMAGE_MODEL, { prompt: buildRenderPrompt(spec), steps: 4 });
+  if (scheme) {
+    const bytes = b64ToBytes(scheme);
+    if (bytes.length > 2_000_000) throw new Error("scheme image too large");
+    const { width, height } = renderSize(spec);
+    const prompt = buildReferencePrompt(spec, style);
+    let lastErr;
+    for (const model of REFERENCE_MODELS) {
+      try {
+        const form = new FormData();
+        form.append("prompt", prompt);
+        form.append("input_image_0", new Blob([bytes], { type: "image/png" }), "scheme.png");
+        form.append("width", String(width));
+        form.append("height", String(height));
+        if (model.endsWith("flux-2-dev")) form.append("steps", "20");
+        const req = new Request("https://form.local/", { method: "POST", body: form });
+        const out = await env.AI.run(model, { multipart: { body: req.body, contentType: req.headers.get("content-type") } });
+        const image = out && (out.image || (out.result && out.result.image));
+        if (image) return { image, model, reference: true };
+        lastErr = new Error(`${model}: empty`);
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+    console.log("reference render failed, fallback to text:", String(lastErr && lastErr.message));
+  }
+  const out = await env.AI.run(IMAGE_MODEL, { prompt: buildRenderPrompt({ ...spec }) + (STYLE_TEXT[style] ? ` ${STYLE_TEXT[style]}.` : ""), steps: 4 });
   if (!out || !out.image) throw new Error("image model returned nothing");
-  return out.image;
+  return { image: out.image, model: IMAGE_MODEL, reference: false };
 }
 
 function b64ToBytes(b64) {
