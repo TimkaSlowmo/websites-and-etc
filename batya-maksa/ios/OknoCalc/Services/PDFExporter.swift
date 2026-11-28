@@ -12,7 +12,10 @@ enum PDFExporter {
     static func makeOffer(positions: [Position], options: OfferOptions, breakdown o: OfferBreakdown, catalog: Catalog,
                           company: String, images: [UUID: Images]) -> URL? {
         let page = CGRect(x: 0, y: 0, width: 595, height: 842)
-        let stamp = Date().formatted(.dateTime.year().month(.twoDigits).day(.twoDigits))
+        let df = DateFormatter()
+        df.dateFormat = "yyyyMMdd"
+        df.locale = Locale(identifier: "en_US_POSIX")
+        let stamp = df.string(from: Date())
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("КП-\(stamp)-\(Int(Date().timeIntervalSince1970) % 100000).pdf")
         let cur = o.currency
         func money(_ v: Double) -> String { Money.format(v, currency: cur) }
