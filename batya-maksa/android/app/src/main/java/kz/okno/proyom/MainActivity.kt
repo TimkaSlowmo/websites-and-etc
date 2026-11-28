@@ -128,9 +128,17 @@ fun App(vm: AppViewModel, demo: Boolean = false, startTab: String? = null, demoP
         if (demo) vm.demo()
         // Демо-КП в файл для проверки макета PDF в CI (adb pull)
         if (demo && demoPdf) runCatching {
-            val out = java.io.File(ctx.getExternalFilesDir(null), "demo-kp.pdf")
-            Pdf.offer(ctx, vm.positions, vm.options, vm.offer, vm.catalog, "BENKAM", emptyMap(), emptyMap()).copyTo(out, overwrite = true)
-            android.util.Log.i("ProyomCI", "demo pdf: ${out.absolutePath}")
+            // В общую папку «Загрузки» (MediaStore), чтобы CI забрал файл через adb
+            val f = Pdf.offer(ctx, vm.positions, vm.options, vm.offer, vm.catalog, "BENKAM", emptyMap(), emptyMap())
+            if (android.os.Build.VERSION.SDK_INT >= 29) {
+                val v = android.content.ContentValues().apply {
+                    put(android.provider.MediaStore.Downloads.DISPLAY_NAME, "demo-kp.pdf")
+                    put(android.provider.MediaStore.Downloads.MIME_TYPE, "application/pdf")
+                }
+                val uri = ctx.contentResolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, v)!!
+                ctx.contentResolver.openOutputStream(uri)!!.use { out -> f.inputStream().use { it.copyTo(out) } }
+                android.util.Log.i("ProyomCI", "demo pdf: /sdcard/Download/demo-kp.pdf")
+            }
         }.onFailure { android.util.Log.e("ProyomCI", "demo pdf failed", it) }
         when (startTab) {
             "history" -> vm.tab = Tab.HISTORY

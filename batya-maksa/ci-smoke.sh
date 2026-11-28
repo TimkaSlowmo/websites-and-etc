@@ -57,7 +57,7 @@ keyboard() { adb shell dumpsys input_method | grep -q "mInputShown=true"; }
 start --ez demo true --ez pdf true; sleep 8
 PDF=$(adb logcat -d -s ProyomCI:I | sed -n 's/.*demo pdf: //p' | tail -1 | tr -d '\r')
 adb logcat -d -s ProyomCI:E | tail -5
-if [ -n "$PDF" ]; then adb pull "$PDF" screens/demo-kp.pdf >/dev/null 2>&1 || adb shell cat "$PDF" > screens/demo-kp.pdf; fi
+[ -n "$PDF" ] && adb pull "$PDF" screens/demo-kp.pdf >/dev/null 2>&1
 [ -s screens/demo-kp.pdf ] && echo "PDF: $(wc -c < screens/demo-kp.pdf) байт" || { echo "PDF не найден ($PDF)"; rm -f screens/demo-kp.pdf; }
 
 run() {
