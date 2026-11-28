@@ -53,6 +53,10 @@ tap_top() {
 }
 keyboard() { adb shell dumpsys input_method | grep -q "mInputShown=true"; }
 
+# Демо-КП в PDF — для проверки макета
+start --ez demo true --ez pdf true; sleep 8
+adb pull /sdcard/Android/data/kz.okno.proyom/files/demo-kp.pdf screens/demo-kp.pdf >/dev/null 2>&1 || echo "PDF не найден"
+
 run() {
   local m=$1
   start; shot "$m-1-home" 6

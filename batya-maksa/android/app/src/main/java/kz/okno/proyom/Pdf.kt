@@ -77,10 +77,10 @@ object Pdf {
             y += h
             hline(y)
         }
-        fun scheme(p: Position, side: Int): Bitmap = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888).also {
+        fun scheme(p: Position, side: Int, thumb: Boolean = false): Bitmap = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888).also {
             val cv = android.graphics.Canvas(it)
             cv.drawColor(Color.WHITE)
-            drawScheme(cv, p.spec, catalog.color(p.selection.colorId)?.hex ?: "#45494E", side.toFloat(), side.toFloat(), null, side / 360f)
+            drawScheme(cv, p.spec, catalog.color(p.selection.colorId)?.hex ?: "#45494E", side.toFloat(), side.toFloat(), null, side / 360f, thumb = thumb)
         }
         fun total(t: String, v: String, bold: Boolean = false, size: Float = 10.5f, color: Int = Color.BLACK) {
             val p = tp(size, bold, color)
@@ -110,7 +110,7 @@ object Pdf {
             val open = p.spec.layout.sections.flatMap { it.cells }.filter { it.opening != Opening.FIXED }
             name += "\n" + if (open.isEmpty()) "глухое" else open.joinToString(", ") { (if (it.door) "дверь " else "") + it.opening.title.lowercase() }
             tableRow(listOf("${i + 1}", "", name, "${b.quantity} шт", "%.2f".format(b.areaM2 * b.quantity), money(b.pricePerM2), money(b.total)),
-                cols, tp(8.5f), minH = 56f, image = scheme(p, 360), imageCol = 1)
+                cols, tp(8.5f), minH = 56f, image = scheme(p, 360, thumb = true), imageCol = 1)
         }
         y += 6f
         total("Итоговая площадь, м²:", "%.2f".format(o.areaM2))

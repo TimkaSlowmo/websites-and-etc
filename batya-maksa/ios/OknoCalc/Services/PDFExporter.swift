@@ -19,9 +19,12 @@ enum PDFExporter {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("КП-\(stamp)-\(Int(Date().timeIntervalSince1970) % 100000).pdf")
         let cur = o.currency
         func money(_ v: Double) -> String { Money.format(v, currency: cur) }
-        func scheme(_ p: Position, side: CGFloat) -> UIImage? {
+        let ru = Locale(identifier: "ru_RU")
+        let longDate = Date().formatted(.dateTime.day().month(.wide).year().locale(ru))
+        let shortDate = Date().formatted(.dateTime.day(.twoDigits).month(.twoDigits).year().locale(ru))
+        func scheme(_ p: Position, side: CGFloat, thumb: Bool = false) -> UIImage? {
             let hex = catalog.color(p.selection.colorId)?.hex ?? "#45494E"
-            let r = ImageRenderer(content: SchemeView(spec: p.spec, frameHex: hex, maxHeight: side)
+            let r = ImageRenderer(content: SchemeView(spec: p.spec, frameHex: hex, maxHeight: side, thumb: thumb)
                 .frame(width: side, height: side).background(Color.white).environment(\.colorScheme, .light))
             r.scale = 3
             return r.uiImage
@@ -81,7 +84,7 @@ enum PDFExporter {
                      : "Коммерческое предложение на изготовление оконно-дверных конструкций",
                      .systemFont(ofSize: 14), color: .darkGray, gap: 2)
                 if !options.objectName.isEmpty { text("по объекту: \(options.objectName)", .boldSystemFont(ofSize: 12), gap: 2) }
-                text(Date().formatted(date: .long, time: .omitted), .systemFont(ofSize: 10), color: .gray)
+                text(longDate, .systemFont(ofSize: 10), color: .gray)
                 y += 6
 
                 let cols: [(CGFloat, CGFloat, NSTextAlignment)] = [
@@ -101,7 +104,7 @@ enum PDFExporter {
                     name += "\n" + (open.isEmpty ? "глухое" : open.map { ($0.door ? "дверь " : "") + $0.opening.title.lowercased() }.joined(separator: ", "))
                     tableRow(["\(i + 1)", "", name, "\(b.quantity) шт", String(format: "%.2f", b.areaM2 * Double(b.quantity)),
                               money(b.pricePerM2), money(b.total)], cols, font: .systemFont(ofSize: 8.5), minH: 56,
-                             image: scheme(p, side: 120), imageCol: 1)
+                             image: scheme(p, side: 120, thumb: true), imageCol: 1)
                 }
                 y += 6
                 func total(_ t: String, _ v: String, bold: Bool = false, size: CGFloat = 10.5, color: UIColor = .black) {
@@ -137,7 +140,7 @@ enum PDFExporter {
                 for s in excl { text("•  " + s, small, gap: 1) }
                 y += 6
                 text("Коммерческое предложение действует в течение \(catalog.validDays) дней.", small, gap: 2)
-                text("Стоимость рассчитана на базе курса от \(Date().formatted(date: .numeric, time: .omitted)). В случае колебаний валютного курса возможна корректировка итоговой стоимости на момент оплаты.",
+                text("Стоимость рассчитана на базе курса от \(shortDate). В случае колебаний валютного курса возможна корректировка итоговой стоимости на момент оплаты.",
                      .systemFont(ofSize: 8.5), color: .gray)
 
                 // ---------- Спецификация материалов ----------

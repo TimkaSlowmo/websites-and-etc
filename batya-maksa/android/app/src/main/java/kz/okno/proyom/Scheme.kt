@@ -147,13 +147,14 @@ private val GlassColor = Color(0xFFCDE6F7)
 
 /**
  * Отрисовка схемы на обычном Android Canvas (общая для экрана, PDF и образца ИИ-фото).
- * editable — голубые размеры, которые можно нажать; clean — без размеров и значков открывания, с ручками.
+ * editable — голубые размеры, которые можно нажать; clean — без размеров и значков открывания, с ручками;
+ * thumb — миниатюра для таблицы КП: значки открывания есть, размеров нет.
  */
 fun drawScheme(canvas: android.graphics.Canvas, spec: WindowSpec, frameHex: String, width: Float, height: Float,
                selectedId: String? = null, density: Float = 1f,
                labelBg: Int = android.graphics.Color.WHITE, dimColor: Int = 0xFF6B7280.toInt(),
-               editable: Boolean = false, clean: Boolean = false) {
-    val L = SchemeLayout(spec, width, height, density, clean)
+               editable: Boolean = false, clean: Boolean = false, thumb: Boolean = false) {
+    val L = SchemeLayout(spec, width, height, density, clean || thumb)
     val p = Paint(Paint.ANTI_ALIAS_FLAG)
     val frameColor = parseHex(frameHex)
     p.color = frameColor
@@ -212,7 +213,7 @@ fun drawScheme(canvas: android.graphics.Canvas, spec: WindowSpec, frameHex: Stri
             canvas.drawRect(cb.l + 1.5f, cb.t + 1.5f, cb.r - 1.5f, cb.b - 1.5f, p)
         }
     }
-    if (clean) return
+    if (clean || thumb) return
     // Подписи ячеек (голубые, если размер можно поменять)
     val text = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Typeface.DEFAULT_BOLD; textAlign = Paint.Align.CENTER }
     for (lb in L.cellLabels()) {

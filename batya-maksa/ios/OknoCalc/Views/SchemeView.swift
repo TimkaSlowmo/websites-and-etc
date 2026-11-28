@@ -23,8 +23,10 @@ struct SchemeView: View {
     var maxHeight: CGFloat = 380
     var onDimension: ((SchemeDimension) -> Void)? = nil
     var clean = false
+    /// Миниатюра для таблицы КП: значки открывания есть, размеров и подписей нет.
+    var thumb = false
 
-    private var dimSpace: CGFloat { clean ? 6 : 34 }
+    private var dimSpace: CGFloat { clean || thumb ? 6 : 34 }
 
     var body: some View {
         GeometryReader { geo in
@@ -129,7 +131,7 @@ struct SchemeView: View {
 
         // Рама
         ctx.fill(Path(box), with: .color(frameColor))
-        let labels = clean ? [] : cellLabels(box, k)
+        let labels = clean || thumb ? [] : cellLabels(box, k)
         for r in spec.cellRects {
             let cr = rect(r, box, k)
             let opening = r.cell.opening != .fixed
@@ -154,7 +156,7 @@ struct SchemeView: View {
                 ctx.stroke(Path(cr.insetBy(dx: 1.5, dy: 1.5)), with: .color(Theme.accent), lineWidth: 3)
             }
         }
-        if clean { return }
+        if clean || thumb { return }
         // Размер ячейки (голубой, если его можно изменить)
         for l in labels {
             let cr = rect(l.r, box, k)

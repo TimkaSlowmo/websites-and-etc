@@ -78,8 +78,9 @@ class MainActivity : ComponentActivity() {
                 enableEdgeToEdge(statusBarStyle = bar, navigationBarStyle = bar)
             }
             ProyomTheme(dark) {
-                // Для автотеста на эмуляторе: --ez demo true, --es tab catalog
-                App(vm, demo = intent.getBooleanExtra("demo", false), startTab = intent.getStringExtra("tab"))
+                // Для автотеста на эмуляторе: --ez demo true, --ez pdf true, --es tab catalog
+                App(vm, demo = intent.getBooleanExtra("demo", false), startTab = intent.getStringExtra("tab"),
+                    demoPdf = intent.getBooleanExtra("pdf", false))
             }
         }
     }
@@ -121,9 +122,15 @@ private val tabs = listOf(
 )
 
 @Composable
-fun App(vm: AppViewModel, demo: Boolean = false, startTab: String? = null) {
+fun App(vm: AppViewModel, demo: Boolean = false, startTab: String? = null, demoPdf: Boolean = false) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
     LaunchedEffect(Unit) {
         if (demo) vm.demo()
+        // Демо-КП в файл для проверки макета PDF в CI (adb pull)
+        if (demo && demoPdf) runCatching {
+            Pdf.offer(ctx, vm.positions, vm.options, vm.offer, vm.catalog, "BENKAM", emptyMap(), emptyMap())
+                .copyTo(java.io.File(ctx.getExternalFilesDir(null), "demo-kp.pdf"), overwrite = true)
+        }
         when (startTab) {
             "history" -> vm.tab = Tab.HISTORY
             "catalog" -> vm.tab = Tab.CATALOG
